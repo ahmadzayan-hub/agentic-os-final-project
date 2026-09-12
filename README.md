@@ -122,13 +122,14 @@ and returns fresh state snapshots.
 ├── server/                # FastAPI adapter, run engine, storage, auth,
 │                          # backup/restore
 ├── scripts/               # serve.py · backup.py · restore.py · worker.py
+│                          # · sbom.py
 ├── config.json            # User-editable settings
 ├── metrics.example.json   # Metric glossary template (copy to metrics.json)
 ├── data/memory.json       # Persistent memory (starts empty)
 ├── tests/                 # Python unittest suite (agent, utils, API,
 │                          # runs, analytics, metric glossary, auth,
 │                          # quotas, backups, worker, failure injection,
-│                          # model gateway, launcher, docs)
+│                          # supply chain, model gateway, launcher, docs)
 ├── frontend/
 │   ├── src/
 │   │   ├── app/           # Shell, store, theme
@@ -205,7 +206,7 @@ python main.py
 
 ```bash
 # Python: agent, utils, API, runs, analytics, metrics, auth, quotas,
-# backups, worker, recovery, launcher, docs (335 tests)
+# backups, worker, recovery, supply chain, launcher, docs (363 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (23 tests)
@@ -221,7 +222,7 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 335 Python tests, 23 frontend unit
+PostgreSQL 16 service. Last verified: 363 Python tests, 23 frontend unit
 tests, and 38 end-to-end checks (37 executed, 1 desktop-only check
 skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:
@@ -262,6 +263,30 @@ with an unrelated error. A full database outage
 (`pg_ctl stop -m immediate`) was executed by hand with measured recovery
 times, because CI's database is a service container a test cannot stop.
 Findings and numbers: `docs/adr/0012-business-continuity.md`.
+
+## Supply chain
+
+```bash
+python scripts/sbom.py            # → sbom.json (CycloneDX), plus a summary
+python scripts/sbom.py --check    # also fail on a shipped copyleft licence
+```
+
+Every third-party GitHub Action is pinned to a **commit SHA**, never a
+tag: `actions/checkout@v4` before and after a compromise of that
+repository are the same line of YAML running different code, with a token
+that can write here. The release is named in a comment so an upgrade
+stays a readable diff, and a test fails the build if a pin reverts to a
+tag or loses its comment.
+
+The bill of materials is generated on every CI run and kept as an
+artifact. It covers both ecosystems — npm from the lock file with
+integrity hashes, Python from the closure `requirements.txt` actually
+reaches — and needs no network, because an SBOM you cannot read during an
+incident is not worth having. Current composition: **302 components (275
+npm, 27 pypi); 286 permissive, 16 weak-copyleft, none strong**, of which
+exactly one copyleft package ships (`psycopg2-binary`, LGPL with
+exceptions) and is named in the build output every time. Details:
+`docs/adr/0013-supply-chain.md`.
 
 ## Backup and restore
 

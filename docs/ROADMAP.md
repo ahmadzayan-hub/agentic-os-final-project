@@ -133,6 +133,17 @@ facts reach the narrator.
   and provider-exit procedures.
 - **Supply chain:** SBOM, signed artifacts, build provenance, license
   scanning, pinned actions/packages, vendor registers and contingency.
+  **Partly done (ADR 0013):** every third-party action pinned to a
+  commit SHA with the release named and a test that keeps it that way;
+  a CycloneDX SBOM generated on every build from the npm lock file and
+  the Python dependency closure, kept as a CI artifact; and a licence
+  gate that fails the build on a shipped strong-copyleft dependency
+  while naming weak-copyleft and undeclared ones. Packages were already
+  pinned by lock file and `requirements.txt`. **Remaining:** signed
+  artifacts and build provenance (both need a release process this
+  project does not have — it has a branch), a signed SBOM, and vendor
+  registers and contingency, which are documents about an organisation
+  rather than about this code.
 - **Android release lifecycle:** Capacitor project, Play App Signing,
   developer verification (regional from 2026-09-30), testing tracks,
   Data Safety declaration, Play Integrity, crash/ANR monitoring,

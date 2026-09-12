@@ -92,7 +92,15 @@ required local files. Both behaviors are covered by tests
    its measurements recorded in the ADR. Not covered anywhere: network
    partition, failover (there is one database and no standby), and
    corruption as opposed to unavailability.
-8. Execution is client-stepped by default: runs advance while the Runs
+8. Supply-chain evidence stops at composition (ADR 0013): the SBOM
+   says what this software is made of, and nothing signs it or attests
+   to how it was built. Signed artifacts and SLSA provenance need a
+   release process this project does not have. The licence gate blocks
+   only strong copyleft in a **shipped** dependency; weak copyleft and
+   undeclared licences are reported, not blocked. `pip-audit` remains
+   advisory. The repository also has no LICENSE file of its own — what
+   this project grants is the owner's decision.
+9. Execution is client-stepped by default: runs advance while the Runs
    view is open. A background worker (`python scripts/worker.py`) can
    advance them server-side with no browser, using database leases with
    heartbeats (ADR 0006), but **nothing starts it automatically** and
@@ -100,20 +108,20 @@ required local files. Both behaviors are covered by tests
    deployments there keep the client-stepped path. One worker advances
    one run at a time; parallelism means running more workers. A
    paused or interrupted run resumes from its durable state either way.
-9. The repository is configured to deploy to Vercel as a full-stack
-   project (static frontend + Python function). **No deployment has been
-   performed or verified** — importing the repo and setting the
-   credentials are owner steps. Without `DATABASE_URL` a deployment
-   falls back to ephemeral per-instance storage. See
-   docs/VERCEL_DEPLOYMENT.md.
-10. Android support is a verified installable PWA; a native Capacitor
+10. The repository is configured to deploy to Vercel as a full-stack
+    project (static frontend + Python function). **No deployment has been
+    performed or verified** — importing the repo and setting the
+    credentials are owner steps. Without `DATABASE_URL` a deployment
+    falls back to ephemeral per-instance storage. See
+    docs/VERCEL_DEPLOYMENT.md.
+11. Android support is a verified installable PWA; a native Capacitor
     project is documented but not shipped (no Android SDK available to
     build or test one honestly).
-11. Obsidian integration is approval-gated write-back into a vault
+12. Obsidian integration is approval-gated write-back into a vault
     folder; reading/sync/retrieval from a vault is not implemented.
-12. Interface language is English; the `language` preference is recorded
+13. Interface language is English; the `language` preference is recorded
     but does not translate the UI. No RTL support yet.
-13. Backups are on-demand: `scripts/backup.py` produces a verified,
+14. Backups are on-demand: `scripts/backup.py` produces a verified,
     restorable backup (the drill in `tests/test_backup.py` destroys the
     database and rebuilds it on every push), but **nothing schedules
     it**, so the recovery point objective is "whenever it was last run".
@@ -125,13 +133,13 @@ required local files. Both behaviors are covered by tests
     written (fine at the 2 MB dataset limit, not at hundreds of
     megabytes), and in local mode `data/memory.json` lives outside the
     database and must be backed up separately.
-14. Usage is bounded per owner (runs/day, dataset count, dataset bytes)
+15. Usage is bounded per owner (runs/day, dataset count, dataset bytes)
     but **no cost in currency is tracked**: there is no billing
     relationship, model tokens are not counted, and serverless execution
     time is not measured. `/api/usage` names those gaps rather than
     hiding them. The daily window is calendar-based (midnight UTC), so a
     burst either side of midnight can exceed the intended daily rate.
-15. Dataset ingestion is CSV only — uploaded as a file or pasted, up to
+16. Dataset ingestion is CSV only — uploaded as a file or pasted, up to
     2 MB and 50,000 rows, held in the database rather than object
     storage. XLSX, JSON, Parquet, and database connectors are not
     implemented, and analysis is in-memory (no DuckDB/Polars), so
