@@ -62,9 +62,14 @@ SCHEMA_STATEMENTS = [
       ended INTEGER NOT NULL, preferences_json TEXT NOT NULL,
       history_json TEXT NOT NULL, transcript_json TEXT NOT NULL,
       next_entry_id INTEGER NOT NULL)""",
+    # Memory is per owner. The composite key matters as much as the
+    # column: keys are handed out per owner, so the first thing two
+    # tenants save is "memory_1" for both, and a single-column primary
+    # key would make the second one collide.
     """CREATE TABLE IF NOT EXISTS memory_kv (
-      key TEXT PRIMARY KEY, text TEXT NOT NULL,
-      category TEXT NOT NULL, updated TEXT)""",
+      owner TEXT NOT NULL, key TEXT NOT NULL, text TEXT NOT NULL,
+      category TEXT NOT NULL, updated TEXT,
+      PRIMARY KEY (owner, key))""",
     """CREATE TABLE IF NOT EXISTS vault_notes (
       path TEXT PRIMARY KEY, run_id TEXT NOT NULL,
       content TEXT NOT NULL, created_at TEXT NOT NULL)""",
@@ -135,6 +140,43 @@ class SqlStore:
             self._exec("ALTER TABLE runs ADD COLUMN paused INTEGER")
         except Exception:
             self._rollback()
+        self._migrate_memory_owner()
+
+    def _migrate_memory_owner(self):
+        """Give memory_kv an owner, rebuilding the table if it predates one.
+
+        This one cannot be an ADD COLUMN: the primary key has to move
+        from (key) to (owner, key), or the second tenant to save a
+        memory collides with the first. Rebuild-and-copy is the only
+        shape both SQLite and PostgreSQL accept, and the guard makes it
+        run exactly once.
+
+        Existing rows are attributed to `local-owner` — the same
+        assumption the runs and sessions migrations made, and the right
+        one: a database written before ownership existed was written by
+        a single-user install.
+        """
+        try:
+            self._exec("SELECT owner FROM memory_kv LIMIT 1")
+            return  # already migrated
+        except Exception:
+            self._rollback()
+        try:
+            self._exec("ALTER TABLE memory_kv RENAME TO memory_kv_pre_owner")
+            for statement in SCHEMA_STATEMENTS:
+                if "memory_kv (" in statement:
+                    self._exec(statement)
+            self._exec(
+                "INSERT INTO memory_kv (owner, key, text, category, updated) "
+                "SELECT 'local-owner', key, text, category, updated "
+                "FROM memory_kv_pre_owner")
+            self._exec("DROP TABLE memory_kv_pre_owner")
+        except Exception:
+            # A half-finished rebuild would lose memory, so leave the
+            # old table in place and let the failure be visible rather
+            # than deleting anything on the way out.
+            self._rollback()
+            raise
 
     def _rollback(self):
         try:
@@ -275,18 +317,22 @@ class SqlStore:
             (keep,))
 
     # -- shared memory ----------------------------------------------------
-    def memory_load(self):
+    def memory_load(self, owner="local-owner"):
         return {
             row["key"]: {"text": row["text"], "category": row["category"],
                          "updated": row["updated"]}
-            for row in self._exec("SELECT * FROM memory_kv")
+            for row in self._exec(
+                "SELECT * FROM memory_kv WHERE owner = ?", (owner,))
         }
 
-    def memory_save(self, payload):
-        self._exec("DELETE FROM memory_kv")
+    def memory_save(self, payload, owner="local-owner"):
+        """Replace one owner's memory. The DELETE is scoped for the same
+        reason the SELECT is: unscoped, saving a memory deleted
+        everybody else's."""
+        self._exec("DELETE FROM memory_kv WHERE owner = ?", (owner,))
         for key, entry in payload.items():
             self.insert("memory_kv", {
-                "key": key, "text": entry["text"],
+                "owner": owner, "key": key, "text": entry["text"],
                 "category": entry["category"], "updated": entry["updated"]})
 
     # -- vault notes ------------------------------------------------------
@@ -352,28 +398,42 @@ class SqlStore:
         restored = 0
         for table in RESTORE_ORDER:
             for row in payload.get(table, []):
+                if table == "memory_kv" and not row.get("owner"):
+                    # Written before memory had an owner: the same
+                    # attribution the migration makes.
+                    row = dict(row, owner="local-owner")
                 self.insert(table, row)
                 restored += 1
         return restored
 
 
 class DbMemoryBackend:
-    """Agent memory persisted in the store's memory_kv table (hosted mode)."""
+    """One owner's agent memory, in the store's memory_kv table.
+
+    An instance is bound to an owner rather than shared, because the
+    alternative — one backend for the process — is what let every tenant
+    read and overwrite every other tenant's memory.
+    """
 
     persistent = True
 
-    def __init__(self, store):
+    def __init__(self, store, owner="local-owner"):
         self._store = store
+        self._owner = owner or "local-owner"
+
+    @property
+    def owner(self):
+        return self._owner
 
     def load(self):
         try:
-            return self._store.memory_load()
+            return self._store.memory_load(self._owner)
         except Exception:
             return {}
 
     def save(self, payload):
         try:
-            self._store.memory_save(payload)
+            self._store.memory_save(payload, self._owner)
             return True
         except Exception:
             return False

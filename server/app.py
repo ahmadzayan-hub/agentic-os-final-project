@@ -181,11 +181,30 @@ def create_app(config_path=None, env=None):
     )
     app.state.engine = engine
     app.state.store = store
-    # Hosted mode keeps agent memory in the database so the backend needs
-    # no local files; local mode keeps the data/memory.json contract.
-    memory_backend = (
-        DbMemoryBackend(store) if isinstance(store, PostgresStore) else None
-    )
+    # Where memory lives, and whose it is.
+    #
+    # Local mode is one person on one machine, and keeps the documented
+    # data/memory.json contract. The moment an identity provider is
+    # configured the install is multi-tenant, and memory has to be
+    # scoped like sessions and runs are — otherwise one tenant reads and
+    # overwrites another's, which is what happened until ADR 0014. That
+    # is a property of authentication, not of the database: a small
+    # deployment with JWTs and SQLite is just as multi-tenant as one
+    # with PostgreSQL, and used to share one memory file between
+    # everybody.
+    # Two independent reasons to keep memory in the database, and either
+    # is enough: a PostgreSQL store means the backend must not depend on
+    # local files (a serverless filesystem is read-only, ADR 0001), and
+    # an identity provider means more than one owner exists. With a
+    # single owner the scoping is a no-op; with several it is the whole
+    # point.
+    multi_tenant = identity.mode != "local"
+    memory_in_database = multi_tenant or isinstance(store, PostgresStore)
+
+    def memory_for(owner):
+        if not memory_in_database:
+            return None  # the Agent's own data/memory.json backend
+        return DbMemoryBackend(store, owner or "local-owner")
 
     allowed_origins = [
         origin.strip()
@@ -298,7 +317,9 @@ def create_app(config_path=None, env=None):
                 status_code=404,
                 detail="Session not found. It may have expired — start a new session.",
             )
-        return Session(config, memory_backend, row=row)
+        return Session(config,
+                       memory_for(row.get("owner") or "local-owner"),
+                       row=row)
 
     def save_session(session):
         store.upsert_session(session.to_row())
@@ -327,7 +348,8 @@ def create_app(config_path=None, env=None):
     @app.post("/api/sessions", status_code=201)
     def create_session(principal=Depends(requires("write"))):
         with lock:
-            session = Session(config, memory_backend, owner=principal.subject)
+            session = Session(config, memory_for(principal.subject),
+                              owner=principal.subject)
             save_session(session)
             store.trim_sessions(MAX_SESSIONS)
             return session.snapshot()

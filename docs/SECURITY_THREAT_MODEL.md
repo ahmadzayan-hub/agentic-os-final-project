@@ -31,7 +31,8 @@ User memory (`data/memory.json`), run data and reports (`data/agentic.db`,
 | Unauthenticated access in a hosted deployment | Production declares auth or startup fails closed; every endpoint except `/api/health` requires a principal | `tests/test_auth.py` |
 | Forged / replayed / downgraded tokens | Managed-provider JWT verification with pinned algorithms — HS256 for shared secrets, RS256/ES256 for JWKS — rejecting `alg: none`, bad signatures, expiry, and audience mismatch | 8 attack tests |
 | Privilege escalation via token claims | Roles come from a server-side permission table; unknown role claims fall back to least privilege (`viewer`) | role-forgery test |
-| Cross-tenant access | `owner` on sessions and runs; reads filtered, writes ownership-checked before any state change; other owners' resources answer 404 (no existence oracle) | isolation tests |
+| Cross-tenant access | `owner` on sessions, runs, datasets **and agent memory**; reads filtered, writes ownership-checked before any state change; other owners' resources answer 404 (no existence oracle) | isolation tests, `tests/test_tenancy.py` |
+| Cross-tenant memory (found and fixed, ADR 0014) | `memory_kv` keyed by `(owner, key)`; load and save both scoped, so one tenant can neither read nor overwrite another's. Until that commit a hosted deployment shared one memory store: every tenant read everybody's memory, and every save deleted everybody else's | `tests/test_tenancy.py`, both hosted shapes, mutation-checked |
 | Credential leakage in errors | Auth failures return fixed messages; token content never echoed | leak test |
 
 | Model/resource denial of service, runaway loops | Per-caller token bucket on all state-changing API calls; `429` with `Retry-After`; default sized above the app's own cadence (ADR 0003) | limiter + API tests |
@@ -39,6 +40,11 @@ User memory (`data/memory.json`), run data and reports (`data/agentic.db`,
 
 ## Known gaps (explicit)
 
+0. The owner boundary is enforced by the application only. Row-level
+   security in the database is deny-by-default rather than owner-aware
+   (ADR 0001), so an application-layer defect is not caught by a second
+   line underneath it — which is how the memory gap in ADR 0014 stayed
+   open. There is also no command that erases one owner completely.
 1. The live provider sign-in round-trip is unverified (this environment
    blocks HTTPS to the provider); confirm once on first deployment.
 2. Tokens sit in browser storage without refresh rotation — an expired

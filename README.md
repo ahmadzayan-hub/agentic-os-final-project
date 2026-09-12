@@ -72,6 +72,11 @@ environment — not a replacement for Windows, macOS, or Linux.
 - **Session restore** — refreshing the browser reconnects to the same
   conversation (sessions expire when the server restarts; saved memory
   does not)
+- **Memory belongs to its owner** — in hosted mode each tenant's memory
+  is scoped to them in the database, and the tests are written from the
+  attacker's side of that boundary: a second authenticated user must not
+  read, overwrite, or delete the first one's. Until ADR 0014 they could
+  do all three
 - **Persistent memory** in `data/memory.json` that survives restarts, with
   **categories and timestamps**, search, category filters, add, **in-place
   edit**, delete, and delete-all controls — destructive actions always
@@ -129,7 +134,8 @@ and returns fresh state snapshots.
 ├── tests/                 # Python unittest suite (agent, utils, API,
 │                          # runs, analytics, metric glossary, auth,
 │                          # quotas, backups, worker, failure injection,
-│                          # supply chain, model gateway, launcher, docs)
+│                          # tenancy, supply chain, model gateway,
+│                          # launcher, docs)
 ├── frontend/
 │   ├── src/
 │   │   ├── app/           # Shell, store, theme
@@ -205,8 +211,9 @@ python main.py
 ## Testing
 
 ```bash
-# Python: agent, utils, API, runs, analytics, metrics, auth, quotas,
-# backups, worker, recovery, supply chain, launcher, docs (363 tests)
+# Python: agent, utils, API, runs, analytics, metrics, auth, tenancy,
+# quotas, backups, worker, recovery, supply chain, launcher, docs
+# (377 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (23 tests)
@@ -222,7 +229,7 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 363 Python tests, 23 frontend unit
+PostgreSQL 16 service. Last verified: 377 Python tests, 23 frontend unit
 tests, and 38 end-to-end checks (37 executed, 1 desktop-only check
 skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:

@@ -70,7 +70,15 @@ required local files. Both behaviors are covered by tests
    are stored in browser storage without refresh rotation; and the rate
    limiter is per process, so multi-instance deployments need a shared
    store. There is no admin UI for granting roles — roles come from
-   token claims or `AGENTIC_OS_DEFAULT_ROLE`. A consequence worth
+   token claims or `AGENTIC_OS_DEFAULT_ROLE`. Agent memory is scoped to
+   its owner as of ADR 0014 — before that commit a hosted deployment
+   shared one memory store between every tenant, so an upgrade
+   attributes all existing memory to `local-owner` and **nothing
+   reassigns it**; that is a SQL `UPDATE` by someone who knows whose
+   data it was. The application enforces the owner boundary; the
+   database's row-level security is deny-by-default rather than
+   owner-aware, so there is no second line of defence underneath it, and
+   there is no command that erases one owner completely. A consequence worth
    stating plainly: `python scripts/serve.py` binds to the local network
    so a phone can reach it, and because local mode has no login, every
    device on that network can read and change the saved memory. The
