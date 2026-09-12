@@ -117,7 +117,15 @@ facts reach the narrator.
 - **UAE PDPL compliance:** data-residency decisions, cross-border
   transfer controls, processor registers, consent evidence, privacy
   impact assessments, deletion across primary storage, embeddings,
-  telemetry, and backups.
+  telemetry, and backups. **Partly done (ADR 0015):** deletion across
+  primary storage — one command erases an owner's rows in every table
+  and the published markdown files on disk, surveys before it deletes,
+  and names in every report what it could not reach (backups first).
+  **Remaining:** everything that is a decision rather than code —
+  residency, transfer controls, processor registers, consent evidence,
+  impact assessments — plus deletion inside backups, which a tool must
+  not do silently, and an erasure endpoint, which needs the product
+  questions in ADR 0015 answered first.
 - **Business continuity:** SLOs and error budgets, point-in-time
   recovery, incident classification and on-call ownership, load/soak/
   failover/chaos testing, provider-exit procedures. **Partly done

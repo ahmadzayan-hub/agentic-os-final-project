@@ -127,15 +127,15 @@ and returns fresh state snapshots.
 ├── server/                # FastAPI adapter, run engine, storage, auth,
 │                          # backup/restore
 ├── scripts/               # serve.py · backup.py · restore.py · worker.py
-│                          # · sbom.py
+│                          # · sbom.py · erase.py
 ├── config.json            # User-editable settings
 ├── metrics.example.json   # Metric glossary template (copy to metrics.json)
 ├── data/memory.json       # Persistent memory (starts empty)
 ├── tests/                 # Python unittest suite (agent, utils, API,
 │                          # runs, analytics, metric glossary, auth,
 │                          # quotas, backups, worker, failure injection,
-│                          # tenancy, supply chain, model gateway,
-│                          # launcher, docs)
+│                          # tenancy, erasure, supply chain, model
+│                          # gateway, launcher, docs)
 ├── frontend/
 │   ├── src/
 │   │   ├── app/           # Shell, store, theme
@@ -212,8 +212,8 @@ python main.py
 
 ```bash
 # Python: agent, utils, API, runs, analytics, metrics, auth, tenancy,
-# quotas, backups, worker, recovery, supply chain, launcher, docs
-# (377 tests)
+# erasure, quotas, backups, worker, recovery, supply chain, launcher,
+# docs (400 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (23 tests)
@@ -229,7 +229,7 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 377 Python tests, 23 frontend unit
+PostgreSQL 16 service. Last verified: 400 Python tests, 23 frontend unit
 tests, and 38 end-to-end checks (37 executed, 1 desktop-only check
 skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:
@@ -270,6 +270,26 @@ with an unrelated error. A full database outage
 (`pg_ctl stop -m immediate`) was executed by hand with measured recovery
 times, because CI's database is a service container a test cannot stop.
 Findings and numbers: `docs/adr/0012-business-continuity.md`.
+
+## Erasing one owner
+
+```bash
+python scripts/erase.py --owner alice@example.com          # survey only
+python scripts/erase.py --owner alice@example.com --yes    # delete
+```
+
+Removes that owner's sessions, runs, tasks, approvals, artifacts,
+datasets, vault notes and memory — **and the published markdown files on
+disk**, because a report exists in two places and deleting only the
+database row turns "erased" into a false statement. The survey is the
+default: the operation is irreversible and the owner identifier is a
+string somebody typed.
+
+Every report ends with what the command could **not** reach — backups
+first, since they still contain the rows and restoring one restores
+them. That list prints whether or not anything was found, because
+"nothing here" and "nothing anywhere" are different answers. Details:
+`docs/adr/0015-per-owner-erasure.md`.
 
 ## Supply chain
 

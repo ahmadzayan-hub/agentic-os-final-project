@@ -78,7 +78,10 @@ required local files. Both behaviors are covered by tests
    data it was. The application enforces the owner boundary; the
    database's row-level security is deny-by-default rather than
    owner-aware, so there is no second line of defence underneath it, and
-   there is no command that erases one owner completely. A consequence worth
+   erasing one owner is an operator command (`scripts/erase.py`,
+   ADR 0015), not an endpoint: it deletes the rows and the published
+   files but cannot reach backups, and it names them in every report
+   rather than implying completeness. A consequence worth
    stating plainly: `python scripts/serve.py` binds to the local network
    so a phone can reach it, and because local mode has no login, every
    device on that network can read and change the saved memory. The
