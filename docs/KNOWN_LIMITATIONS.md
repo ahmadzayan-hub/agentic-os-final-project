@@ -17,7 +17,12 @@ placeholder controls — absent capabilities have no UI.
      compares recorded control/treatment groups and refuses the claim
      otherwise. It estimates nothing from observational data — no
      propensity scores, difference-in-differences, instrumental
-     variables, or synthetic control — and no sequential testing.
+     variables, or synthetic control. Where an experiment *is* recorded,
+     the range carrying the verdict is always-valid (ADR 0016), so
+     checking a running test repeatedly does not inflate the error rate;
+     it is about 1.55× wider than the fixed-horizon reading, which is
+     printed beside it. Small samples now decline to conclude — eight
+     observations are eight observations.
    - **Predictive** fits a straight-line trend to the historical periods
      and extends it, with accuracy measured by backtesting against
      held-out periods. There is no seasonality model, no machine
@@ -30,9 +35,11 @@ placeholder controls — absent capabilities have no UI.
      leverage is; it is not an optimizer and knows nothing about cost,
      capacity, or feasibility.
    - Comparison between recorded experiment groups reports a range and
-     whether it includes no-change (ADR 0010). No test is applied
+     whether it includes no-change (ADR 0010, 0016). No test is applied
      anywhere else: the descriptive, diagnostic, predictive and
-     prescriptive stages are arithmetic, not inference.
+     prescriptive stages are arithmetic, not inference. Nothing
+     recommends when to stop a test — that is a decision about cost and
+     risk, not a statistic.
 3. The optional narrator (Ollama, Anthropic, or Groq) only phrases
    already-verified facts and never receives the dataset. The wire
    contract for each provider is tested against a local HTTP server —

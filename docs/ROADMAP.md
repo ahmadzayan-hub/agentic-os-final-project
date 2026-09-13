@@ -109,9 +109,15 @@ facts reach the narrator.
   ships fixed-horizon A/B comparison with an uncertainty range,
   Bonferroni control across arms, sample-ratio-mismatch detection, power
   and minimum-detectable-effect arithmetic, and a refusal path that
-  prices the experiment when the data is observational. **Remaining:**
-  sequential testing and always-valid inference, and any method for
-  estimating an effect from observational data (propensity scores,
+  prices the experiment when the data is observational. **Also done
+  (ADR 0016):** always-valid inference — a normal-mixture confidence
+  sequence now carries the verdict, so checking a running test repeatedly
+  and stopping when it looks good does not inflate the error rate
+  (simulated: 31.5% false alarms under peeking becomes 1.0%), with the
+  fixed-horizon reading kept beside it and labelled with the assumption
+  it needs. **Remaining:** an early-stopping recommendation, which is a
+  decision about cost and risk rather than a statistic, and any method
+  for estimating an effect from observational data (propensity scores,
   difference-in-differences, instrumental variables, synthetic control) —
   each of which is a research decision, not a missing function.
 - **UAE PDPL compliance:** data-residency decisions, cross-border

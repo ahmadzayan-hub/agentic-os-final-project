@@ -1,7 +1,12 @@
 # ADR 0010 — Experiment and causal inference as a governed stage
 
-**Status:** Accepted
+**Status:** Accepted, amended in part by ADR 0016
 **Date:** 2026-08-15
+
+> The "what this is not" section below lists sequential testing as
+> absent and warns that peeking invalidates these ranges. ADR 0016 acted
+> on that warning: an always-valid range now carries the verdict. The
+> text is left as written — a record says what was decided when.
 **Supersedes in part:** ADR 0009 (roster count: nineteen stages → twenty)
 
 ## Context

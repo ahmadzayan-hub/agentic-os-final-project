@@ -23,6 +23,7 @@ import re
 import statistics
 
 from server import metrics as glossary
+from server import sequential
 
 MAX_ROWS = 50_000
 MAX_DATASET_BYTES = 2_000_000
@@ -997,20 +998,32 @@ def _controlled_comparison(ctx, rows, values, measure, column, arm_names):
     # the whole family at 5% (Bonferroni). Stated as arithmetic, not as a
     # word the reader has to trust.
     comparisons = sorted(name for name in usable if name != baseline)
-    z = statistics.NormalDist().inv_cdf(1 - 0.05 / (2 * len(comparisons)))
+    # The risk budget is split across the comparisons either way; only the
+    # shape of the bound differs.
+    alpha = 0.05 / len(comparisons)
+    z = statistics.NormalDist().inv_cdf(1 - alpha / 2)
     results = []
     for index, name in enumerate(comparisons):
         count, mean, variance = _arm_stats(usable[name])
         difference = mean - base_mean
         spread = math.sqrt(variance / count + base_var / base_n)
-        low, high = difference - z * spread, difference + z * spread
+        fixed_low, fixed_high = difference - z * spread, difference + z * spread
+        # The sequence is only as advanced as its slower arm.
+        reached = min(count, base_n)
+        low, high = sequential.always_valid_range(difference, spread, reached,
+                                                  alpha=alpha)
         relative = difference / abs(base_mean) if base_mean else None
         results.append({
             "group": name, "rows": count, "average": round(mean, 2),
             "difference": round(difference, 2),
             "relative": round(relative, 4) if relative is not None else None,
+            # `low`/`high` are the range the verdict rests on, and it is
+            # the one that survives being looked at more than once.
             "low": round(low, 2), "high": round(high, 2),
-            "beyond_chance": (low > 0 and high > 0) or (low < 0 and high < 0),
+            "fixed_low": round(fixed_low, 2), "fixed_high": round(fixed_high, 2),
+            "beyond_chance": sequential.excludes_no_change(low, high),
+            "beyond_chance_if_horizon_was_fixed":
+                sequential.excludes_no_change(fixed_low, fixed_high),
         })
         calcs.append({
             "id": f"c_exp_diff_{index}", "name": f"difference_{name}_vs_{baseline}",
@@ -1020,8 +1033,16 @@ def _controlled_comparison(ctx, rows, values, measure, column, arm_names):
         calcs.append({
             "id": f"c_exp_range_{index}", "name": f"range_{name}_vs_{baseline}",
             "value": f"{low:,.2f} to {high:,.2f}",
-            "method": f"difference ± {z:.2f}·√(var/n + var/n), two-sided 5% split "
-                      f"across {len(comparisons)} comparison(s)"})
+            "method": f"difference ± {sequential.inflation(reached, alpha):.2f}·"
+                      f"√(var/n + var/n) — a normal-mixture confidence sequence at "
+                      f"n={reached}, valid at every sample size, 5% split across "
+                      f"{len(comparisons)} comparison(s)"})
+        calcs.append({
+            "id": f"c_exp_fixed_{index}",
+            "name": f"fixed_size_range_{name}_vs_{baseline}",
+            "value": f"{fixed_low:,.2f} to {fixed_high:,.2f}",
+            "method": f"difference ± {z:.2f}·√(var/n + var/n) — valid only if the "
+                      "sample size was fixed before the data was collected"})
 
     # A randomised split that came out lopsided is evidence the assignment
     # or the logging is broken, and it invalidates the comparison above it.
@@ -1046,7 +1067,8 @@ def _controlled_comparison(ctx, rows, values, measure, column, arm_names):
         f"can compare them. “{baseline}” is used as the baseline; every figure "
         "below is the difference from it.",
         "",
-        "| Group | Rows | Average | Difference | Plausible range | Beyond chance? |",
+        "| Group | Rows | Average | Difference | Range (safe to check early) "
+        "| Beyond chance? |",
         "| --- | --- | --- | --- | --- | --- |",
         f"| {baseline} (baseline) | {base_n} | {base_mean:,.2f} | — | — | — |",
     ]
@@ -1061,7 +1083,29 @@ def _controlled_comparison(ctx, rows, values, measure, column, arm_names):
               "difference looks precise and is not: repeat the same test and it "
               "would land somewhere in that range. Where the range crosses zero, "
               "the difference is inside what chance alone produces, and it should "
-              "not be acted on as a result."]
+              "not be acted on as a result.",
+              "",
+              "### Why this range and not a narrower one", "",
+              "Most people look at a test more than once — on Tuesday, again on "
+              "Thursday — and stop when the number looks good. Stopping when the "
+              "number looks good is what turns a 1-in-20 risk of a false result "
+              "into something far worse: simulated, checking an ordinary range "
+              "roughly two hundred times finds a “real” difference in about a "
+              "third of tests where nothing is happening at all.",
+              "",
+              "The range above is built to survive that. It is valid at every "
+              "sample size at once, so looking early, looking often, and stopping "
+              "when you like do not break it. It is about half again as wide as "
+              "the ordinary one, and that width is what the freedom to look costs.",
+              "",
+              "If you genuinely fixed the sample size before collecting anything "
+              "and are looking exactly once, the narrower range applies:"]
+    lines += ["", "| Group | Range (only if the size was fixed in advance) "
+              "| Beyond chance? |", "| --- | --- | --- |"]
+    lines += [f"| {item['group']} | {item['fixed_low']:,.2f} to "
+              f"{item['fixed_high']:,.2f} "
+              f"| {'yes' if item['beyond_chance_if_horizon_was_fixed'] else 'no'} |"
+              for item in results]
     if len(comparisons) > 1:
         lines += ["", f"{len(comparisons)} groups were compared against the "
                   "baseline. Comparing more groups gives chance more chances, so "
@@ -1077,19 +1121,24 @@ def _controlled_comparison(ctx, rows, values, measure, column, arm_names):
                         f"by {abs(item['difference']):,.2f}"
                         + (f" ({abs(item['relative']):.1%})"
                            if item["relative"] is not None else "")
-                        + f", and the plausible range ({item['low']:,.2f} to "
+                        + f", and the range ({item['low']:,.2f} to "
                           f"{item['high']:,.2f}) does not include no-change, so this "
-                          "is unlikely to be chance alone.",
+                          "is unlikely to be chance alone. That range holds however "
+                          "often the test was checked along the way.",
                 "evidence": [f"c_exp_diff_{index}", f"c_exp_range_{index}"],
                 "status": "verified"})
         else:
             claims.append({
                 "id": f"cl_exp_null_{index}", "type": "finding",
                 "text": f"“{item['group']}” and “{baseline}” cannot be separated on "
-                        f"{measure}: the plausible range ({item['low']:,.2f} to "
+                        f"{measure}: the range ({item['low']:,.2f} to "
                         f"{item['high']:,.2f}) includes no change, so the difference "
                         "of " + f"{item['difference']:+,.2f} is within ordinary "
-                        "variation.",
+                        "variation." + (
+                            " A narrower reading would call it real, but only for "
+                            "someone who fixed the sample size before collecting "
+                            "anything and is looking exactly once."
+                            if item["beyond_chance_if_horizon_was_fixed"] else ""),
                 "evidence": [f"c_exp_diff_{index}", f"c_exp_range_{index}"],
                 "status": "verified"})
     if lopsided:
@@ -1105,6 +1154,15 @@ def _controlled_comparison(ctx, rows, values, measure, column, arm_names):
                     "that wide, so the comparison may be measuring the assignment "
                     "rather than the change.",
             "evidence": ["c_exp_split"], "status": "verified"})
+
+    claims.append({
+        "id": "cl_exp_peeking", "type": "assumption",
+        "text": "The ranges above stay honest however often this test was "
+                "checked while it ran, which is why they are wider than the "
+                "usual ones. The narrower figures beside them apply only if the "
+                "number of observations was decided before any data was "
+                "collected and the result is being read once.",
+        "evidence": ["c_exp_range_0"], "status": "verified"})
 
     # The column proves an assignment was recorded. It does not prove the
     # assignment was random — and only randomisation turns this difference

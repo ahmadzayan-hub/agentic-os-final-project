@@ -37,6 +37,15 @@ environment — not a replacement for Windows, macOS, or Linux.
   do not — which is most business data — it refuses the causal claim and
   computes the experiment that would settle it: how many observations per
   group, and the smallest change the data already in hand could detect
+- **A result that survives being looked at twice** — the range carrying
+  the verdict is an *always-valid* one, so checking a running test on
+  Tuesday and again on Thursday, and stopping when it looks good, does
+  not break it. Simulated, an ordinary range checked that way calls a
+  difference real in **31.5% of experiments where nothing is happening**;
+  the always-valid range does it in 1.0%, while still finding a genuine
+  effect every time. It is ~1.55× wider, the report says why, and the
+  narrower reading is printed beside it for anyone who really did fix
+  their sample size in advance (ADR 0016)
 - **Every figure says what it measures and who owns that definition** —
   a metric glossary (`metrics.json`) gives each metric a definition, an
   owner, and optionally the arithmetic it must satisfy. The glossary
@@ -211,9 +220,9 @@ python main.py
 ## Testing
 
 ```bash
-# Python: agent, utils, API, runs, analytics, metrics, auth, tenancy,
-# erasure, quotas, backups, worker, recovery, supply chain, launcher,
-# docs (400 tests)
+# Python: agent, utils, API, runs, analytics, sequential ranges,
+# metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
+# supply chain, launcher, docs (414 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (23 tests)
@@ -229,7 +238,7 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 400 Python tests, 23 frontend unit
+PostgreSQL 16 service. Last verified: 414 Python tests, 23 frontend unit
 tests, and 38 end-to-end checks (37 executed, 1 desktop-only check
 skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:

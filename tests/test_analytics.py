@@ -554,12 +554,34 @@ def ab_dataset(control, treatment, extra=None, column="variant"):
 
 
 def independent_range(baseline, arm, comparisons=1):
-    """The difference and its range, computed here from stdlib only."""
+    """The fixed-size difference and range, from stdlib only."""
     z = statistics.NormalDist().inv_cdf(1 - 0.05 / (2 * comparisons))
     difference = statistics.fmean(arm) - statistics.fmean(baseline)
     spread = math.sqrt(statistics.variance(arm) / len(arm)
                        + statistics.variance(baseline) / len(baseline))
     return difference, difference - z * spread, difference + z * spread
+
+
+def independent_safe_range(baseline, arm, comparisons=1):
+    """The always-valid range, recomputed here from the published formula
+    rather than by calling the code under test."""
+    alpha = 0.05 / comparisons
+    n = min(len(arm), len(baseline))
+    term = -2 * math.log(alpha)
+    rho_squared = (term + math.log(term + 1)) / 1000
+    scaled = n * rho_squared
+    factor = math.sqrt((2 * (scaled + 1) / scaled)
+                       * math.log(math.sqrt(scaled + 1) / alpha))
+    difference = statistics.fmean(arm) - statistics.fmean(baseline)
+    spread = math.sqrt(statistics.variance(arm) / len(arm)
+                       + statistics.variance(baseline) / len(baseline))
+    return difference, difference - factor * spread, difference + factor * spread
+
+
+def spread_of(size, start, step=1.0, offset=0.0):
+    """Distinct values with real variance — identical rows are dropped as
+    duplicates during cleaning, which would shrink the arm."""
+    return [round(start + offset + index * step, 2) for index in range(size)]
 
 
 class ExperimentAgentTestCase(unittest.TestCase):
@@ -623,21 +645,66 @@ class ExperimentAgentTestCase(unittest.TestCase):
                                round(expected, 4), places=4)
 
     def test_a_real_difference_is_measured_as_a_range_not_a_point(self):
-        control, treatment = [10, 12, 14, 16], [30, 32, 34, 36]
+        control = spread_of(60, 100.0, 0.5)
+        treatment = spread_of(60, 130.0, 0.5)
         ctx, results = run_pipeline(ab_dataset(control, treatment))
         self.assertTrue(ctx["experiment"]["is_experiment"])
         self.assertEqual(ctx["experiment"]["baseline"], "control")
         arm = ctx["experiment"]["arms"][0]
-        difference, low, high = independent_range(control, treatment)
+        difference, low, high = independent_safe_range(control, treatment)
         self.assertAlmostEqual(arm["difference"], round(difference, 2), places=2)
         self.assertAlmostEqual(arm["low"], round(low, 2), places=2)
         self.assertAlmostEqual(arm["high"], round(high, 2), places=2)
         self.assertTrue(arm["beyond_chance"])
 
+    def test_the_narrower_fixed_size_range_is_reported_beside_it(self):
+        """Someone who really did fix the sample size in advance is
+        entitled to the tighter reading — as long as the report says
+        which assumption buys it."""
+        control = spread_of(60, 100.0, 0.5)
+        treatment = spread_of(60, 130.0, 0.5)
+        ctx, _ = run_pipeline(ab_dataset(control, treatment))
+        arm = ctx["experiment"]["arms"][0]
+        _difference, fixed_low, fixed_high = independent_range(control, treatment)
+        self.assertAlmostEqual(arm["fixed_low"], round(fixed_low, 2), places=2)
+        self.assertAlmostEqual(arm["fixed_high"], round(fixed_high, 2), places=2)
+        self.assertLess(arm["fixed_high"] - arm["fixed_low"],
+                        arm["high"] - arm["low"],
+                        "the fixed-size range should be the narrower one")
+        report = ctx["experiment"]["report_markdown"]
+        self.assertIn("fixed in advance", report)
+
+    def test_eight_observations_do_not_prove_anything(self):
+        """Four against four, perfectly separated, used to be called a
+        result. A range that survives being looked at twice will not do
+        that, and should not: eight observations are eight observations."""
+        ctx, _ = run_pipeline(ab_dataset([10, 12, 14, 16], [30, 32, 34, 36]))
+        arm = ctx["experiment"]["arms"][0]
+        self.assertFalse(arm["beyond_chance"])
+        self.assertLess(arm["low"], 0)
+        self.assertGreater(arm["high"], 0)
+
+    def test_the_report_explains_why_its_range_is_wider(self):
+        """A wider number with no reason beside it reads as a worse
+        answer rather than an honest one."""
+        ctx, _ = run_pipeline(ab_dataset(spread_of(60, 100.0, 0.5),
+                                         spread_of(60, 130.0, 0.5)))
+        report = ctx["experiment"]["report_markdown"].lower()
+        self.assertIn("more than once", report)
+        self.assertIn("stop", report)
+
+    def test_the_peeking_assumption_is_always_stated(self):
+        _, results = run_pipeline(ab_dataset(spread_of(60, 100.0, 0.5),
+                                             spread_of(60, 130.0, 0.5)))
+        assumptions = [c["text"] for c in results["experiment"]["claims"]
+                       if c["type"] == "assumption"]
+        self.assertTrue(any("however often" in text for text in assumptions))
+
     def test_a_difference_inside_the_noise_is_not_reported_as_a_result(self):
         """The expensive mistake is acting on a difference that a rerun
         would not reproduce."""
-        control, treatment = [10, 40, 15, 35, 20], [12, 42, 14, 38, 25]
+        control = spread_of(40, 10.0, 2.0)
+        treatment = spread_of(40, 11.0, 2.0)
         ctx, _ = run_pipeline(ab_dataset(control, treatment))
         arm = ctx["experiment"]["arms"][0]
         self.assertFalse(arm["beyond_chance"])
@@ -648,10 +715,11 @@ class ExperimentAgentTestCase(unittest.TestCase):
     def test_comparing_more_groups_widens_every_range(self):
         """More comparisons give chance more chances. The correction is
         arithmetic, not a footnote."""
-        control, treatment = [10, 12, 14, 16], [20, 22, 24, 26]
+        control = spread_of(40, 10.0, 0.5)
+        treatment = spread_of(40, 20.0, 0.5)
         two_arms, _ = run_pipeline(ab_dataset(control, treatment))
-        three_arms, _ = run_pipeline(
-            ab_dataset(control, treatment, extra={"variant-b": [18, 19, 20, 21]}))
+        three_arms, _ = run_pipeline(ab_dataset(
+            control, treatment, extra={"variant-b": spread_of(40, 15.0, 0.5)}))
         narrow = next(a for a in two_arms["experiment"]["arms"]
                       if a["group"] == "treatment")
         wide = next(a for a in three_arms["experiment"]["arms"]
@@ -675,7 +743,7 @@ class ExperimentAgentTestCase(unittest.TestCase):
 
     def test_an_even_split_is_not_flagged(self):
         ctx, results = run_pipeline(
-            ab_dataset([10, 12, 14, 16], [20, 22, 24, 26]))
+            ab_dataset(spread_of(20, 10.0, 0.5), spread_of(20, 20.0, 0.5)))
         self.assertTrue(ctx["experiment"]["balanced"])
         self.assertFalse([c for c in results["experiment"]["claims"]
                           if c["type"] == "warning"])
@@ -683,14 +751,16 @@ class ExperimentAgentTestCase(unittest.TestCase):
     def test_a_comparison_always_states_that_it_assumed_randomisation(self):
         """The column proves an assignment was recorded, never that it was
         random — and only randomisation turns a difference into an effect."""
-        _, results = run_pipeline(ab_dataset([10, 12, 14, 16], [20, 22, 24, 26]))
+        _, results = run_pipeline(ab_dataset(spread_of(20, 10.0, 0.5),
+                                             spread_of(20, 20.0, 0.5)))
         assumptions = [c for c in results["experiment"]["claims"]
                        if c["type"] == "assumption"]
         self.assertTrue(assumptions)
         self.assertIn("random", " ".join(c["text"] for c in assumptions).lower())
 
     def test_a_comparison_always_states_how_it_treated_the_rows(self):
-        _, results = run_pipeline(ab_dataset([10, 12, 14, 16], [20, 22, 24, 26]))
+        _, results = run_pipeline(ab_dataset(spread_of(20, 10.0, 0.5),
+                                             spread_of(20, 20.0, 0.5)))
         limitations = [c["text"] for c in results["experiment"]["claims"]
                        if c["type"] == "limitation"]
         self.assertTrue(any("independent observation" in text
@@ -717,7 +787,8 @@ class ExperimentAgentTestCase(unittest.TestCase):
 
     def test_its_claims_are_in_business_language_like_every_other_stage(self):
         for dataset in (analytics.sample_dataset(),
-                        ab_dataset([10, 12, 14, 16], [20, 22, 24, 26])):
+                        ab_dataset(spread_of(20, 10.0, 0.5),
+                                   spread_of(20, 20.0, 0.5))):
             _, results = run_pipeline(dataset)
             for claim in results["experiment"]["claims"]:
                 self.assertEqual(analytics._jargon_in(claim["text"]), [],
