@@ -87,13 +87,41 @@ class ModelGateway:
             "local_only": self.provider in ("deterministic", "ollama"),
         }
 
-    def narrate(self, goal, facts):
+    def providers(self):
+        """Every provider this gateway could actually reach, in the order
+        it would pick them.
+
+        The constructor collapses these to one by priority, which is the
+        right default and the wrong amount of information for anything
+        that wants to choose per report (see server/routing.py).
+        """
+        found = []
+        if self.ollama_model:
+            found.append({"provider": "ollama", "model": self.ollama_model,
+                          "local_only": True})
+        if self.anthropic_key:
+            found.append({"provider": "anthropic", "model": self.anthropic_model,
+                          "local_only": False})
+        if self.groq_key:
+            found.append({"provider": "groq", "model": self.groq_model,
+                          "local_only": False})
+        # Always reachable, always last: it needs nothing and never fails.
+        found.append({"provider": "deterministic", "model": None,
+                      "local_only": True})
+        return found
+
+    def narrate(self, goal, facts, provider=None):
         """Return {'text', 'source'}. Facts are short verified statements;
-        the model is asked only to phrase them."""
+        the model is asked only to phrase them.
+
+        `provider` overrides the priority order for this call. The gateway
+        could always reach all three; until now nothing could ask it for
+        a particular one.
+        """
         callers = {"ollama": self._call_ollama,
                    "anthropic": self._call_anthropic,
                    "groq": self._call_groq}
-        caller = callers.get(self.provider)
+        caller = callers.get(provider or self.provider)
         if caller:
             text = caller(goal, facts)
             if text:

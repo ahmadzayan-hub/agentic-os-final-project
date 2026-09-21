@@ -2052,6 +2052,10 @@ def prescriptive(ctx, gateway=None):
         output={"headline": headline, "options": options, "recommendation": best,
                 "exec_summary": narration["text"],
                 "exec_summary_source": narration["source"],
+                # Who chose the narrator, when something did. The report
+                # already names which model wrote the summary; why that
+                # one belongs beside it (ADR 0017).
+                "exec_summary_routing": narration.get("routing"),
                 "report_markdown": _section_report("Prescriptive", "What should I do?",
                                                    ctx, lines, calcs,
                                                    headline=headline)},
@@ -2196,6 +2200,31 @@ def validator(ctx):
     )
 
 
+def _routing_note(routing, source=None):
+    """How the narrator was chosen, for the line that names it.
+
+    Empty when nothing chose — the gateway's priority order needs no
+    explanation, and a sentence saying "no router" in every report would
+    be noise.
+
+    The `source` matters because a routing decision can be honoured and
+    still not produce the summary: the chosen provider may time out or
+    refuse, and the deterministic narrator writes it instead. Reporting
+    only the decision would then read as "the deterministic narrator was
+    chosen by SmallestLLM", which is not what happened.
+    """
+    if not routing or not routing.get("router"):
+        return ""
+    if not routing.get("honoured"):
+        return (f", after {routing['router']}'s choice was not used — "
+                + routing.get("why", "").rstrip("."))
+    if source == "deterministic":
+        return (f", after {routing['router']} routed this to "
+                f"“{routing['chose']}”, which did not answer")
+    return (f", chosen by {routing['router']} which picked "
+            f"“{routing['chose']}”")
+
+
 def reporter(ctx):
     """The comprehensive report: the four type reports in one document.
 
@@ -2211,8 +2240,10 @@ def reporter(ctx):
         "",
         "## Executive summary",
         ctx["prescriptive"]["exec_summary"],
-        f"*(Narrative source: {ctx['prescriptive']['exec_summary_source']}; every "
-        "figure in this report is deterministically calculated.)*",
+        f"*(Narrative source: {ctx['prescriptive']['exec_summary_source']}"
+        + _routing_note(ctx["prescriptive"].get("exec_summary_routing"),
+                        ctx["prescriptive"]["exec_summary_source"])
+        + "; every figure in this report is deterministically calculated.)*",
         "",
         "## The four questions",
         "| Type | Question | Answer in one line |",

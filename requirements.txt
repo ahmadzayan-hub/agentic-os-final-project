@@ -13,3 +13,15 @@ psycopg2-binary>=2.9
 
 # Hosted-mode token verification; local mode needs no authentication:
 pyjwt[crypto]>=2.8
+
+# Deliberately absent: LLMRouter (github.com/ulab-uiuc/LLMRouter).
+#
+# Per-report model routing is optional (ADR 0017) and the contract is one
+# method wide, so a router is four lines if you want one. LLMRouter's own
+# routers bring torch, transformers and CUDA wheels — 5.3 GB measured —
+# which is not a cost a CLI that otherwise needs only the standard
+# library should impose on everyone. Install it yourself if you want it:
+#
+#     pip install -e /path/to/LLMRouter
+#
+# With it absent, five tests skip and nothing else changes.

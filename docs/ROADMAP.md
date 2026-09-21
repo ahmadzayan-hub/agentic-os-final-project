@@ -86,6 +86,22 @@ facts reach the narrator.
    billing relationship, no token accounting, and no execution-time
    measurement here, so a cost column would be fabricated; the response
    names what it does not measure instead.
+7. Per-report model selection, so the narrator is a decision rather than
+   a start-up default.
+   **Done:** an optional router chosen by two environment variables,
+   behind a one-method contract (`route_single`) that every
+   [LLMRouter](https://github.com/ulab-uiuc/LLMRouter) router satisfies
+   and a four-line class also satisfies (ADR 0017). The report prints
+   which model narrated **and why that one**; a choice this deployment
+   cannot reach is refused and reported as refused rather than quietly
+   swapped; the router receives the verified facts and never the dataset;
+   a router that fails to load leaves the application unchanged and says
+   so in `/api/health`. **Deliberately not done:** LLMRouter as a
+   dependency — 5.3 GB of torch and CUDA wheels, measured, against a CLI
+   that otherwise needs only the standard library. **Not done:** cost or
+   latency feedback to the router, per-tenant routers, and any exercise
+   of LLMRouter's learned (KNN/MLP/graph) routers, whose checkpoints this
+   environment cannot download.
 
 ## Tier 3 — Enterprise Release (scoped, not started)
 

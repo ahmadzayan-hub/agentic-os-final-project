@@ -76,6 +76,12 @@ environment — not a replacement for Windows, macOS, or Linux.
   preferred when set because nothing leaves the machine. The model only
   phrases already-verified facts: it never sees the dataset and never
   produces a number, and the report names which narrator wrote the summary
+- **Pluggable model routing** — that priority order is a default, not a
+  verdict. An optional router picks the narrator **per report** and the
+  report prints **why that one** (ADR 0017). The contract is one method
+  wide, so any [LLMRouter](https://github.com/ulab-uiuc/LLMRouter) router
+  works, or four lines of your own. A choice this deployment cannot reach
+  is refused and said to be refused, never quietly swapped
 - **Installable PWA** — manifest, icons, and a service worker make the
   mobile-first app installable on Android via "Add to Home screen"
 - **Session restore** — refreshing the browser reconnects to the same
@@ -222,7 +228,7 @@ python main.py
 ```bash
 # Python: agent, utils, API, runs, analytics, sequential ranges,
 # metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
-# supply chain, launcher, docs (414 tests)
+# supply chain, launcher, routing, docs (441 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (23 tests)
@@ -238,11 +244,17 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 414 Python tests, 23 frontend unit
+PostgreSQL 16 service. Last verified: 441 Python tests, 23 frontend unit
 tests, and 38 end-to-end checks (37 executed, 1 desktop-only check
 skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:
 `PLAYWRIGHT_EXECUTABLE_PATH=/path/to/chromium npx playwright test`.
+
+Five of the 441 load real LLMRouter routers and **skip unless LLMRouter
+is installed**, which in CI it is not — so CI reports `OK (skipped=5)`
+and that is the expected result, not a gap. The other 22 routing tests
+never import it and always run. Both readings were verified: with the
+library installed, 441 tests and nothing skipped.
 
 ## Background worker (optional)
 
@@ -261,6 +273,56 @@ worker that crashes stops renewing its lease, and the next worker (or an
 open browser) picks the run up from its durable state — including the
 stage the crash interrupted, which is re-run rather than skipped. Details
 and trade-offs: `docs/adr/0006-durable-execution.md`.
+
+## Choosing the narrator (optional)
+
+Without configuration the gateway narrates by a fixed priority: local
+Ollama if set, else Claude, else Groq, else the deterministic template.
+A **router** replaces that one guess with a decision made per report, and
+the report prints the reason.
+
+```bash
+export AGENTIC_OS_ROUTER=llmrouter.models.smallest_llm.router.SmallestLLM
+export AGENTIC_OS_ROUTER_CONFIG=router.yaml
+python scripts/serve.py
+```
+
+The contract is one method: `route_single({"query": ...})` returning a
+`model_name`. Every [LLMRouter](https://github.com/ulab-uiuc/LLMRouter)
+router satisfies it, and so does this:
+
+```python
+class PreferLocal:
+    def route_single(self, query):
+        return {"model_name": "qwen3:4b"}
+```
+
+**LLMRouter is optional and is not in `requirements.txt`** — it brings
+torch, transformers and CUDA wheels totalling 5.3 GB measured here, which
+a CLI that otherwise needs only the standard library should not require.
+Install it separately if you want it:
+
+```bash
+pip install -e /path/to/LLMRouter     # only if you want LLMRouter's routers
+```
+
+What the router is given is the narration prompt — the goal and the
+verified facts — and **never the dataset**; that rule does not relax
+because the router runs locally. What it chooses is mapped to a provider
+this deployment can actually reach, and a choice that maps to nothing is
+**refused and reported as refused**, because silently narrating with a
+different model would make the report's "narrated by" line untrue:
+
+```
+*(Narrative source: deterministic, after LargestLLM's choice was not used —
+The router chose "claude-sonnet-4-5", which this deployment cannot reach, so
+the gateway's own priority order applied; every figure in this report is
+deterministically calculated.)*
+```
+
+A router that fails to load leaves the application exactly as it was and
+says so in `/api/health` under `router_problem`. Details and trade-offs:
+`docs/adr/0017-choosing-the-narrator.md`.
 
 ## Failure injection
 

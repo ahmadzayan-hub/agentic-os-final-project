@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 
 from agent import Agent
 from server.model_gateway import ModelGateway
+from server.routing import RoutedGateway, build_router
 from server.runs import RunEngine
 from server.auth import AuthError, build_identity, public_auth_config
 from server.quota import QuotaExceeded, load_limits
@@ -166,6 +167,13 @@ def create_app(config_path=None, env=None):
     lock = threading.Lock()
 
     gateway = ModelGateway()
+    # Optional: something that chooses which model narrates each report
+    # (ADR 0017). Absent — the default, and always in tests and CI — this
+    # wraps nothing and changes nothing.
+    router, router_name, router_problem = build_router(env, config)
+    if router is not None:
+        gateway = RoutedGateway(gateway, router, router_name)
+    app.state.router_problem = router_problem
     # Hosted PostgreSQL (DATABASE_URL / config "database_url") when
     # configured; local SQLite otherwise. See docs/adr/0001-database.md.
     store = open_store(
@@ -343,6 +351,9 @@ def create_app(config_path=None, env=None):
             "agent_name": config.get("agent_name", "Agentic OS"),
             "version": str(config.get("version", "1.0.0")),
             "model_provider": gateway.status(),
+            # A misconfigured router is the operator's to fix, and they
+            # will not find it unless something says so.
+            "router_problem": app.state.router_problem,
         }
 
     @app.post("/api/sessions", status_code=201)

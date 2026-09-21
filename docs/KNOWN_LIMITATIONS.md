@@ -52,7 +52,27 @@ placeholder controls — absent capabilities have no UI.
    hosted deployment. Any failure falls
    back to the deterministic narrator, and the report always names which
    one wrote the summary.
-4. There is no autonomous "improve forever" loop. Runs are bounded;
+4. Which model narrates can be decided per report by an optional router
+   (ADR 0017), and that too has edges. **LLMRouter is not installed by
+   default** and is not in `requirements.txt`: its routers bring torch,
+   transformers and CUDA wheels — 5.3 GB measured — so five tests skip on
+   an ordinary install and in CI, which is the expected result rather
+   than a gap. Importing one costs about **11 seconds of start-up**
+   (torch, once); the routing decision itself is free for the heuristic
+   routers. Only those two heuristic routers (`SmallestLLM`,
+   `LargestLLM`) have been exercised here — LLMRouter's **KNN, MLP and
+   graph routers need embedding models and checkpoints this environment's
+   egress policy blocks**, so they are untested, and "it works with
+   SmallestLLM" is not "it works with the MLP router". Nothing measures
+   what a choice cost and nothing feeds that back: there is no online
+   learning and no billing relationship to learn against (ADR 0008).
+   There is one router per process, fixed at start-up, so a hosted
+   install cannot give each tenant its own — the same limitation, for the
+   same reason, as the metric glossary below. A choice the deployment
+   cannot reach is refused rather than substituted, which means a router
+   trained on a catalogue this install does not hold contributes nothing
+   but a line in the report saying so.
+5. There is no autonomous "improve forever" loop. Runs are bounded;
    lessons accumulate as vault run logs for human review. Permanent 100%
    accuracy cannot honestly be promised by any AI system; deterministic
    calculations are exact for the operations implemented.
@@ -68,7 +88,7 @@ required local files. Both behaviors are covered by tests
 
 ## Platform
 
-5. Authentication ships as an adapter (ADR 0002/0003): local mode is
+6. Authentication ships as an adapter (ADR 0002/0003): local mode is
    single-owner with no login; hosted mode verifies managed-provider
    JWTs with server-side roles, per-owner isolation, a sign-in screen,
    and per-caller rate limiting. Caveats: the live provider round-trip
@@ -94,7 +114,7 @@ required local files. Both behaviors are covered by tests
    device on that network can read and change the saved memory. The
    launcher prints this at start-up and `--local-only` opts out, but
    nothing enforces it — a laptop on café Wi-Fi is an open app.
-6. The metric glossary (ADR 0011) is a file, not a table: it is
+7. The metric glossary (ADR 0011) is a file, not a table: it is
    process-wide, so a hosted install cannot give each tenant its own,
    and it is read once at server start, so an edit does not reach a
    running process until it restarts. Its formula language is one
@@ -102,7 +122,7 @@ required local files. Both behaviors are covered by tests
    so a definition stays checkable by hand. No glossary ships with the
    repository; an unconfigured install analyses an undefined column and
    says so in every report.
-7. Crash recovery is drilled, not assumed (ADR 0012): connection loss,
+8. Crash recovery is drilled, not assumed (ADR 0012): connection loss,
    a worker killed with SIGKILL mid-stage, and the engine rebuilt
    mid-run are automated against PostgreSQL in CI. A **full database
    outage** is not — CI's database is a service container the test
@@ -110,7 +130,7 @@ required local files. Both behaviors are covered by tests
    its measurements recorded in the ADR. Not covered anywhere: network
    partition, failover (there is one database and no standby), and
    corruption as opposed to unavailability.
-8. Supply-chain evidence stops at composition (ADR 0013): the SBOM
+9. Supply-chain evidence stops at composition (ADR 0013): the SBOM
    says what this software is made of, and nothing signs it or attests
    to how it was built. Signed artifacts and SLSA provenance need a
    release process this project does not have. The licence gate blocks
@@ -118,28 +138,28 @@ required local files. Both behaviors are covered by tests
    undeclared licences are reported, not blocked. `pip-audit` remains
    advisory. The repository also has no LICENSE file of its own — what
    this project grants is the owner's decision.
-9. Execution is client-stepped by default: runs advance while the Runs
-   view is open. A background worker (`python scripts/worker.py`) can
-   advance them server-side with no browser, using database leases with
-   heartbeats (ADR 0006), but **nothing starts it automatically** and
-   Vercel's serverless runtime has no process to run it in — hosted
-   deployments there keep the client-stepped path. One worker advances
-   one run at a time; parallelism means running more workers. A
-   paused or interrupted run resumes from its durable state either way.
-10. The repository is configured to deploy to Vercel as a full-stack
+10. Execution is client-stepped by default: runs advance while the Runs
+    view is open. A background worker (`python scripts/worker.py`) can
+    advance them server-side with no browser, using database leases with
+    heartbeats (ADR 0006), but **nothing starts it automatically** and
+    Vercel's serverless runtime has no process to run it in — hosted
+    deployments there keep the client-stepped path. One worker advances
+    one run at a time; parallelism means running more workers. A
+    paused or interrupted run resumes from its durable state either way.
+11. The repository is configured to deploy to Vercel as a full-stack
     project (static frontend + Python function). **No deployment has been
     performed or verified** — importing the repo and setting the
     credentials are owner steps. Without `DATABASE_URL` a deployment
     falls back to ephemeral per-instance storage. See
     docs/VERCEL_DEPLOYMENT.md.
-11. Android support is a verified installable PWA; a native Capacitor
+12. Android support is a verified installable PWA; a native Capacitor
     project is documented but not shipped (no Android SDK available to
     build or test one honestly).
-12. Obsidian integration is approval-gated write-back into a vault
+13. Obsidian integration is approval-gated write-back into a vault
     folder; reading/sync/retrieval from a vault is not implemented.
-13. Interface language is English; the `language` preference is recorded
+14. Interface language is English; the `language` preference is recorded
     but does not translate the UI. No RTL support yet.
-14. Backups are on-demand: `scripts/backup.py` produces a verified,
+15. Backups are on-demand: `scripts/backup.py` produces a verified,
     restorable backup (the drill in `tests/test_backup.py` destroys the
     database and rebuilds it on every push), but **nothing schedules
     it**, so the recovery point objective is "whenever it was last run".
@@ -151,13 +171,13 @@ required local files. Both behaviors are covered by tests
     written (fine at the 2 MB dataset limit, not at hundreds of
     megabytes), and in local mode `data/memory.json` lives outside the
     database and must be backed up separately.
-15. Usage is bounded per owner (runs/day, dataset count, dataset bytes)
+16. Usage is bounded per owner (runs/day, dataset count, dataset bytes)
     but **no cost in currency is tracked**: there is no billing
     relationship, model tokens are not counted, and serverless execution
     time is not measured. `/api/usage` names those gaps rather than
     hiding them. The daily window is calendar-based (midnight UTC), so a
     burst either side of midnight can exceed the intended daily rate.
-16. Dataset ingestion is CSV only — uploaded as a file or pasted, up to
+17. Dataset ingestion is CSV only — uploaded as a file or pasted, up to
     2 MB and 50,000 rows, held in the database rather than object
     storage. XLSX, JSON, Parquet, and database connectors are not
     implemented, and analysis is in-memory (no DuckDB/Polars), so

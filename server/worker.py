@@ -27,6 +27,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from server.model_gateway import ModelGateway
+from server.routing import RoutedGateway, build_router
 from server.runs import RunEngine, _stamp, _utcnow
 from server.storage import open_store
 
@@ -123,8 +124,19 @@ def build_worker(env=None, config_path=None, **kwargs):
         env.get("DATABASE_URL") or config.get("database_url"),
         config.get("database_file") or PROJECT_ROOT / "data" / "agentic.db",
     )
+    gateway = ModelGateway()
+    # The worker narrates the same reports the API does, so it routes the
+    # same way; a run advanced in the background must not be narrated by a
+    # different model than one advanced in a browser.
+    router, router_name, problem = build_router(env, config)
+    if router is not None:
+        gateway = RoutedGateway(gateway, router, router_name)
+    elif problem:
+        # The API reports this in /api/health. A worker has no health
+        # endpoint, so a misconfigured router would be invisible here.
+        print(problem, file=sys.stderr, flush=True)
     engine = RunEngine(store, config.get("vault_dir") or PROJECT_ROOT / "vault",
-                       ModelGateway())
+                       gateway)
     return RunWorker(engine, store, **kwargs)
 
 
