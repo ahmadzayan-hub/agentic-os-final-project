@@ -94,6 +94,14 @@ environment — not a replacement for Windows, macOS, or Linux.
   the agent's own true sentence, deletion is confirmed first, and it
   never sees a row or writes a number (ADR 0019). A run started from
   the chat opens in Runs and passes the same approval gate
+- **Custom agents as plugins** — a domain stage is a file: a class with a
+  role, a title, a place in the pipeline and a `run(ctx)`, registered by
+  dotted path like the router. It runs on a copy of the context, before
+  provenance, validation and reporting — there is no placement after
+  them — so its claims are audited by the same validator, its figures
+  appear in the same provenance chain, and its section in the same report
+  the approval gate binds to. Profiles choose which stages a run includes
+  (ADR 0020). `examples/stages/target_attainment.py` is a complete one
 - **Arabic and English** — the whole interface in either language,
   switched from the header in one click; right-to-left layout in Arabic
   through logical CSS properties rather than a second stylesheet; the
@@ -247,13 +255,14 @@ python main.py
 ```bash
 # Python: agent, utils, API, runs, analytics, sequential ranges,
 # metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
-# supply chain, launcher, routing, language, assistant, docs (506 tests)
+# supply chain, launcher, routing, language, assistant, custom stages,
+# docs (534 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (37 tests)
 cd frontend && npm test
 
-# End-to-end + accessibility (48 checks across desktop and mobile,
+# End-to-end + accessibility (50 checks across desktop and mobile,
 # in English and Arabic;
 # requires the production build: npm run build)
 cd frontend && npx playwright test
@@ -264,17 +273,17 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 506 Python tests, 37 frontend unit
-tests, and 48 end-to-end checks (47 executed, 1 desktop-only check
+PostgreSQL 16 service. Last verified: 534 Python tests, 37 frontend unit
+tests, and 50 end-to-end checks (49 executed, 1 desktop-only check
 skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:
 `PLAYWRIGHT_EXECUTABLE_PATH=/path/to/chromium npx playwright test`.
 
-Five of the 506 load real LLMRouter routers and **skip unless LLMRouter
+Five of the 534 load real LLMRouter routers and **skip unless LLMRouter
 is installed**, which in CI it is not — so CI reports `OK (skipped=5)`
 and that is the expected result, not a gap. The other 22 routing tests
 never import it and always run. Both readings were verified: with the
-library installed, 506 tests and nothing skipped.
+library installed, 534 tests and nothing skipped.
 
 ## Background worker (optional)
 
@@ -343,6 +352,41 @@ deterministically calculated.)*
 A router that fails to load leaves the application exactly as it was and
 says so in `/api/health` under `router_problem`. Details and trade-offs:
 `docs/adr/0017-choosing-the-narrator.md`.
+
+## Custom agents (optional)
+
+The built-in pipeline is a closed roster. To add a stage for your own
+domain, write a file and register it — nothing in `analytics.py` changes:
+
+```json
+{
+  "stages": [
+    {"path": "examples.stages.target_attainment.TargetAttainment",
+     "options": {"target": 3000000}}
+  ],
+  "profiles": {"default": [], "with-target": ["target_attainment"]}
+}
+```
+
+A stage is a class with `role`, `title`, `after` (the built-in stage it
+follows), an optional `question` (set, it gets its own report tab), and
+`run(ctx)` returning the shape every built-in stage returns —
+`status · summary · claims · calculations · quality_checks · output`.
+That shape is checked before anything is recorded, and ids must carry
+the role (`target_attainment.c_gap`) so a plugin can never be mistaken
+for a built-in calculation.
+
+What being admitted means: the stage runs before provenance, validation
+and reporting, so a claim without evidence or in statistical jargon is
+rejected by the same validator that rejects a built-in one; its figures
+sit in the same provenance chain and key-metrics table; its section is
+embedded in the same report. It sees a copy of the context and cannot
+change what the built-in stages found. Its failure is its own — the run
+continues and the report says the stage failed — unless it declares
+`can_fail_run`. `AGENTIC_OS_STAGES` registers stages without options;
+`stages_path` makes a plain folder importable; `/api/pipelines` lists
+what loaded and why anything did not. A plugin is trusted Python, not a
+sandbox. Details: `docs/adr/0020-custom-agents-as-plugins.md`.
 
 ## Failure injection
 

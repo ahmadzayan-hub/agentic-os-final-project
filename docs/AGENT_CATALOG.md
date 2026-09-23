@@ -126,6 +126,30 @@ leases and recovers; it never produces a finding. Keeping the
 orchestrator out of the analysis list is what makes "no stage may
 approve its own work" a structural fact rather than a promise.
 
+## Custom stages (ADR 0020)
+
+The roster above is the built-in one. A stage for a domain the
+repository does not know — a target the business set, a rule the sector
+follows — is a file registered by dotted path (`config.json` `stages`,
+or `AGENTIC_OS_STAGES`), with the same typed contract as every row in
+the table:
+
+```
+role · title · after · question? · can_fail_run? · run(ctx) →
+    status · summary · claims[] · calculations[] · quality_checks[] · output
+```
+
+Admission is on the same terms as the built-in stages, enforced rather
+than promised: the stage runs before the Provenance Agent, the
+Validation Expert and the Reporting Expert — there is no placement after
+them — so its claims are checked for evidence and jargon, its
+calculations enter the provenance chain, and its section is embedded in
+the report the Knowledge Curator publishes. Ids carry the role
+(`target_attainment.c_gap`), the result is validated field by field, the
+stage sees a copy of the context, and its failure is its own unless it
+declares otherwise. `examples/stages/target_attainment.py` is a complete
+example; `docs/adr/0020-custom-agents-as-plugins.md` has the reasoning.
+
 ## Not implemented (honest scope)
 
 Seasonality models, true optimization, red-team, and cost agents are not

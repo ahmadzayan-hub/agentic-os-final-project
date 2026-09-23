@@ -171,6 +171,22 @@ export interface RunSummary {
   updated_at: string
 }
 
+/** Registered custom stages and the profiles that choose among them,
+ *  from GET /api/pipelines (ADR 0020). */
+export interface Pipelines {
+  stages: Array<{
+    role: string
+    title: string
+    after: string
+    question: string | null
+    can_fail_run: boolean
+  }>
+  profiles: Record<string, string[]>
+  /** The custom stages a run gets when no profile is chosen. */
+  default: string[]
+  problems: string[]
+}
+
 /** What this tenant has used against its limits, from GET /api/usage. */
 export interface UsageAllowance {
   used: number

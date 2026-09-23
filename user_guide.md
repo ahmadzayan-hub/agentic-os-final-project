@@ -143,6 +143,18 @@ anything itself. You can
 recorded on the server, so it holds across a refresh and applies to a
 background worker too, not just the tab you clicked in.
 
+If the operator has registered **custom stages** — a domain agent written
+outside this repository, such as the bundled target-attainment example —
+they appear in the same pipeline list at the place they asked for, and a
+stage with a question of its own gets its own report tab plus a **Custom
+stages** section in the full report. Where the operator has also defined
+**profiles**, a *Pipeline profile* selector appears above the goal; the
+text under it names the stages the chosen profile adds, and the run
+records which profile it ran with. A custom stage's claims pass through
+the same validator as the built-in ones, and if a custom stage fails the
+report says so rather than leaving it out. Registering a stage is an
+operator task: see "Custom agents" in the README.
+
 ### Defining what a number means
 
 By default a run picks the column it analyses by its name — a column

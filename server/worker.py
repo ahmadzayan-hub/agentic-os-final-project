@@ -28,6 +28,7 @@ from pathlib import Path
 
 from server.model_gateway import ModelGateway
 from server.routing import RoutedGateway, build_router
+from server.stages import load_stages
 from server.runs import RunEngine, _stamp, _utcnow
 from server.storage import open_store
 
@@ -135,8 +136,14 @@ def build_worker(env=None, config_path=None, **kwargs):
         # The API reports this in /api/health. A worker has no health
         # endpoint, so a misconfigured router would be invisible here.
         print(problem, file=sys.stderr, flush=True)
+    # The worker runs the same custom stages the API does: a run
+    # advanced in the background must not lack a stage the browser has.
+    stage_registry, stage_problems = load_stages(env, config)
+    for stage_problem in stage_problems:
+        print(stage_problem, file=sys.stderr, flush=True)
     engine = RunEngine(store, config.get("vault_dir") or PROJECT_ROOT / "vault",
-                       gateway)
+                       gateway, stages=stage_registry,
+                       profiles=config.get("profiles") or {})
     return RunWorker(engine, store, **kwargs)
 
 

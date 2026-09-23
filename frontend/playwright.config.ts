@@ -11,7 +11,10 @@ const PREPARE_CONFIG =
   '\'preferences\':{\'tone\':\'friendly\',\'language\':\'English\',\'save_history\':True},' +
   '\'memory_file\':\'frontend/e2e/.tmp/memory.json\',' +
   '\'database_file\':\'frontend/e2e/.tmp/agentic.db\',' +
-  '\'vault_dir\':\'frontend/e2e/.tmp/vault\',\'maximum_history_items\':50},' +
+  '\'vault_dir\':\'frontend/e2e/.tmp/vault\',\'maximum_history_items\':50,' +
+  '\'stages\':[{\'path\':\'examples.stages.target_attainment.TargetAttainment\',' +
+  '\'options\':{\'target\':3000000}}],' +
+  '\'profiles\':{\'default\':[],\'with-target\':[\'target_attainment\']}},' +
   'open(\'frontend/e2e/.tmp/config.json\',\'w\')); ' +
   'json.dump({},open(\'frontend/e2e/.tmp/memory.json\',\'w\'))"'
 

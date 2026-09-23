@@ -34,7 +34,7 @@ with.
 | Model gateway + per-report routing | **Mature, one caveat** | ADR 0007, 0017; LLMRouter integrated and exercised | No live hosted-model call has been made from this environment; LLMRouter's learned routers untested here. |
 | Security, tenancy, erasure, supply chain | **Mature for hosted mode** | ADR 0002–0005, 0013–0015 | IdP round-trip unverified live; no row-level security under the application boundary; no signed artifacts. |
 | **Conversational agent** | **Partial → ADR 0019, shipped after this assessment** | Was: `generate_response` returned a tone template. Now: `assistant.py` + `server/assistant.py` turn a sentence into one of ten typed actions, by rules or a model, and act | Rules are a vocabulary, not language understanding; one action per sentence; no live model verified from here. The floor is real and the ceiling is the model. |
-| **Customisation / extensibility** | **Missing** | `analytics.PIPELINE` is a literal list; `docs/ROADMAP.md` lists "Pluggable Domain Expert Agent" as outstanding | No stage registry, no plugin loading, no per-project pipeline profile. The typed stage contract exists internally and is the right seam — it is just not exposed. |
+| **Customisation / extensibility** | **Partial → ADR 0020, shipped after this assessment** | Was: `analytics.PIPELINE` a literal list. Now: `server/stages.py` loads stages by dotted path, validates the contract, places them before the auditors; profiles per run; `examples/stages/target_attainment.py` | A plugin is trusted Python, not sandboxed; the registry is per process; a custom stage cannot narrate or chart. |
 | Interface: accessibility, performance, responsive, PWA | **Mature** | WCAG 2.2 AA by axe on every view; Lighthouse 96/100/100/100; 320 px up | — |
 | **Interface: languages and direction** | **Missing → this slice** | 188 hard-coded English strings; 30 physical-direction CSS rules; `language` preference recorded and ignored | Arabic/English UI, RTL, and agent replies in the chosen language ship with this document. |
 | Report language | **English only** | ~2,400 lines of narrative strings in `analytics.py` | Arabic reports are a separate slice, not a switch. |
@@ -62,15 +62,14 @@ with.
    model adds — breadth of phrasing — and it is unverified live from
    this environment.
 
-3. **Custom agents as plugins.** Expose the stage contract the pipeline
-   already uses internally (`status · summary · claims · calculations ·
-   quality_checks · output`) as a registry: a project registers a stage
-   by dotted path, exactly as a router is registered today
-   (`AGENTIC_OS_ROUTER`), and chooses a *pipeline profile* per run. The
-   validator, the provenance chain and the approval gate apply to a
-   custom stage unchanged, so a domain expert's stage cannot bypass the
-   governance the built-in ones live under. One to two slices, and it
-   turns "edit analytics.py" into "add a file".
+3. **Custom agents as plugins** — *shipped as ADR 0020 after this
+   assessment was written.* The stage contract the pipeline already used
+   internally is a registry: a project registers a stage by dotted path,
+   as a router is, and chooses a pipeline profile per run. The validator,
+   the provenance chain and the approval gate apply to a custom stage
+   unchanged because there is no placement after them. What remains is
+   what a registry cannot give — a sandbox, per-tenant stages, hot
+   reload.
 
 4. **Arabic reports.** A report-language layer over the narrative
    strings. Separate from the interface work because the volume is

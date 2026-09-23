@@ -3,6 +3,7 @@ import type {
   AuthConfig,
   ExportPayload,
   IdentityInfo,
+  Pipelines,
   RunDetail,
   RunSummary,
   SessionState,
@@ -152,15 +153,17 @@ export const api = {
   exportData: (id: string) => request<ExportPayload>(`/api/sessions/${id}/export`),
   clearMemory: (id: string) =>
     request<OperationResult>(`/api/sessions/${id}/memory`, { method: 'DELETE' }),
-  createRun: (goal: string, datasetText?: string, datasetName?: string) =>
+  createRun: (goal: string, datasetText?: string, datasetName?: string, profile?: string) =>
     request<RunDetail>('/api/runs', {
       method: 'POST',
       body: JSON.stringify({
         goal,
         dataset_text: datasetText ?? null,
         dataset_name: datasetName ?? null,
+        profile: profile || null,
       }),
     }),
+  pipelines: () => request<Pipelines>('/api/pipelines'),
   listRuns: () => request<{ runs: RunSummary[] }>('/api/runs'),
   usage: () => request<Usage>('/api/usage'),
   getRun: (id: string) => request<RunDetail>(`/api/runs/${id}`),

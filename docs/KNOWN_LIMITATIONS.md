@@ -200,3 +200,11 @@ required local files. Both behaviors are covered by tests
     storage. XLSX, JSON, Parquet, and database connectors are not
     implemented, and analysis is in-memory (no DuckDB/Polars), so
     larger-than-memory datasets are out of scope.
+18. Custom stages (ADR 0020) are **trusted Python in this process**, not
+    a sandbox: the contract catches a malformed result, a mis-cited
+    claim or a mutated context, and a plugin that wants to misbehave
+    can still import anything. The operator decides what to register.
+    The registry is per process and read at start-up — no per-tenant
+    stages in a hosted install, and a new stage needs a restart, as
+    with the glossary and the router. A custom stage cannot narrate (it
+    gets no model gateway) and cannot chart; its figures are tables.

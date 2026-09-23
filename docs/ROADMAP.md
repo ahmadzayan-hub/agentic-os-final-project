@@ -127,6 +127,16 @@ facts reach the narrator.
    sentence (none is reachable from here); more than one action per
    sentence; reasoning over the full report rather than quoting its
    headlines.
+10. Custom agents as plugins.
+   **Done (ADR 0020):** a stage registry loaded by dotted path with
+   options and a plain-folder path; a typed result contract validated
+   field by field with role-prefixed ids; placement only before the
+   governed tail, so every custom stage is audited by the same
+   provenance, validation and report; a copied context; failure
+   scoped to the stage unless declared otherwise; per-run profiles; a
+   complete example stage; `/api/pipelines` and health reporting.
+   **Not done:** a sandbox (a plugin is trusted Python); per-tenant
+   registries; hot reload; a custom stage that narrates or charts.
 
 ## Tier 3 — Enterprise Release (scoped, not started)
 
@@ -224,8 +234,11 @@ never "few agents"; it was "no agent that only rephrases another".
 The typed contracts below remain outstanding:
 
 1. Data Platform Agent (the *Data Contract* half shipped in ADR 0009)
-2. Pluggable Domain Expert Agent
-3. Reliability and Incident Management Agent
+2. Reliability and Incident Management Agent
+
+The *Pluggable Domain Expert Agent* left this list in ADR 0020 — not
+as one more agent but as the mechanism by which any domain stage is
+admitted under the same contract as the built-in ones.
 
 The Experiment and Causal Inference Agent left this list in ADR 0010
 with its typed contract in `docs/AGENT_CATALOG.md`, including the

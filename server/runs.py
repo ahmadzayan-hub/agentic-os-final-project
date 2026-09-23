@@ -14,6 +14,7 @@ gated by a server-enforced approval bound to the exact artifact hash —
 a manipulated client cannot publish unapproved or altered content.
 """
 
+import copy
 import hashlib
 import json
 import re
@@ -22,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from server import analytics, metrics, quota
+from server import stages as stage_registry
 
 RUN_STATES = {"queued", "running", "awaiting_approval", "verifying",
               "completed", "partially_completed", "failed", "cancelled"}
@@ -54,8 +56,13 @@ def _stamp(moment):
 
 
 class RunEngine:
-    def __init__(self, store, vault_dir, gateway, limits=None, glossary=None):
+    def __init__(self, store, vault_dir, gateway, limits=None, glossary=None,
+                 stages=None, profiles=None):
         self.store = store
+        # Custom stages (ADR 0020): role -> descriptor, in registration
+        # order, and the named profiles that choose among them.
+        self.stages = dict(stages or {})
+        self.profiles = dict(profiles or {})
         self.vault_dir = Path(vault_dir)
         self.gateway = gateway
         # None disables quota enforcement entirely (the CLI and tests that
@@ -108,8 +115,44 @@ class RunEngine:
             "owner": owner, "created_at": _now()})
         return self.store.get_dataset(dataset_id)
 
+    def custom_roles_for(self, profile=None):
+        """Which registered stages a run includes. A profile names a
+        subset; no profile means the "default" profile when one is
+        configured, else every registered stage."""
+        if profile is None:
+            chosen = self.profiles.get("default")
+            if chosen is None:
+                return list(self.stages)
+        else:
+            chosen = self.profiles.get(profile)
+            if chosen is None:
+                available = ", ".join(sorted(self.profiles)) or "none"
+                raise ValueError(f"Unknown pipeline profile “{profile}”. "
+                                 f"Available: {available}.")
+        unknown = [role for role in chosen if role not in self.stages]
+        if unknown:
+            raise ValueError(f"Profile “{profile or 'default'}” names stages "
+                             f"that are not registered: {', '.join(unknown)}.")
+        return list(chosen)
+
+    def roles_for(self, profile=None):
+        """The run's stage order: the built-in pipeline with each custom
+        stage inserted after the built-in stage it asked for. Custom
+        stages can only be placed before the governed tail, so every
+        one of them runs before provenance, validation and reporting."""
+        custom = self.custom_roles_for(profile)
+        roles = []
+        for role, _ in analytics.PIPELINE:
+            roles.append(role)
+            roles.extend(r for r in custom
+                         if getattr(self.stages[r], "after",
+                                    stage_registry.DEFAULT_AFTER) == role)
+        return roles + ["publish"]
+
     def create_run(self, goal, dataset_text=None, dataset_name=None,
-                   owner="local-owner", dataset_id=None):
+                   owner="local-owner", dataset_id=None, profile=None):
+        # An unknown profile is refused before anything is written.
+        roles = self.roles_for(profile)
         # Checked before anything is written, so a refused run leaves no
         # half-created rows behind.
         if self.limits:
@@ -133,11 +176,11 @@ class RunEngine:
             "dataset_text": "", "state": "queued",
             "created_at": now, "updated_at": now, "error": None,
             "owner": owner, "dataset_id": dataset["id"]})
-        roles = [role for role, _ in analytics.PIPELINE] + ["publish"]
         for idx, role in enumerate(roles):
+            title = analytics.ROLE_TITLES.get(role) or self.stages[role].title
             self.store.insert("tasks", {
                 "id": uuid.uuid4().hex[:12], "run_id": run_id, "idx": idx,
-                "role": role, "title": analytics.ROLE_TITLES[role],
+                "role": role, "title": title,
                 "state": "pending", "summary": None, "result_json": None,
                 "updated_at": now})
         return self.get_run(run_id)
@@ -159,6 +202,15 @@ class RunEngine:
                 result = json.loads(task["result_json"])
                 ctx[task["role"]] = result.get("output", {})
                 ctx[task["role"] + "_result"] = result
+        # The run declares its custom stages, and provenance, validation
+        # and the report audit exactly that list (analytics.evidence_stages).
+        custom = [t["role"] for t in tasks
+                  if t["role"] not in analytics.ROLE_TITLES]
+        ctx["custom_stages"] = custom
+        ctx["custom_titles"] = {t["role"]: t["title"] for t in tasks
+                                if t["role"] in custom}
+        ctx["custom_failures"] = {t["role"]: t["summary"] for t in tasks
+                                  if t["role"] in custom and t["state"] == "failed"}
         return ctx
 
     def _reclaim_orphaned_tasks(self, run_id):
@@ -215,19 +267,24 @@ class RunEngine:
             return self._request_publish_approval(run_id, task)
 
         stage = dict(analytics.PIPELINE).get(task["role"])
-        if stage is None:
-            # A run created by an earlier pipeline version. Say so plainly
+        custom = self.stages.get(task["role"])
+        if stage is None and custom is None:
+            # A run created by an earlier pipeline version, or with a
+            # custom stage that is no longer registered. Say so plainly
             # rather than failing with an unrelated error later.
-            message = (f"This run was created by an earlier pipeline version "
-                       f"(stage “{task['role']}” no longer exists) and cannot be "
-                       "resumed. Its stored results remain readable; start a new "
-                       "run to analyze the same data with the current pipeline.")
+            message = (f"This run was created with a pipeline this server does "
+                       f"not have (stage “{task['role']}” is not built in and not "
+                       "registered) and cannot be resumed. Its stored results "
+                       "remain readable; start a new run to analyze the same "
+                       "data with the current pipeline.")
             self._set_task(task["id"], "failed", summary=message)
             self._set_run_state(run_id, "failed", error=message)
             return self.get_run(run_id)
 
         self._set_task(task["id"], "running")
         ctx = self._context(run, tasks)
+        if custom is not None:
+            return self._advance_custom(run_id, task, custom, ctx)
         try:
             result = (stage(ctx, gateway=self.gateway)
                       if task["role"] in analytics.NARRATED_STAGES else stage(ctx))
@@ -259,6 +316,39 @@ class RunEngine:
                 "name": "analytics-report", "kind": "markdown", "version": 1,
                 "content": result["output"]["report_markdown"],
                 "published_path": None, "created_at": _now()})
+        return self.get_run(run_id)
+
+    def _advance_custom(self, run_id, task, descriptor, ctx):
+        """Run a registered stage under the contract (ADR 0020).
+
+        What the built-in stages found is safe from it because every
+        stage's context is rebuilt from the stored results (a write to
+        this dict reaches no later stage). The copy is for the one live
+        object in the context: the glossary, read once per process and
+        shared by every run — a stage must not be able to certify its
+        own definition of revenue for everyone who runs after it. Its
+        result is checked against the contract before anything is
+        recorded. A failure is the stage's, not the run's, unless the
+        stage declared otherwise — and the report then says the stage
+        failed rather than silently lacking it.
+        """
+        try:
+            result = descriptor.run(copy.deepcopy(ctx))
+            result = stage_registry.validate_result(task["role"], result)
+        except Exception as error:
+            message = f"Custom stage “{task['role']}” failed: {error}"
+            return self._custom_failed(run_id, task, descriptor, message)
+        if result["status"] == "failed":
+            return self._custom_failed(run_id, task, descriptor,
+                                       result["summary"], result)
+        self._set_task(task["id"], "succeeded", summary=result["summary"],
+                       result=result)
+        return self.get_run(run_id)
+
+    def _custom_failed(self, run_id, task, descriptor, message, result=None):
+        self._set_task(task["id"], "failed", summary=message, result=result)
+        if getattr(descriptor, "can_fail_run", False):
+            self._set_run_state(run_id, "failed", error=message)
         return self.get_run(run_id)
 
     def _request_publish_approval(self, run_id, task):
@@ -400,6 +490,15 @@ class RunEngine:
                                     "title": analytics.ROLE_TITLES[t["role"]],
                                     # The one sentence a business reader needs,
                                     # surfaced rather than left inside the markdown.
+                                    "headline": result["output"].get("headline", ""),
+                                    "content": content})
+            # A custom stage that wrote a section gets its own tab too.
+            if result and t["role"] not in analytics.ROLE_TITLES:
+                content = result["output"].get("report_markdown")
+                if content:
+                    reports.append({"type": t["role"],
+                                    "question": result["output"].get("question") or "",
+                                    "title": t["title"],
                                     "headline": result["output"].get("headline", ""),
                                     "content": content})
         artifact = self.store.latest_artifact(run_id)

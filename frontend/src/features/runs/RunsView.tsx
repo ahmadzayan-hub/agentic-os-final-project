@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n'
 import { api, ApiError } from '../../shared/api'
 import { Icon } from '../../shared/components/Icon'
 import { questionLabel, stateLabel, typeLabel } from '../../shared/labels'
-import type { ChartSpec, RunDetail, RunSummary } from '../../shared/types'
+import type { ChartSpec, Pipelines, RunDetail, RunSummary } from '../../shared/types'
 
 const ACTIVE_STATES = ['queued', 'running']
 
@@ -95,6 +95,15 @@ interface RunsViewProps {
   openNonce?: number
 }
 
+/** The custom stages a profile includes, by title, for the picker's help. */
+function stageTitles(pipelines: Pipelines, profile: string): string[] {
+  const roles = profile ? (pipelines.profiles[profile] ?? []) : pipelines.default
+  return roles.map((role) => {
+    const stage = pipelines.stages.find((s) => s.role === role)
+    return stage ? stage.title.split(' — ')[0] : role
+  })
+}
+
 export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
   const { t, tx, plural, isRtl } = useI18n()
   const [runs, setRuns] = useState<RunSummary[]>([])
@@ -113,6 +122,10 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [throttled, setThrottled] = useState(false)
+  // Custom stages and profiles (ADR 0020). The picker exists only when
+  // an operator configured profiles; a default install shows nothing.
+  const [pipelines, setPipelines] = useState<Pipelines | null>(null)
+  const [profile, setProfile] = useState('')
   const advancing = useRef(false)
 
   const refreshList = useCallback(async () => {
@@ -127,6 +140,19 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
   useEffect(() => {
     void refreshList()
   }, [refreshList])
+
+  useEffect(() => {
+    let cancelled = false
+    api
+      .pipelines()
+      .then((result) => !cancelled && setPipelines(result))
+      .catch(() => {
+        /* an older server without the endpoint: no picker */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!openRunId) return
@@ -191,6 +217,7 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
         goal.trim(),
         useUpload && csvDraft.trim() ? csvDraft : undefined,
         useUpload && csvDraft.trim() ? (fileName ?? t('runs.pastedName')) : undefined,
+        profile || undefined,
       )
       setRun(detail)
       setStoppedByError(false)
@@ -340,6 +367,35 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                     />
                   </div>
                 </>
+              ) : null}
+              {pipelines && Object.keys(pipelines.profiles).length > 0 ? (
+                <div className="field">
+                  <label className="field__label" htmlFor="run-profile">
+                    {t('runs.profile')}
+                  </label>
+                  <span className="field__help">
+                    {t('runs.profileHelp')}{' '}
+                    {stageTitles(pipelines, profile).length > 0
+                      ? t('runs.profileStages', { list: stageTitles(pipelines, profile).join(', ') })
+                      : t('runs.profileNone')}
+                  </span>
+                  <select
+                    id="run-profile"
+                    className="field__select"
+                    value={profile}
+                    onChange={(event) => setProfile(event.target.value)}
+                    disabled={busy}
+                  >
+                    <option value="">{t('runs.profileDefault')}</option>
+                    {Object.keys(pipelines.profiles)
+                      .filter((name) => name !== 'default')
+                      .map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
               ) : null}
               <div className="field">
                 <button type="submit" className="btn btn--primary" disabled={busy || !goal.trim()}>
@@ -534,7 +590,7 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                     className={`reporttab ${openReport === section.type ? 'reporttab--on' : ''}`}
                     onClick={() => setOpenReport(section.type)}
                   >
-                    <span className="reporttab__name">{typeLabel(t, section.type)}</span>
+                    <span className="reporttab__name">{typeLabel(t, section.type, section.title)}</span>
                     <span className="reporttab__q">
                       {questionLabel(t, section.type, section.question)}
                     </span>
@@ -566,7 +622,7 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                       role="region"
                       lang="en"
                       dir="ltr"
-                      aria-label={t('runs.reportText', { type: typeLabel(t, section.type) })}
+                      aria-label={t('runs.reportText', { type: typeLabel(t, section.type, section.title) })}
                     >
                       {section.content}
                     </pre>

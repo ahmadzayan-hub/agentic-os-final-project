@@ -59,9 +59,13 @@ export function categoryLabel(t: Translate, category: string): string {
   return category.charAt(0).toUpperCase() + category.slice(1)
 }
 
-export function typeLabel(t: Translate, type: string): string {
+/** A custom stage's section is named by the stage's own title, up to
+ *  its question ("Target Attainment Agent — how far…" → "Target
+ *  Attainment Agent"); a built-in type by its translated name. */
+export function typeLabel(t: Translate, type: string, title?: string): string {
   const known = TYPES[type]
-  return known ? t(`type.${known}` as MessageKey) : type
+  if (known) return t(`type.${known}` as MessageKey)
+  return title ? title.split(' — ')[0] : type
 }
 
 /** The question a report section answers. The server's own wording is

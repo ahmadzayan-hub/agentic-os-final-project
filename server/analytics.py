@@ -1670,7 +1670,7 @@ def lineage(ctx):
     auditor actually asks for.
     """
     produced, cited = {}, set()
-    for stage in EVIDENCE_STAGES:
+    for stage in evidence_stages(ctx):
         result = ctx.get(stage + "_result", {})
         for calc in result.get("calculations", []):
             produced[calc["id"]] = stage
@@ -1680,7 +1680,7 @@ def lineage(ctx):
     dangling = sorted(cited - set(produced))
     unused = sorted(set(produced) - cited)
     claim_count = sum(len(ctx.get(s + "_result", {}).get("claims", []))
-                      for s in EVIDENCE_STAGES)
+                      for s in evidence_stages(ctx))
     calcs = [
         {"id": "c_lin_calcs", "name": "calculations_produced", "value": len(produced),
          "method": "calculations emitted across every evidence-producing stage"},
@@ -2078,9 +2078,9 @@ def validator(ctx):
                    "passed": clean["rows_after"] + clean["dropped"] == clean["rows_before"],
                    "detail": f"{clean['rows_after']} kept + {clean['dropped']} dropped "
                              f"= {clean['rows_before']} input rows"})
-    all_calc_ids = {c["id"] for stage in EVIDENCE_STAGES
+    all_calc_ids = {c["id"] for stage in evidence_stages(ctx)
                     for c in ctx.get(stage + "_result", {}).get("calculations", [])}
-    all_claims = [cl for stage in EVIDENCE_STAGES
+    all_claims = [cl for stage in evidence_stages(ctx)
                   for cl in ctx.get(stage + "_result", {}).get("claims", [])]
     unsupported = [cl["id"] for cl in all_claims
                    if not set(cl.get("evidence", [])) <= all_calc_ids]
@@ -2225,6 +2225,28 @@ def _routing_note(routing, source=None):
             f"“{routing['chose']}”")
 
 
+def _custom_stage_lines(ctx):
+    """What each custom stage found, or that it failed. A stage the
+    operator added is part of the run, so its outcome is in the report
+    either way — a report that silently lacked a stage would be a
+    report the reader could not tell was incomplete."""
+    roles = ctx.get("custom_stages") or []
+    if not roles:
+        return []
+    titles = ctx.get("custom_titles") or {}
+    failures = ctx.get("custom_failures") or {}
+    lines = ["", "## Custom stages"]
+    for role in roles:
+        result = ctx.get(role + "_result")
+        title = titles.get(role, role)
+        if result:
+            lines.append(f"- **{title}:** {result['summary']}")
+        else:
+            lines.append(f"- **{title}:** failed — "
+                         f"{failures.get(role, 'no result was recorded')}")
+    return lines
+
+
 def reporter(ctx):
     """The comprehensive report: the four type reports in one document.
 
@@ -2272,11 +2294,12 @@ def reporter(ctx):
               ctx["segments_result"]["summary"],
               ctx["anomaly_result"]["summary"],
               ctx["sensitivity_result"]["summary"],
+              *_custom_stage_lines(ctx),
               "", "## Key metrics",
               "Every figure produced by the run, in one place. Each per-type "
               "section below repeats the figures it used.",
               "", "| Metric | Value | Method |", "| --- | --- | --- |"]
-    for stage in EVIDENCE_STAGES:
+    for stage in evidence_stages(ctx):
         for calc in ctx.get(stage + "_result", {}).get("calculations", []):
             lines.append(f"| {calc['name']} | {calc['value']} | {calc['method']} |")
 
@@ -2287,10 +2310,16 @@ def reporter(ctx):
         lines += ["", "---", ""]
         lines += ["#" + line if line.startswith("# ") else line
                   for line in section.split("\n")]
+    for role in ctx.get("custom_stages") or []:
+        section = ctx.get(role, {}).get("report_markdown", "")
+        if section:
+            lines += ["", "---", ""]
+            lines += ["#" + line if line.startswith("# ") else line
+                      for line in section.split("\n")]
 
     lines += ["", "---", "", "## Every claim in this report",
               "| Claim | Type | Evidence | Status |", "| --- | --- | --- | --- |"]
-    for stage in EVIDENCE_STAGES:
+    for stage in evidence_stages(ctx):
         for claim in ctx.get(stage + "_result", {}).get("claims", []):
             lines.append(f"| {claim['text']} | {claim['type']} | "
                          f"{', '.join(claim['evidence'])} | {claim['status']} |")
@@ -2365,6 +2394,16 @@ EVIDENCE_STAGES = ("collector", "contract", "profiler", "quality", "privacy",
                    "diagnostic",
                    "experiment", "predictive", "anomaly", "prescriptive",
                    "sensitivity", "lineage")
+
+
+def evidence_stages(ctx):
+    """The stages whose claims and calculations this run audits: the
+    built-in evidence stages plus any custom stages the run declared
+    (ADR 0020). Provenance, validation and the report all read this,
+    so a custom stage is under the same governance as a built-in one
+    — that is the condition of being admitted, not an option."""
+    return EVIDENCE_STAGES + tuple(ctx.get("custom_stages") or ())
+
 
 # Stages that receive the model gateway (narration of verified facts only).
 NARRATED_STAGES = ("prescriptive",)

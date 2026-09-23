@@ -26,6 +26,7 @@ from agent import Agent, language_code
 from server.assistant import Assistant
 from server.model_gateway import ModelGateway
 from server.routing import RoutedGateway, build_router
+from server.stages import describe, load_stages
 from server.runs import RunEngine
 from server.auth import AuthError, build_identity, public_auth_config
 from server.quota import QuotaExceeded, load_limits
@@ -170,6 +171,7 @@ class PreferenceIn(BaseModel):
 
 class RunIn(BaseModel):
     goal: str = Field(min_length=3, max_length=500)
+    profile: str | None = Field(default=None, max_length=64)
     dataset_text: str | None = Field(default=None, max_length=2_100_000)
     dataset_id: str | None = Field(default=None, max_length=32)
     dataset_name: str | None = Field(default=None, max_length=100)
@@ -212,11 +214,17 @@ def create_app(config_path=None, env=None):
         config.get("database_file") or PROJECT_ROOT / "data" / "agentic.db",
     )
     limits = load_limits(env)
+    # Custom stages (ADR 0020). A stage that fails to load leaves the
+    # pipeline as it was; the problem is reported, not raised.
+    stage_registry, stage_problems = load_stages(env, config)
+    app.state.stage_problems = stage_problems
     engine = RunEngine(
         store,
         config.get("vault_dir") or PROJECT_ROOT / "vault",
         gateway,
         limits=limits,
+        stages=stage_registry,
+        profiles=config.get("profiles") or {},
     )
     app.state.engine = engine
     app.state.store = store
@@ -388,6 +396,7 @@ def create_app(config_path=None, env=None):
             # A misconfigured router is the operator's to fix, and they
             # will not find it unless something says so.
             "router_problem": app.state.router_problem,
+            "stage_problems": app.state.stage_problems,
         }
 
     @app.post("/api/sessions", status_code=201)
@@ -586,14 +595,28 @@ def create_app(config_path=None, env=None):
                 return engine.create_run(run.goal, run.dataset_text,
                                          run.dataset_name,
                                          owner=principal.subject,
-                                         dataset_id=run.dataset_id)
+                                         dataset_id=run.dataset_id,
+                                         profile=run.profile)
             except KeyError:
                 raise HTTPException(status_code=404, detail='Dataset not found.')
+            except ValueError as error:
+                # An unknown profile, or one naming an unregistered stage.
+                raise HTTPException(status_code=422, detail=str(error))
             except QuotaExceeded as error:
                 # 429: the request is well formed and the caller is
                 # entitled to make it — just not right now, or not this
                 # much. The message says which and when it clears.
                 raise HTTPException(status_code=429, detail=error.message)
+
+    @app.get("/api/pipelines")
+    def read_pipelines(principal=Depends(requires("read"))):
+        """The registered custom stages, the profiles that choose among
+        them, what a run gets by default, and why any stage could not
+        be loaded."""
+        return {"stages": [describe(d) for d in engine.stages.values()],
+                "profiles": engine.profiles,
+                "default": engine.custom_roles_for(None),
+                "problems": app.state.stage_problems}
 
     @app.get("/api/usage")
     def read_usage(principal=Depends(requires("read"))):
