@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n'
 import { Dialog } from '../../shared/components/Dialog'
 import type { CommandInfo } from '../../shared/types'
 
@@ -7,33 +8,40 @@ interface HelpDialogProps {
 }
 
 export function HelpDialog({ commands, onClose }: HelpDialogProps) {
+  const { t, tx } = useI18n()
   return (
-    <Dialog title="Commands" onClose={onClose} wide labelledById="help-title">
+    <Dialog title={t('help.title')} onClose={onClose} wide labelledById="help-title">
       <p className="dialog__body">
-        Type these in the composer, pick them from the command palette (<kbd>Ctrl</kbd>+
-        <kbd>K</kbd>), or use the quick actions in the sidebar.
+        {tx('help.body', {
+          shortcut: (
+            <>
+              <kbd>Ctrl</kbd>+<kbd>K</kbd>
+            </>
+          ),
+        })}
       </p>
       <table className="cmdtable">
         <thead>
           <tr>
-            <th scope="col">Command</th>
-            <th scope="col">What it does</th>
+            <th scope="col">{t('help.command')}</th>
+            <th scope="col">{t('help.what')}</th>
           </tr>
         </thead>
         <tbody>
           {commands.map((command) => (
             <tr key={command.command}>
               <td>
-                <code>{command.usage}</code>
+                {/* A command is typed as written: always left-to-right. */}
+                <code dir="ltr">{command.usage}</code>
               </td>
-              <td>{command.description}</td>
+              <td dir="auto">{command.description}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <div className="dialog__actions">
         <button type="button" className="btn btn--ghost" onClick={onClose}>
-          Close
+          {t('common.close')}
         </button>
       </div>
     </Dialog>

@@ -65,12 +65,39 @@
   --text-l: 1.0625rem;
   --text-xl: 1.5rem;
   --text-display: 2rem;
+  --leading: 1.5;
+
+  /* Letter-spacing is a Latin-script device. The tokens exist so the
+     Arabic override below can zero them in one place: tracking, negative
+     or positive, breaks the joins of a connected script. */
+  --tracking-tight: -0.01em;
+  --tracking-tighter: -0.02em;
+  --tracking-brand: 0.01em;
+  --tracking-caps: 0.05em;
+  --tracking-label: 0.07em;
 
   /* Motion */
   --motion-fast: 140ms ease;
   --motion-medium: 220ms ease;
 
   color-scheme: light;
+}
+
+/* Arabic. System fonts with full Arabic coverage, ordered so that Latin
+   glyphs (product names, paths, keyboard keys) come from the same face
+   as the Arabic around them rather than a fallback with a different
+   x-height. No web font is loaded: the app works offline and ships no
+   third-party requests. Arabic glyphs sit lower and read smaller at the
+   same size, so the leading is opened up slightly. */
+:root:lang(ar) {
+  --font-sans: 'Segoe UI', Tahoma, 'Noto Sans Arabic', 'Noto Naskh Arabic', 'Geeza Pro',
+    'Helvetica Neue', Arial, system-ui, sans-serif;
+  --leading: 1.65;
+  --tracking-tight: 0;
+  --tracking-tighter: 0;
+  --tracking-brand: 0;
+  --tracking-caps: 0;
+  --tracking-label: 0;
 }
 
 [data-theme='dark'] {

@@ -1,5 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import {
+  applyLocale,
+  currentLocale,
+  localeFromPreference,
+  preferenceFor,
+  storedLocale,
+  translate,
+  translatePlural,
+} from '../i18n'
+import type { Locale, MessageKey, Vars } from '../i18n'
 import { api, ApiError, hasToken, storeToken } from '../shared/api'
 import type {
   ActivityEvent,
@@ -34,6 +44,8 @@ interface Store {
   dismissFailed: () => void
   clearHistory: () => Promise<OperationOutcome>
   setPreference: (key: string, value: string) => Promise<OperationOutcome>
+  /** Interface language and the agent's reply language, changed together. */
+  setLanguage: (locale: Locale) => Promise<OperationOutcome>
   addMemory: (information: string, category?: string) => Promise<OperationOutcome>
   updateMemory: (key: string, information: string, category?: string) => Promise<OperationOutcome>
   deleteMemory: (key: string) => Promise<OperationOutcome>
@@ -85,17 +97,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const pendingCount = useRef(0)
   const [pending, setPending] = useState(0)
 
-  const pushEvent = useCallback((label: string, kind: ActivityKind, detail?: string) => {
-    eventId += 1
-    const event: ActivityEvent = {
-      id: eventId,
-      label,
-      kind,
-      detail,
-      time: new Date().toISOString(),
-    }
-    setEvents((current) => [event, ...current].slice(0, 100))
-  }, [])
+  const pushEvent = useCallback(
+    (code: MessageKey, kind: ActivityKind, detail?: string, vars?: Vars) => {
+      eventId += 1
+      const event: ActivityEvent = {
+        id: eventId,
+        code,
+        vars,
+        kind,
+        detail,
+        time: new Date().toISOString(),
+      }
+      setEvents((current) => [event, ...current].slice(0, 100))
+    },
+    [],
+  )
 
   const beginWork = useCallback(() => {
     pendingCount.current += 1
@@ -110,11 +126,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     function goOnline() {
       setOffline(false)
-      pushEvent('Connection restored', 'success')
+      pushEvent('event.connection.restored', 'success')
     }
     function goOffline() {
       setOffline(true)
-      pushEvent('Connection lost', 'error')
+      pushEvent('event.connection.lost', 'error')
     }
     window.addEventListener('online', goOnline)
     window.addEventListener('offline', goOffline)
@@ -137,26 +153,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     beginWork()
     setBootError(null)
     try {
-      const state = await api.createSession()
+      // The agent phrases its own replies from the session's language
+      // preference; seeding it from the interface language means the
+      // welcome message is already in the right language.
+      const state = await api.createSession(preferenceFor(currentLocale()))
       setSession(state)
       storeSessionId(state.session_id)
       setFailedText(null)
       setLastError(false)
       setOffline(false)
       setLastSyncedAt(new Date().toISOString())
-      pushEvent('Session started', 'success', state.agent_name)
+      pushEvent('event.session.started', 'success', state.agent_name)
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         handleUnauthorized()
         return
       }
-      const message = error instanceof ApiError ? error.message : 'Could not start a session.'
+      const message = error instanceof ApiError ? error.message : translate('outcome.startFailed')
       setBootError(message)
-      pushEvent('Session start failed', 'error', message)
+      pushEvent('event.session.startFailed', 'error', message)
     } finally {
       endWork()
     }
   }, [beginWork, endWork, pushEvent, handleUnauthorized])
+
+  /** A restored session may have been created in another language, or
+   *  on another device. The browser's explicit choice wins and the agent
+   *  is told; with no explicit choice, the session's language is applied
+   *  to the interface without being recorded as a choice. */
+  const reconcileLanguage = useCallback((state: SessionState) => {
+    const chosen = storedLocale()
+    const sessionLocale = localeFromPreference(state.preferences.language)
+    if (chosen === null) {
+      if (sessionLocale !== currentLocale()) applyLocale(sessionLocale, false)
+      return
+    }
+    if (chosen !== sessionLocale && !state.ended) {
+      api
+        .setPreference(state.session_id, 'language', preferenceFor(chosen))
+        .then((result) => setSession(result.state))
+        .catch(() => {
+          /* the next preference change carries the language with it */
+        })
+    }
+  }, [])
 
   // On page load, restore the previous session when the server still has
   // it and it hasn't ended; otherwise fall back to a fresh session.
@@ -194,7 +234,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setSession(state)
           setOffline(false)
           setLastSyncedAt(new Date().toISOString())
-          pushEvent('Session restored', 'success', `${state.transcript.length} messages`)
+          pushEvent(
+            'event.session.restored',
+            'success',
+            translatePlural('session.restoredMessages', state.transcript.length),
+          )
+          reconcileLanguage(state)
           return
         }
       } catch (error) {
@@ -206,7 +251,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // replacing the session. A 404 just means the session expired.
         if (error instanceof ApiError && (error.status === 0 || error.status >= 500)) {
           setBootError(error.message)
-          pushEvent('Session restore failed', 'error', error.message)
+          pushEvent('event.session.restoreFailed', 'error', error.message)
           return
         }
       } finally {
@@ -214,22 +259,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
     await start()
-  }, [beginWork, endWork, pushEvent, start, handleUnauthorized])
+  }, [beginWork, endWork, pushEvent, start, handleUnauthorized, reconcileLanguage])
 
-  const signIn = useCallback(async (token: string) => {
-    storeToken(token)
-    setNeedsSignIn(false)
-    setBootError(null)
-    try {
-      setIdentity(await api.identity())
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        handleUnauthorized()
-        return
+  const signIn = useCallback(
+    async (token: string) => {
+      storeToken(token)
+      setNeedsSignIn(false)
+      setBootError(null)
+      try {
+        setIdentity(await api.identity())
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          handleUnauthorized()
+          return
+        }
       }
-    }
-    await start()
-  }, [handleUnauthorized, start])
+      await start()
+    },
+    [handleUnauthorized, start],
+  )
 
   const signOut = useCallback(() => {
     try {
@@ -238,7 +286,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       /* nothing stored */
     }
     handleUnauthorized()
-    pushEvent('Signed out', 'info')
+    pushEvent('event.signedOut', 'info')
   }, [handleUnauthorized, pushEvent])
 
   const startedOnce = useRef(false)
@@ -266,14 +314,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         // stuck in offline mode after a successful request.
         setOffline(false)
         setLastSyncedAt(new Date().toISOString())
-        pushEvent('Request completed', 'info', text.length > 60 ? `${text.slice(0, 60)}…` : text)
-        if (result.state.ended) pushEvent('Session ended', 'info')
+        pushEvent(
+          'event.request.completed',
+          'info',
+          text.length > 60 ? `${text.slice(0, 60)}…` : text,
+        )
+        if (result.state.ended) pushEvent('event.session.ended', 'info')
       } catch (error) {
-        const message = error instanceof ApiError ? error.message : 'The request failed.'
+        const message = error instanceof ApiError ? error.message : translate('outcome.requestFailed')
         setFailedText(text)
         setLastError(true)
         if (error instanceof ApiError && error.offline) setOffline(true)
-        pushEvent('Request failed', 'error', message)
+        pushEvent('event.request.failed', 'error', message)
       } finally {
         setSending(false)
         endWork()
@@ -294,9 +346,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const runOperation = useCallback(
     async (
       operation: (sessionId: string) => Promise<{ reply_text: string; state: SessionState }>,
-      successLabel: string,
+      code: MessageKey,
     ): Promise<OperationOutcome> => {
-      if (!session) return { ok: false, message: 'No active session.' }
+      if (!session) return { ok: false, message: translate('outcome.noSession') }
       beginWork()
       try {
         const result = await operation(session.session_id)
@@ -304,13 +356,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setLastError(false)
         setOffline(false)
         setLastSyncedAt(new Date().toISOString())
-        pushEvent(successLabel, 'success', result.reply_text)
+        pushEvent(code, 'success', result.reply_text)
         return { ok: true, message: result.reply_text }
       } catch (error) {
-        const message = error instanceof ApiError ? error.message : 'The request failed.'
+        const message = error instanceof ApiError ? error.message : translate('outcome.requestFailed')
         if (error instanceof ApiError && error.offline) setOffline(true)
         setLastError(true)
-        pushEvent(`${successLabel} failed`, 'error', message)
+        pushEvent(`${code}.failed` as MessageKey, 'error', message)
         return { ok: false, message }
       } finally {
         endWork()
@@ -320,35 +372,51 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const clearHistory = useCallback(
-    () => runOperation((id) => api.clearHistory(id), 'History cleared'),
+    () => runOperation((id) => api.clearHistory(id), 'event.history.cleared'),
     [runOperation],
   )
   const setPreference = useCallback(
     (key: string, value: string) =>
-      runOperation((id) => api.setPreference(id, key, value), 'Preference changed'),
+      runOperation((id) => api.setPreference(id, key, value), 'event.preference.changed'),
     [runOperation],
+  )
+  const setLanguage = useCallback(
+    async (locale: Locale): Promise<OperationOutcome> => {
+      // The interface switches at once; the agent is told so its next
+      // reply matches. With no live session there is nothing to tell.
+      applyLocale(locale)
+      if (!session || session.ended) return { ok: true, message: '' }
+      return runOperation(
+        (id) => api.setPreference(id, 'language', preferenceFor(locale)),
+        'event.preference.changed',
+      )
+    },
+    [session, runOperation],
   )
   const addMemory = useCallback(
     (information: string, category?: string) =>
-      runOperation((id) => api.addMemory(id, information, category), 'Memory saved'),
+      runOperation((id) => api.addMemory(id, information, category), 'event.memory.saved'),
     [runOperation],
   )
   const updateMemory = useCallback(
     (key: string, information: string, category?: string) =>
-      runOperation((id) => api.updateMemory(id, key, information, category), 'Memory updated'),
+      runOperation(
+        (id) => api.updateMemory(id, key, information, category),
+        'event.memory.updated',
+      ),
     [runOperation],
   )
   const deleteMemory = useCallback(
-    (key: string) => runOperation((id) => api.deleteMemory(id, key), 'Memory removed'),
+    (key: string) => runOperation((id) => api.deleteMemory(id, key), 'event.memory.removed'),
     [runOperation],
   )
   const clearMemory = useCallback(
-    () => runOperation((id) => api.clearMemory(id), 'Memory cleared'),
+    () => runOperation((id) => api.clearMemory(id), 'event.memory.cleared'),
     [runOperation],
   )
 
   const exportData = useCallback(async (): Promise<OperationOutcome> => {
-    if (!session) return { ok: false, message: 'No active session.' }
+    if (!session) return { ok: false, message: translate('outcome.noSession') }
     beginWork()
     try {
       const payload = await api.exportData(session.session_id)
@@ -362,11 +430,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       link.remove()
       URL.revokeObjectURL(url)
       setLastSyncedAt(new Date().toISOString())
-      pushEvent('Data exported', 'success', 'agentic-os-export.json')
-      return { ok: true, message: 'Your data was downloaded as agentic-os-export.json.' }
+      pushEvent('event.export.done', 'success', 'agentic-os-export.json')
+      return { ok: true, message: translate('outcome.exported') }
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'The export failed.'
-      pushEvent('Data export failed', 'error', message)
+      const message = error instanceof ApiError ? error.message : translate('outcome.exportFailed')
+      pushEvent('event.export.failed', 'error', message)
       return { ok: false, message }
     } finally {
       endWork()
@@ -374,16 +442,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [session, beginWork, endWork, pushEvent])
 
   const endSession = useCallback(async (): Promise<OperationOutcome> => {
-    if (!session) return { ok: false, message: 'No active session.' }
+    if (!session) return { ok: false, message: translate('outcome.noSession') }
     beginWork()
     try {
       const state = await api.endSession(session.session_id)
       setSession(state)
-      pushEvent('Session ended', 'info')
-      return { ok: true, message: 'Session ended.' }
+      pushEvent('event.session.ended', 'info')
+      return { ok: true, message: translate('outcome.sessionEnded') }
     } catch (error) {
-      const message = error instanceof ApiError ? error.message : 'The request failed.'
-      pushEvent('End session failed', 'error', message)
+      const message = error instanceof ApiError ? error.message : translate('outcome.requestFailed')
+      pushEvent('event.session.endFailed', 'error', message)
       return { ok: false, message }
     } finally {
       endWork()
@@ -420,6 +488,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       dismissFailed,
       clearHistory,
       setPreference,
+      setLanguage,
       addMemory,
       updateMemory,
       deleteMemory,
@@ -446,6 +515,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       dismissFailed,
       clearHistory,
       setPreference,
+      setLanguage,
       addMemory,
       updateMemory,
       deleteMemory,

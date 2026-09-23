@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../../i18n'
 import { Icon } from '../../shared/components/Icon'
 import type { AuthConfig } from '../../shared/types'
 
@@ -14,6 +15,7 @@ interface SignInProps {
  *  never receives, stores, or proxies a password. It only keeps the
  *  returned access token to authorize API calls. */
 export function SignIn({ config, onSignedIn }: SignInProps) {
+  const { t, locale, setLocale } = useI18n()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -21,6 +23,7 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
   const [notice, setNotice] = useState<string | null>(null)
 
   const canUseProvider = config.flows.length > 0
+  const otherLocale = locale === 'en' ? 'ar' : 'en'
 
   async function providerRequest(path: string, body: unknown) {
     const response = await fetch(`${config.provider_url}${path}`, {
@@ -40,7 +43,7 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
              (payload as Record<string, unknown>).msg ??
              (payload as Record<string, unknown>).message)
           : null
-      throw new Error(typeof message === 'string' ? message : 'Sign-in failed.')
+      throw new Error(typeof message === 'string' ? message : t('signin.failed'))
     }
     return payload as Record<string, unknown> | null
   }
@@ -57,12 +60,12 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
       })
       const token = payload?.access_token
       if (typeof token !== 'string' || !token) {
-        throw new Error('The provider did not return an access token.')
+        throw new Error(t('signin.noToken'))
       }
       setPassword('')
       onSignedIn(token)
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Sign-in failed.')
+      setError(caught instanceof Error ? caught.message : t('signin.failed'))
     } finally {
       setBusy(false)
     }
@@ -70,7 +73,7 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
 
   async function sendMagicLink() {
     if (!email.trim()) {
-      setError('Enter your email address first.')
+      setError(t('signin.enterEmail'))
       return
     }
     setBusy(true)
@@ -78,36 +81,47 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
     setNotice(null)
     try {
       await providerRequest('/auth/v1/otp', { email: email.trim() })
-      setNotice(`Check ${email.trim()} for a sign-in link.`)
+      setNotice(t('signin.checkEmail', { email: email.trim() }))
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not send the link.')
+      setError(caught instanceof Error ? caught.message : t('signin.linkFailed'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <main className="signin" aria-label="Sign in">
+    <main className="signin" aria-label={t('signin.aria')}>
       <div className="signin__card">
-        <span className="brand__mark signin__mark" aria-hidden="true">
-          A
-        </span>
-        <h1 className="signin__title">Sign in to Agentic OS</h1>
-        <p className="signin__desc">
-          This deployment requires an account. Your credentials go directly to the
-          identity provider — Agentic OS never sees them.
-        </p>
+        <div className="signin__top">
+          <span className="brand__mark signin__mark" aria-hidden="true">
+            A
+          </span>
+          {/* No session exists yet, so this switches the interface only;
+              the agent learns the language when the session is created. */}
+          <button
+            type="button"
+            className="langbtn"
+            aria-label={t('language.switch')}
+            onClick={() => setLocale(otherLocale)}
+          >
+            <Icon name="globe" size={16} />
+            <span lang={otherLocale}>{t('language.other')}</span>
+          </button>
+        </div>
+        <h1 className="signin__title">{t('signin.title')}</h1>
+        <p className="signin__desc">{t('signin.desc')}</p>
 
         {canUseProvider ? (
           <form onSubmit={signInWithPassword}>
             <div className="field">
               <label className="field__label" htmlFor="signin-email">
-                Email
+                {t('signin.email')}
               </label>
               <input
                 id="signin-email"
                 className="field__input"
                 type="email"
+                dir="ltr"
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -117,12 +131,13 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
             </div>
             <div className="field">
               <label className="field__label" htmlFor="signin-password">
-                Password
+                {t('signin.password')}
               </label>
               <input
                 id="signin-password"
                 className="field__input"
                 type="password"
+                dir="ltr"
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -132,7 +147,7 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
             <div className="signin__actions">
               <button type="submit" className="btn btn--primary" disabled={busy || !email.trim()}>
                 {busy ? <span className="spinner" aria-hidden="true" /> : null}
-                Sign in
+                {t('signin.submit')}
               </button>
               <button
                 type="button"
@@ -140,15 +155,14 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
                 onClick={() => void sendMagicLink()}
                 disabled={busy}
               >
-                Email me a link
+                {t('signin.magic')}
               </button>
             </div>
           </form>
         ) : (
           <p className="signin__warning" role="status">
             <Icon name="alert" size={16} />
-            This server requires authentication but no provider is configured for the
-            browser. Set SUPABASE_URL and SUPABASE_ANON_KEY on the server.
+            {t('signin.noProvider')}
           </p>
         )}
 
@@ -156,6 +170,7 @@ export function SignIn({ config, onSignedIn }: SignInProps) {
           className={`statusline ${error ? 'statusline--error' : notice ? 'statusline--success' : ''}`}
           role="status"
           aria-live="polite"
+          dir="auto"
         >
           {error ?? notice ?? ''}
         </p>

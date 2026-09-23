@@ -1,3 +1,5 @@
+import type { MessageKey, Vars } from '../i18n'
+
 export interface TranscriptEntry {
   id: number
   role: 'user' | 'agent'
@@ -48,9 +50,14 @@ export interface ExportPayload {
 
 export type ActivityKind = 'info' | 'success' | 'error'
 
+/** An activity event records *what happened* as a message code, not as a
+ *  sentence, so the timeline reads in whichever language the interface
+ *  is in when it is looked at — including after a switch. `detail` is
+ *  free text (a server reply, a filename) and stays as it came. */
 export interface ActivityEvent {
   id: number
-  label: string
+  code: MessageKey
+  vars?: Vars
   detail?: string
   kind: ActivityKind
   time: string

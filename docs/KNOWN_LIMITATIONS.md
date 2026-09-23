@@ -157,8 +157,16 @@ required local files. Both behaviors are covered by tests
     build or test one honestly).
 13. Obsidian integration is approval-gated write-back into a vault
     folder; reading/sync/retrieval from a vault is not implemented.
-14. Interface language is English; the `language` preference is recorded
-    but does not translate the UI. No RTL support yet.
+14. The interface is Arabic or English (ADR 0018), right-to-left in
+    Arabic, and the agent's own replies follow the chosen language. Three
+    boundaries: **reports are written in English** — the analytics
+    narrative is a separate slice and every report block is marked
+    `lang="en"` so a screen reader knows; the choice is per browser and
+    per session, so a hosted install has no organisation-wide default;
+    and Arabic uses system fonts, so the face varies by operating system
+    (no font is downloaded, because the app works offline). Digits are
+    Western in both languages so a figure on screen matches the same
+    figure in the report.
 15. Backups are on-demand: `scripts/backup.py` produces a verified,
     restorable backup (the drill in `tests/test_backup.py` destroys the
     database and rebuilds it on every push), but **nothing schedules

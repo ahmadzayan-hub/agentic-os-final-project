@@ -3,6 +3,11 @@
 The Agent receives every user request, keeps the conversation history,
 stores memory (optionally persisted to disk), applies user preferences,
 and produces a response for each recognized command.
+
+It answers in the language the `language` preference names. The
+interface asks for that preference when it creates a session and changes
+it when the reader switches language, so the two stay in step; at the
+command line, `/set language العربية` does the same.
 """
 
 import re
@@ -42,12 +47,133 @@ DEFAULT_PREFERENCES = {
     "save_history": True,
 }
 
+# The language preference is a string a person types. These are the
+# spellings, in both scripts, that mean each supported language; anything
+# else is kept as typed and answered in English.
+ARABIC_NAMES = ("arabic", "ar", "العربية", "عربي", "عربية", "عربى")
+ENGLISH_NAMES = ("english", "en", "الإنجليزية", "الانجليزية", "إنجليزي", "انجليزي")
+
+
+def language_code(value):
+    """'ar' or 'en' for a language preference value."""
+    return "ar" if str(value or "").strip().lower() in ARABIC_NAMES else "en"
+
+
+def canonical_language(value):
+    """The stored form of a language preference: 'Arabic', 'English', or
+    whatever was typed when it is neither — a wrong value is shown back
+    rather than silently corrected to something else."""
+    if not isinstance(value, str):
+        return value
+    lowered = value.strip().lower()
+    if lowered in ARABIC_NAMES:
+        return "Arabic"
+    if lowered in ENGLISH_NAMES:
+        return "English"
+    return value
+
 TONE_STYLES = {
     "friendly": "Happy to help! I received your request: \"{request}\". "
     "Enter /help to see everything I can do.",
     "concise": "Received: \"{request}\". See /help for commands.",
     "formal": "Your request \"{request}\" has been received. "
     "Please consult /help for the list of supported commands.",
+}
+
+# U+200E (left-to-right mark) precedes each slash command inside Arabic
+# text so the command reads as one left-to-right run; without it the
+# bidi algorithm can hang the slash on the wrong side of the word.
+TONE_STYLES_ARABIC = {
+    "friendly": "يسعدني المساعدة! استلمت طلبك: \"{request}\". "
+    "أدخل ‎/help لترى كل ما أستطيع فعله.",
+    "concise": "استلمت: \"{request}\". راجع ‎/help للأوامر.",
+    "formal": "تم استلام طلبك \"{request}\". "
+    "يُرجى مراجعة ‎/help للاطلاع على قائمة الأوامر المدعومة.",
+}
+
+MESSAGES = {
+    "en": {
+        "welcome": "Welcome to {name} (version {version}). "
+                   "Enter /help to view available commands.",
+        "empty_input": "Please enter a command or question.",
+        "history_cleared": "Conversation history cleared.",
+        "goodbye": "Session closed. Goodbye.",
+        "unknown_command": "Unknown command: {command}. "
+                           "Enter /help to view available commands.",
+        "no_history": "No conversation history is available.",
+        "provide_information": "Please provide information to remember.",
+        "saved": "Information saved.",
+        "nothing_saved": "No information has been saved yet.",
+        "saved_heading": "Saved information:",
+        "specify_forget": "Please specify what to forget: "
+                          "/forget <key> or /forget all.",
+        "removed": "Removed {key}.",
+        "not_found": "No saved information found for {key}. "
+                     "Enter /recall to list keys.",
+        "all_removed": "All saved information has been removed.",
+        "updated": "Information updated.",
+        "not_written": ", but the change could not be written to disk and "
+                       "may not survive a restart. Check permissions for "
+                       "the memory file.",
+        "set_usage": "Usage: /set <setting> <value>. Example: /set tone concise",
+        "preference_updated": "Preference updated: {key} = {shown}.",
+        "preferences_heading": "Current preferences:",
+        "help": (
+            "Available commands:\n"
+            "/help: Display available commands\n"
+            "/remember <information>: Save information\n"
+            "/recall: Display saved information\n"
+            "/forget <key>: Remove one saved item (/forget all removes everything)\n"
+            "/set <setting> <value>: Update a preference (e.g. /set tone concise)\n"
+            "/preferences: Display current preferences\n"
+            "/history: Display conversation history\n"
+            "/clear: Clear conversation history\n"
+            "/exit: Close the application"
+        ),
+        "you_label": "You",
+        "agent_label": "Agent",
+    },
+    "ar": {
+        "welcome": "مرحبًا بك في {name} (الإصدار {version}). "
+                   "أدخل ‎/help لعرض الأوامر المتاحة.",
+        "empty_input": "يُرجى إدخال أمر أو سؤال.",
+        "history_cleared": "تم مسح سجل المحادثة.",
+        "goodbye": "أُغلقت الجلسة. إلى اللقاء.",
+        "unknown_command": "أمر غير معروف: {command}. "
+                           "أدخل ‎/help لعرض الأوامر المتاحة.",
+        "no_history": "لا يوجد سجل محادثة متاح.",
+        "provide_information": "يُرجى تقديم معلومة لحفظها.",
+        "saved": "تم حفظ المعلومة.",
+        "nothing_saved": "لم تُحفظ أي معلومات بعد.",
+        "saved_heading": "المعلومات المحفوظة:",
+        "specify_forget": "يُرجى تحديد ما تريد نسيانه: "
+                          "‎/forget <key> أو ‎/forget all.",
+        "removed": "تمت إزالة {key}.",
+        "not_found": "لا توجد معلومة محفوظة باسم {key}. "
+                     "أدخل ‎/recall لعرض المفاتيح.",
+        "all_removed": "تمت إزالة كل المعلومات المحفوظة.",
+        "updated": "تم تحديث المعلومة.",
+        "not_written": "، لكن تعذّر كتابة التغيير على القرص وقد لا يبقى بعد "
+                       "إعادة التشغيل. تحقق من أذونات ملف الذاكرة.",
+        "set_usage": "الاستخدام: ‎/set <setting> <value>. "
+                     "مثال: ‎/set tone concise",
+        "preference_updated": "تم تحديث التفضيل: {key} = {shown}.",
+        "preferences_heading": "التفضيلات الحالية:",
+        "help": (
+            "الأوامر المتاحة:\n"
+            "‎/help: عرض الأوامر المتاحة\n"
+            "‎/remember <information>: حفظ معلومة\n"
+            "‎/recall: عرض المعلومات المحفوظة\n"
+            "‎/forget <key>: إزالة عنصر محفوظ واحد (‎/forget all يزيل كل شيء)\n"
+            "‎/set <setting> <value>: تحديث تفضيل (مثال: ‎/set tone concise)\n"
+            "‎/preferences: عرض التفضيلات الحالية\n"
+            "‎/history: عرض سجل المحادثة\n"
+            "‎/clear: مسح سجل المحادثة\n"
+            "‎/exit: إغلاق التطبيق"
+        ),
+        "you_label": "أنت",
+        "agent_label": "الوكيل",
+    },
 }
 
 
@@ -137,18 +263,34 @@ class Agent:
         return (1, 0, key)
 
     # ------------------------------------------------------------------
+    # Language
+    # ------------------------------------------------------------------
+    def language(self):
+        """'ar' or 'en': the language this agent phrases its replies in."""
+        return language_code(self.preferences.get("language"))
+
+    def text(self, message, /, **values):
+        """A reply in the current language, with English as the fallback
+        for a message that has no translation yet — a missing string must
+        never become a missing reply.
+
+        `message` is positional-only because the placeholders are keyword
+        arguments, and one of them is named `key`.
+        """
+        catalogue = MESSAGES[self.language()]
+        template = catalogue.get(message) or MESSAGES["en"][message]
+        return template.format(**values)
+
+    # ------------------------------------------------------------------
     # Entry points
     # ------------------------------------------------------------------
     def get_welcome_message(self):
-        return (
-            f"Welcome to {self.name} (version {self.version}). "
-            "Enter /help to view available commands."
-        )
+        return self.text("welcome", name=self.name, version=self.version)
 
     def process_input(self, user_input):
         """Route a single user request to the matching handler."""
         if not validate_input(user_input):
-            return "Please enter a command or question."
+            return self.text("empty_input")
 
         user_input = user_input.strip()
         command = user_input.split(maxsplit=1)[0].lower()
@@ -163,7 +305,7 @@ class Agent:
             return self.get_history()
         if command == "/clear":
             self.history.clear()
-            return "Conversation history cleared."
+            return self.text("history_cleared")
         if command == "/remember":
             return self.remember(user_input)
         if command == "/recall":
@@ -175,12 +317,9 @@ class Agent:
         if command == "/preferences":
             return self.get_preferences()
         if command == "/exit":
-            return "Session closed. Goodbye."
+            return self.text("goodbye")
         if user_input.startswith("/"):
-            return (
-                f"Unknown command: {command}. "
-                "Enter /help to view available commands."
-            )
+            return self.text("unknown_command", command=command)
         return self.generate_response(user_input)
 
     # ------------------------------------------------------------------
@@ -196,7 +335,7 @@ class Agent:
 
     def get_history(self):
         if not self.history:
-            return "No conversation history is available."
+            return self.text("no_history")
         return "\n".join(self.history)
 
     # ------------------------------------------------------------------
@@ -210,31 +349,28 @@ class Agent:
         """Save a new memory entry with a category and timestamp."""
         information = information.strip() if isinstance(information, str) else ""
         if not information:
-            return "Please provide information to remember."
+            return self.text("provide_information")
         key = self._next_memory_key()
         self.memory[key] = information
         self.memory_meta[key] = {
             "category": self._clean_category(category),
             "updated": self._now_iso(),
         }
-        return self._saved_message("Information saved.")
+        return self._saved_message(self.text("saved"))
 
     def recall(self):
         if not self.memory:
-            return "No information has been saved yet."
+            return self.text("nothing_saved")
         lines = [
             f"{key}: {self.memory[key]}"
             for key in sorted(self.memory, key=self._key_order)
         ]
-        return "Saved information:\n" + "\n".join(lines)
+        return self.text("saved_heading") + "\n" + "\n".join(lines)
 
     def forget(self, command):
         target = command[len("/forget"):].strip()
         if not target:
-            return (
-                "Please specify what to forget: "
-                "/forget <key> or /forget all."
-            )
+            return self.text("specify_forget")
         if target.lower() == "all":
             return self.clear_all_memory()
         return self.remove_memory(target)
@@ -244,14 +380,14 @@ class Agent:
         if key in self.memory:
             del self.memory[key]
             self.memory_meta.pop(key, None)
-            return self._saved_message(f"Removed {key}.")
-        return f"No saved information found for {key}. Enter /recall to list keys."
+            return self._saved_message(self.text("removed", key=key))
+        return self.text("not_found", key=key)
 
     def clear_all_memory(self):
         """Delete every memory entry."""
         self.memory.clear()
         self.memory_meta.clear()
-        return self._saved_message("All saved information has been removed.")
+        return self._saved_message(self.text("all_removed"))
 
     def memory_entries(self):
         """Memory as a list of rich entries in stable numeric key order."""
@@ -278,9 +414,9 @@ class Agent:
         """
         information = information.strip() if isinstance(information, str) else ""
         if not information:
-            return "Please provide information to remember."
+            return self.text("provide_information")
         if key not in self.memory:
-            return f"No saved information found for {key}. Enter /recall to list keys."
+            return self.text("not_found", key=key)
         self.memory[key] = information
         previous = self.memory_meta.get(
             key, {"category": DEFAULT_MEMORY_CATEGORY, "updated": None}
@@ -291,7 +427,7 @@ class Agent:
             else previous["category"],
             "updated": self._now_iso(),
         }
-        return self._saved_message("Information updated.")
+        return self._saved_message(self.text("updated"))
 
     def _next_memory_key(self):
         """Build a unique key even after entries have been deleted."""
@@ -319,11 +455,7 @@ class Agent:
         presented as a successful save."""
         if self._save_memory():
             return base
-        return (
-            base.rstrip(".")
-            + ", but the change could not be written to disk and may not "
-            + "survive a restart. Check permissions for the memory file."
-        )
+        return base.rstrip(".") + self.text("not_written")
 
     # ------------------------------------------------------------------
     # Preferences
@@ -331,44 +463,42 @@ class Agent:
     def update_preference(self, command):
         parts = command.split(maxsplit=2)
         if len(parts) < 3:
-            return "Usage: /set <setting> <value>. Example: /set tone concise"
+            return self.text("set_usage")
         _, key, value = parts
         return self.set_preference(key, value)
 
     def set_preference(self, key, value):
-        """Store one preference, converting true/false strings to booleans."""
+        """Store one preference, converting true/false strings to booleans.
+
+        The language preference is canonicalised so the interface can
+        recognise it whichever spelling was typed; the confirmation is
+        phrased in the language just chosen, which is the first evidence
+        that the change took.
+        """
         key = key.strip().lower()
         if isinstance(value, str) and value.lower() in ("true", "false"):
             value = value.lower() == "true"
+        if key == "language":
+            value = canonical_language(value)
         self.preferences[key] = value
         shown = str(value).lower() if isinstance(value, bool) else value
-        return f"Preference updated: {key} = {shown}."
+        return self.text("preference_updated", key=key, shown=shown)
 
     def get_preferences(self):
         lines = []
         for key, value in sorted(self.preferences.items()):
             shown = str(value).lower() if isinstance(value, bool) else value
             lines.append(f"{key}: {shown}")
-        return "Current preferences:\n" + "\n".join(lines)
+        return self.text("preferences_heading") + "\n" + "\n".join(lines)
 
     # ------------------------------------------------------------------
     # Responses
     # ------------------------------------------------------------------
     def generate_response(self, user_input):
         tone = self.preferences.get("tone", "friendly")
-        template = TONE_STYLES.get(tone, TONE_STYLES["friendly"])
+        styles = TONE_STYLES_ARABIC if self.language() == "ar" else TONE_STYLES
+        template = styles.get(tone, styles["friendly"])
         return template.format(request=user_input)
 
     def get_help(self):
-        return (
-            "Available commands:\n"
-            "/help: Display available commands\n"
-            "/remember <information>: Save information\n"
-            "/recall: Display saved information\n"
-            "/forget <key>: Remove one saved item (/forget all removes everything)\n"
-            "/set <setting> <value>: Update a preference (e.g. /set tone concise)\n"
-            "/preferences: Display current preferences\n"
-            "/history: Display conversation history\n"
-            "/clear: Clear conversation history\n"
-            "/exit: Close the application"
-        )
+        return self.text("help")

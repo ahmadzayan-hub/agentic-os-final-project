@@ -17,7 +17,10 @@
     />
     <title>Agentic OS</title>
     <script>
-      // Apply the saved theme and motion settings before first paint.
+      // Apply the saved theme, motion and language settings before first
+      // paint. Language goes on <html> as lang + dir, which is where CSS,
+      // the bidi algorithm and screen readers read it from — set here so
+      // an Arabic reader never sees a left-to-right flash.
       try {
         var theme = localStorage.getItem('aos-theme')
         if (theme === 'light' || theme === 'dark') {
@@ -25,6 +28,10 @@
         }
         if (localStorage.getItem('aos-motion') === 'reduce') {
           document.documentElement.dataset.motion = 'reduce'
+        }
+        if (localStorage.getItem('aos-locale') === 'ar') {
+          document.documentElement.lang = 'ar'
+          document.documentElement.dir = 'rtl'
         }
       } catch (error) {
         /* localStorage unavailable — system settings apply */

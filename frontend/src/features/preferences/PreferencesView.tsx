@@ -3,27 +3,44 @@ import { useMotion } from '../../app/useMotion'
 import { useTheme } from '../../app/useTheme'
 import type { ThemeChoice } from '../../app/useTheme'
 import type { OperationOutcome } from '../../app/store'
+import { useI18n } from '../../i18n'
+import type { Locale, MessageKey } from '../../i18n'
+import { toneLabel } from '../../shared/labels'
 import type { PreferenceValue } from '../../shared/types'
 
 const TONES = ['friendly', 'concise', 'formal'] as const
-const THEMES: Array<{ id: ThemeChoice; label: string }> = [
-  { id: 'dark', label: 'Dark' },
-  { id: 'light', label: 'Light' },
-  { id: 'system', label: 'System' },
+const THEMES: Array<{ id: ThemeChoice; label: MessageKey }> = [
+  { id: 'dark', label: 'theme.dark' },
+  { id: 'light', label: 'theme.light' },
+  { id: 'system', label: 'theme.system' },
+]
+// Each language is named in itself, so the option a reader is looking
+// for is legible whatever the interface currently says.
+const LANGUAGES: Array<{ id: Locale; name: string }> = [
+  { id: 'en', name: 'English' },
+  { id: 'ar', name: 'العربية' },
 ]
 
 interface PreferencesViewProps {
   preferences: Record<string, PreferenceValue>
   disabled: boolean
+  locale: Locale
   onSet: (key: string, value: string) => Promise<OperationOutcome>
+  onSetLanguage: (locale: Locale) => Promise<OperationOutcome>
 }
 
-export function PreferencesView({ preferences, disabled, onSet }: PreferencesViewProps) {
+export function PreferencesView({
+  preferences,
+  disabled,
+  locale,
+  onSet,
+  onSetLanguage,
+}: PreferencesViewProps) {
+  const { t, tx } = useI18n()
   const { theme, setTheme } = useTheme()
   const { reducedMotion, setReducedMotion } = useMotion()
   const [statusMessage, setStatusMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const [busyKey, setBusyKey] = useState<string | null>(null)
-  const [languageDraft, setLanguageDraft] = useState(String(preferences.language ?? 'English'))
   const [nameDraft, setNameDraft] = useState(String(preferences.user_name ?? ''))
 
   const tone = String(preferences.tone ?? 'friendly')
@@ -36,27 +53,32 @@ export function PreferencesView({ preferences, disabled, onSet }: PreferencesVie
     setBusyKey(null)
   }
 
+  async function applyLanguage(next: Locale) {
+    if (next === locale) return
+    setBusyKey('language')
+    const outcome = await onSetLanguage(next)
+    setStatusMessage(outcome.message ? { ok: outcome.ok, text: outcome.message } : null)
+    setBusyKey(null)
+  }
+
   return (
-    <section className="panel" aria-label="Preferences">
+    <section className="panel" aria-label={t('prefs.aria')}>
       <div className="panel__inner panel__inner--split">
         <div className="panel__column">
           <div className="panel__header">
             <div>
-              <h2 className="panel__title">Response preferences</h2>
-              <p className="panel__desc">
-                Control how the agent responds. Changes apply to the current session; permanent
-                defaults live in <code>config.json</code>.
-              </p>
+              <h2 className="panel__title">{t('prefs.title')}</h2>
+              <p className="panel__desc">{tx('prefs.desc', { code: <code>config.json</code> })}</p>
             </div>
           </div>
 
           <div className="card">
             <div className="field">
               <span className="field__label" id="tone-label">
-                Tone
+                {t('prefs.tone')}
               </span>
               <span className="field__help" id="tone-help">
-                How the agent phrases its replies.
+                {t('prefs.toneHelp')}
               </span>
               <div
                 className="segmented"
@@ -73,7 +95,7 @@ export function PreferencesView({ preferences, disabled, onSet }: PreferencesVie
                     disabled={busyKey !== null || disabled}
                     onClick={() => void apply('tone', option)}
                   >
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                    {toneLabel(t, option)}
                   </button>
                 ))}
               </div>
@@ -88,15 +110,16 @@ export function PreferencesView({ preferences, disabled, onSet }: PreferencesVie
               }}
             >
               <label className="field__label" htmlFor="pref-name">
-                Your name
+                {t('prefs.name')}
               </label>
-              <span className="field__help">Used to greet you in the workspace.</span>
+              <span className="field__help">{t('prefs.nameHelp')}</span>
               <div className="field__row">
                 <input
                   id="pref-name"
                   className="field__input"
                   type="text"
-                  placeholder="e.g. Ahmad"
+                  dir="auto"
+                  placeholder={t('prefs.namePlaceholder')}
                   value={nameDraft}
                   maxLength={200}
                   onChange={(event) => setNameDraft(event.target.value)}
@@ -107,54 +130,47 @@ export function PreferencesView({ preferences, disabled, onSet }: PreferencesVie
                   className="btn btn--ghost"
                   disabled={busyKey !== null || disabled || !nameDraft.trim()}
                 >
-                  Save
-                </button>
-              </div>
-            </form>
-
-            <form
-              className="field"
-              onSubmit={(event) => {
-                event.preventDefault()
-                const value = languageDraft.trim()
-                if (value) void apply('language', value)
-              }}
-            >
-              <label className="field__label" htmlFor="pref-language">
-                Language
-              </label>
-              <span className="field__help">
-                Recorded with your preferences; the current agent replies in English.
-              </span>
-              <div className="field__row">
-                <input
-                  id="pref-language"
-                  className="field__input"
-                  type="text"
-                  value={languageDraft}
-                  maxLength={200}
-                  onChange={(event) => setLanguageDraft(event.target.value)}
-                  disabled={busyKey !== null || disabled}
-                />
-                <button
-                  type="submit"
-                  className="btn btn--ghost"
-                  disabled={busyKey !== null || disabled || !languageDraft.trim()}
-                >
-                  Save
+                  {t('common.save')}
                 </button>
               </div>
             </form>
 
             <div className="field">
+              <span className="field__label" id="language-label">
+                {t('prefs.language')}
+              </span>
+              <span className="field__help" id="language-help">
+                {t('prefs.languageHelp')}
+              </span>
+              <div
+                className="segmented"
+                role="group"
+                aria-labelledby="language-label"
+                aria-describedby="language-help"
+              >
+                {LANGUAGES.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className="segmented__option"
+                    lang={option.id}
+                    aria-pressed={locale === option.id}
+                    disabled={busyKey !== null || disabled}
+                    onClick={() => void applyLanguage(option.id)}
+                  >
+                    {option.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
               <div className="switchrow">
                 <div>
                   <span className="field__label" id="history-label">
-                    Record session history
+                    {t('prefs.history')}
                   </span>
-                  <p className="field__help">
-                    When off, your requests are not recorded in this session’s history.
-                  </p>
+                  <p className="field__help">{t('prefs.historyHelp')}</p>
                 </div>
                 <button
                   type="button"
@@ -177,19 +193,20 @@ export function PreferencesView({ preferences, disabled, onSet }: PreferencesVie
             }`}
             role="status"
             aria-live="polite"
+            dir="auto"
           >
-            {busyKey ? 'Saving…' : (statusMessage?.text ?? '')}
+            {busyKey ? t('prefs.saving') : (statusMessage?.text ?? '')}
           </p>
         </div>
 
         <div className="panel__column panel__column--side">
           <div className="card">
-            <h3 className="card__title">Interface</h3>
-            <p className="panel__desc">Stored in this browser only.</p>
+            <h3 className="card__title">{t('prefs.interface')}</h3>
+            <p className="panel__desc">{t('prefs.interfaceDesc')}</p>
 
             <div className="field">
               <span className="field__label" id="theme-label">
-                Theme
+                {t('prefs.theme')}
               </span>
               <div className="segmented" role="group" aria-labelledby="theme-label">
                 {THEMES.map((option) => (
@@ -200,7 +217,7 @@ export function PreferencesView({ preferences, disabled, onSet }: PreferencesVie
                     aria-pressed={theme === option.id}
                     onClick={() => setTheme(option.id)}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 ))}
               </div>
@@ -210,9 +227,9 @@ export function PreferencesView({ preferences, disabled, onSet }: PreferencesVie
               <div className="switchrow">
                 <div>
                   <span className="field__label" id="motion-label">
-                    Reduced motion
+                    {t('prefs.motion')}
                   </span>
-                  <p className="field__help">Minimize animations. System settings are always honored.</p>
+                  <p className="field__help">{t('prefs.motionHelp')}</p>
                 </div>
                 <button
                   type="button"

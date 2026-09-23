@@ -102,6 +102,17 @@ facts reach the narrator.
    latency feedback to the router, per-tenant routers, and any exercise
    of LLMRouter's learned (KNN/MLP/graph) routers, whose checkpoints this
    environment cannot download.
+8. The interface in the reader's language.
+   **Done (ADR 0018):** Arabic and English, switchable from the header
+   or the sign-in screen; right-to-left layout through logical CSS
+   properties rather than a second stylesheet; every interface string in
+   two typed dictionaries the compiler keeps in step; the agent's own
+   replies, welcome and command catalogue in the chosen language; the
+   same WCAG 2.2 AA bar in both. **Not done:** Arabic reports — the
+   analytics narrative — which is its own slice because the numbers and
+   evidence ids must stay identical across languages for provenance to
+   hold; and any third language, for which the mechanism is ready and no
+   dictionary is written.
 
 ## Tier 3 — Enterprise Release (scoped, not started)
 

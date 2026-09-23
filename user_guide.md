@@ -99,8 +99,10 @@ sessions and restarts. Do not store passwords or confidential information.
 
 Open **Preferences** to switch the response tone (Friendly, Concise, or
 Formal — replies change immediately), set **your name** (used in the
-workspace greeting), set the language label, and turn session-history
-recording on or off. Changes apply to the current session; permanent
+workspace greeting), choose the **language** (English or العربية — the
+interface switches at once, right-to-left in Arabic, and the agent's
+replies follow; the same switch sits in the header), and turn
+session-history recording on or off. Changes apply to the current session; permanent
 defaults are edited in `config.json`. The **Interface** card holds
 browser-side settings: theme (Dark, Light, or System) and a reduced-motion
 switch.
@@ -269,7 +271,7 @@ the requests that came before it.
 | Preference     | Default    | Effect                                                  |
 | -------------- | ---------- | ------------------------------------------------------- |
 | `tone`         | `friendly` | Response style: `friendly`, `concise`, or `formal`      |
-| `language`     | `English`  | Recorded for reference; responses are in English        |
+| `language`     | `English`  | `English` or `Arabic`: the agent replies in it and the web interface follows |
 | `save_history` | `true`     | When `false`, requests are not recorded in the history  |
 
 Values `true` and `false` are stored as real booleans, so

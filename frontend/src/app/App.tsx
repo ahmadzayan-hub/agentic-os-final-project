@@ -9,28 +9,32 @@ import { MemoryView } from '../features/memory/MemoryView'
 import { Onboarding } from '../features/onboarding/Onboarding'
 import { PreferencesView } from '../features/preferences/PreferencesView'
 import { RunsView } from '../features/runs/RunsView'
+import { useI18n } from '../i18n'
+import type { MessageKey } from '../i18n'
 import { ConfirmDialog } from '../shared/components/ConfirmDialog'
 import { Icon } from '../shared/components/Icon'
 import type { IconName } from '../shared/components/Icon'
 import { StatusBadge } from '../shared/components/StatusBadge'
+import { languageLabel, toneLabel } from '../shared/labels'
 import type { CommandInfo } from '../shared/types'
 import { useStore } from './store'
 import { useTheme } from './useTheme'
 
 type Tab = 'chat' | 'runs' | 'memory' | 'preferences' | 'activity'
 
-const TABS: Array<{ id: Tab; label: string; icon: IconName }> = [
-  { id: 'chat', label: 'Workspace', icon: 'chat' },
-  { id: 'runs', label: 'Runs', icon: 'sparkle' },
-  { id: 'memory', label: 'Memory', icon: 'memory' },
-  { id: 'activity', label: 'Activity', icon: 'activity' },
-  { id: 'preferences', label: 'Preferences', icon: 'settings' },
+const TABS: Array<{ id: Tab; label: MessageKey; icon: IconName }> = [
+  { id: 'chat', label: 'nav.workspace', icon: 'chat' },
+  { id: 'runs', label: 'nav.runs', icon: 'sparkle' },
+  { id: 'memory', label: 'nav.memory', icon: 'memory' },
+  { id: 'activity', label: 'nav.activity', icon: 'activity' },
+  { id: 'preferences', label: 'nav.preferences', icon: 'settings' },
 ]
 
 const ONBOARDING_KEY = 'aos-onboarded'
 
 export function App() {
   const store = useStore()
+  const { t, locale } = useI18n()
   const { isDark, toggleTheme } = useTheme()
   const [tab, setTab] = useState<Tab>('chat')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -104,6 +108,25 @@ export function App() {
   }
 
   const { session, bootError, status } = store
+  const otherLocale = locale === 'en' ? 'ar' : 'en'
+
+  // One control a reader can always find: the other language's name, in
+  // that language. Marked with its own `lang` so a screen reader
+  // pronounces it correctly rather than in the interface language.
+  const languageButton = (
+    <button
+      type="button"
+      className="langbtn"
+      aria-label={t('language.switch')}
+      onClick={() => {
+        void store.setLanguage(otherLocale)
+        setDrawerOpen(false)
+      }}
+    >
+      <Icon name="globe" size={16} />
+      <span lang={otherLocale}>{t('language.other')}</span>
+    </button>
+  )
 
   // Hosted deployments gate everything behind the identity provider.
   if (store.needsSignIn && store.authConfig) {
@@ -123,8 +146,10 @@ export function App() {
             <span className="brand__mark" aria-hidden="true">
               A
             </span>
-            <span className="brand__name">Agentic OS</span>
+            <span className="brand__name">{t('brand.name')}</span>
           </div>
+          <div className="header__spacer" style={{ flex: 1 }} />
+          {languageButton}
         </header>
         {bootError ? (
           <div className="empty" style={{ margin: 'auto' }}>
@@ -135,17 +160,17 @@ export function App() {
             <p style={{ marginTop: 'var(--space-4)' }}>
               <button type="button" className="btn btn--primary" onClick={() => void store.start()}>
                 <Icon name="refresh" size={16} />
-                Try again
+                {t('boot.tryAgain')}
               </button>
             </p>
           </div>
         ) : (
-          <div className="boot" role="status" aria-label="Starting your session">
+          <div className="boot" role="status" aria-label={t('boot.startingAria')}>
             <div className="skeleton skeleton--orb" />
             <div className="skeleton skeleton--title" />
             <div className="skeleton skeleton--line" />
             <div className="skeleton skeleton--line skeleton--short" />
-            <p className="boot__text">Starting your session…</p>
+            <p className="boot__text">{t('boot.starting')}</p>
           </div>
         )}
       </div>
@@ -158,8 +183,8 @@ export function App() {
 
   const sidebar = (
     <div className="sidebar">
-      <p className="sidebar__label">Workspace</p>
-      <nav className="sidebar__nav" aria-label="Main">
+      <p className="sidebar__label">{t('nav.section')}</p>
+      <nav className="sidebar__nav" aria-label={t('nav.main')}>
         {TABS.map((item) => (
           <button
             key={item.id}
@@ -172,7 +197,7 @@ export function App() {
             }}
           >
             <Icon name={item.icon} size={18} />
-            {item.label}
+            {t(item.label)}
             {item.id === 'memory' && memoryCount > 0 ? (
               <span className="navbtn__badge">{memoryCount}</span>
             ) : null}
@@ -190,7 +215,7 @@ export function App() {
           }}
         >
           <Icon name="plus" size={16} />
-          New session
+          {t('session.new')}
         </button>
         <button
           type="button"
@@ -202,24 +227,24 @@ export function App() {
           disabled={session.ended}
         >
           <Icon name="power" size={16} />
-          End session
+          {t('session.end')}
         </button>
         <div className="sidebar__identity">
           <span className="sidebar__avatar" aria-hidden="true">
             {(store.identity?.principal.email || userName || 'A').charAt(0).toUpperCase()}
           </span>
           <span className="sidebar__who">
-            <span>{store.identity?.principal.email || userName || session.agent_name}</span>
+            <span dir="auto">{store.identity?.principal.email || userName || session.agent_name}</span>
             <span className="sidebar__meta">
-              v{session.version} · {store.identity?.principal.role ?? 'local'}
+              v{session.version} · {store.identity?.principal.role ?? t('session.roleLocal')}
             </span>
           </span>
           {store.identity ? (
             <button
               type="button"
               className="iconbtn"
-              aria-label="Sign out"
-              title="Sign out"
+              aria-label={t('session.signOut')}
+              title={t('session.signOut')}
               onClick={() => {
                 store.signOut()
                 setDrawerOpen(false)
@@ -236,14 +261,14 @@ export function App() {
   return (
     <div className="shell">
       <a className="skiplink" href="#composer-input">
-        Skip to message composer
+        {t('shell.skip')}
       </a>
       <header className="shell__header">
         <button
           type="button"
           ref={menuButtonRef}
           className="iconbtn menubtn"
-          aria-label="Open navigation"
+          aria-label={t('nav.open')}
           aria-expanded={drawerOpen}
           onClick={() => setDrawerOpen(true)}
         >
@@ -260,20 +285,22 @@ export function App() {
             type="button"
             className="searchbtn"
             onClick={() => setPaletteOpen(true)}
-            aria-label="Search or run a command (Ctrl+K)"
+            aria-label={t('search.aria')}
           >
             <Icon name="search" size={16} />
-            <span className="searchbtn__text">Search or run a command</span>
+            <span className="searchbtn__text">{t('search.button')}</span>
             <kbd>Ctrl K</kbd>
           </button>
         </div>
         <div className="header__spacer" />
         <StatusBadge status={status} />
         <div className="header__actions">
+          {languageButton}
           <button
             type="button"
             className="iconbtn"
-            aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+            aria-label={isDark ? t('theme.toLight') : t('theme.toDark')}
+            data-control="theme"
             onClick={toggleTheme}
           >
             <Icon name={isDark ? 'sun' : 'moon'} />
@@ -281,7 +308,7 @@ export function App() {
           <button
             type="button"
             className="iconbtn"
-            aria-label="Help and commands"
+            aria-label={t('help.aria')}
             onClick={() => setHelpOpen(true)}
           >
             <Icon name="help" />
@@ -297,10 +324,16 @@ export function App() {
             <button
               type="button"
               className="scrim"
-              aria-label="Close navigation"
+              aria-label={t('nav.close')}
               onClick={() => setDrawerOpen(false)}
             />
-            <div className="drawer" role="dialog" aria-modal="true" aria-label="Navigation" ref={drawerRef}>
+            <div
+              className="drawer"
+              role="dialog"
+              aria-modal="true"
+              aria-label={t('nav.drawer')}
+              ref={drawerRef}
+            >
               {sidebar}
             </div>
           </>
@@ -337,7 +370,9 @@ export function App() {
             <PreferencesView
               preferences={session.preferences}
               disabled={session.ended}
+              locale={locale}
               onSet={store.setPreference}
+              onSetLanguage={store.setLanguage}
             />
           ) : null}
           {tab === 'activity' ? (
@@ -351,41 +386,41 @@ export function App() {
         </main>
 
         {tab === 'chat' ? (
-          <aside className="rail" aria-label="Session overview">
+          <aside className="rail" aria-label={t('rail.aria')}>
             <div className="rail__section">
-              <h2 className="rail__title">Session context</h2>
+              <h2 className="rail__title">{t('rail.context')}</h2>
               <dl>
                 <div className="rail__row">
-                  <dt>Agent</dt>
-                  <dd>{session.agent_name}</dd>
+                  <dt>{t('rail.agent')}</dt>
+                  <dd dir="auto">{session.agent_name}</dd>
                 </div>
                 <div className="rail__row">
-                  <dt>Messages</dt>
+                  <dt>{t('rail.messages')}</dt>
                   <dd>{session.transcript.length}</dd>
                 </div>
                 <div className="rail__row">
-                  <dt>Memory entries</dt>
+                  <dt>{t('rail.memoryEntries')}</dt>
                   <dd>{memoryCount}</dd>
                 </div>
                 <div className="rail__row">
-                  <dt>Tone</dt>
-                  <dd>{String(session.preferences.tone ?? 'friendly')}</dd>
+                  <dt>{t('rail.tone')}</dt>
+                  <dd>{toneLabel(t, String(session.preferences.tone ?? 'friendly'))}</dd>
                 </div>
                 <div className="rail__row">
-                  <dt>Language</dt>
-                  <dd>{String(session.preferences.language ?? 'English')}</dd>
+                  <dt>{t('rail.language')}</dt>
+                  <dd>{languageLabel(t, session.preferences.language ?? 'English')}</dd>
                 </div>
               </dl>
             </div>
             <div className="rail__section">
-              <h2 className="rail__title">Recent activity</h2>
+              <h2 className="rail__title">{t('rail.recent')}</h2>
               {store.events.length === 0 ? (
-                <p className="rail__event">No activity yet.</p>
+                <p className="rail__event">{t('rail.none')}</p>
               ) : (
                 store.events.slice(0, 6).map((event) => (
                   <p key={event.id} className="rail__event">
                     <span className={`dot dot--${event.kind}`} aria-hidden="true" />
-                    {event.label}
+                    {t(event.code, event.vars)}
                   </p>
                 ))
               )}
@@ -394,7 +429,7 @@ export function App() {
         ) : null}
       </div>
 
-      <nav className="tabbar" aria-label="Primary">
+      <nav className="tabbar" aria-label={t('nav.primary')}>
         {TABS.map((item) => (
           <button
             key={item.id}
@@ -404,7 +439,7 @@ export function App() {
             onClick={() => setTab(item.id)}
           >
             <Icon name={item.icon} size={20} />
-            <span>{item.label}</span>
+            <span>{t(item.label)}</span>
           </button>
         ))}
       </nav>
@@ -420,13 +455,13 @@ export function App() {
       {showOnboarding ? <Onboarding onDismiss={dismissOnboarding} /> : null}
       {confirming ? (
         <ConfirmDialog
-          title={confirming === 'history' ? 'Clear conversation history?' : 'End this session?'}
+          title={confirming === 'history' ? t('confirm.history.title') : t('confirm.end.title')}
           message={
-            confirming === 'history'
-              ? 'The recorded history of this session will be removed. Saved memory is not affected.'
-              : 'The agent will say goodbye and this session will close. Saved memory and preferences in config.json are kept.'
+            confirming === 'history' ? t('confirm.history.message') : t('confirm.end.message')
           }
-          confirmLabel={confirming === 'history' ? 'Clear history' : 'End session'}
+          confirmLabel={
+            confirming === 'history' ? t('confirm.history.confirm') : t('confirm.end.confirm')
+          }
           busy={confirmBusy}
           onCancel={() => setConfirming(null)}
           onConfirm={() => void confirmAction()}

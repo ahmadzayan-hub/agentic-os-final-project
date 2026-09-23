@@ -10,6 +10,8 @@ environment — not a replacement for Windows, macOS, or Linux.
 
 ![Agentic OS — workspace, dark theme](docs/screenshots/desktop-hero-dark.png)
 
+![Agentic OS — the same workspace in Arabic, right-to-left](docs/screenshots/desktop-chat-arabic-dark.png)
+
 ## Main Features
 
 - **Web workspace** — a responsive React application with a greeting hero,
@@ -82,6 +84,12 @@ environment — not a replacement for Windows, macOS, or Linux.
   wide, so any [LLMRouter](https://github.com/ulab-uiuc/LLMRouter) router
   works, or four lines of your own. A choice this deployment cannot reach
   is refused and said to be refused, never quietly swapped
+- **Arabic and English** — the whole interface in either language,
+  switched from the header in one click; right-to-left layout in Arabic
+  through logical CSS properties rather than a second stylesheet; the
+  agent's own replies, welcome message and command list follow the
+  chosen language; the same WCAG 2.2 AA bar in both. Reports are written
+  in English and are marked as such for screen readers (ADR 0018)
 - **Installable PWA** — manifest, icons, and a service worker make the
   mobile-first app installable on Android via "Add to Home screen"
 - **Session restore** — refreshing the browser reconnects to the same
@@ -98,7 +106,8 @@ environment — not a replacement for Windows, macOS, or Linux.
   require confirmation (old plain-text memory files load transparently)
 - **Data controls** — export everything (memory, preferences, history,
   transcript) as JSON, clear history, or delete all memory from one place
-- **Preferences** (tone, your name, language, history recording) applied to
+- **Preferences** (tone, your name, language — English or Arabic — and
+  history recording) applied to
   responses immediately, plus interface settings (theme, reduced motion)
 - **Responsive by design** — sidebar navigation on desktop, a bottom tab
   bar on phones and tablets, verified from 320 px up
@@ -228,13 +237,14 @@ python main.py
 ```bash
 # Python: agent, utils, API, runs, analytics, sequential ranges,
 # metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
-# supply chain, launcher, routing, docs (441 tests)
+# supply chain, launcher, routing, language, docs (457 tests)
 python -m unittest discover tests
 
-# Frontend unit tests (23 tests)
+# Frontend unit tests (37 tests)
 cd frontend && npm test
 
-# End-to-end + accessibility (38 checks across desktop and mobile;
+# End-to-end + accessibility (46 checks across desktop and mobile,
+# in English and Arabic;
 # requires the production build: npm run build)
 cd frontend && npx playwright test
 
@@ -244,17 +254,17 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 441 Python tests, 23 frontend unit
-tests, and 38 end-to-end checks (37 executed, 1 desktop-only check
+PostgreSQL 16 service. Last verified: 457 Python tests, 37 frontend unit
+tests, and 46 end-to-end checks (45 executed, 1 desktop-only check
 skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:
 `PLAYWRIGHT_EXECUTABLE_PATH=/path/to/chromium npx playwright test`.
 
-Five of the 441 load real LLMRouter routers and **skip unless LLMRouter
+Five of the 457 load real LLMRouter routers and **skip unless LLMRouter
 is installed**, which in CI it is not — so CI reports `OK (skipped=5)`
 and that is the expected result, not a gap. The other 22 routing tests
 never import it and always run. Both readings were verified: with the
-library installed, 441 tests and nothing skipped.
+library installed, 457 tests and nothing skipped.
 
 ## Background worker (optional)
 

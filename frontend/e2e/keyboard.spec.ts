@@ -22,8 +22,10 @@ test('the report tabs follow the keyboard tabs pattern', async ({ page }) => {
   await expect(page.getByRole('tabpanel')).toContainText('Why did it happen?')
 
   // The causal check sits right after the stage that finds associations.
+  // The stage's role is "experiment"; the reader sees it as the causal
+  // question, which is what the tab is named.
   await page.keyboard.press('ArrowRight')
-  await expect(tab(/experiment/i)).toBeFocused()
+  await expect(tab(/causal/i)).toBeFocused()
   await expect(page.getByRole('tabpanel')).toContainText('Can we claim a cause?')
 
   await page.keyboard.press('End')

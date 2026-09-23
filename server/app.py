@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from agent import Agent
+from agent import Agent, language_code
 from server.model_gateway import ModelGateway
 from server.routing import RoutedGateway, build_router
 from server.runs import RunEngine
@@ -50,6 +50,25 @@ COMMANDS = [
     {"command": "/clear", "usage": "/clear", "description": "Clear conversation history"},
     {"command": "/exit", "usage": "/exit", "description": "End the session"},
 ]
+
+# The same commands, described in Arabic. A command's spelling is the
+# same in either language — it is what the person types.
+COMMANDS_ARABIC = [
+    {"command": "/help", "usage": "/help", "description": "عرض الأوامر المتاحة"},
+    {"command": "/remember", "usage": "/remember <information>", "description": "حفظ معلومة في الذاكرة"},
+    {"command": "/recall", "usage": "/recall", "description": "عرض الذاكرة المحفوظة"},
+    {"command": "/forget", "usage": "/forget <key> | all", "description": "إزالة ذاكرة محفوظة"},
+    {"command": "/set", "usage": "/set <setting> <value>", "description": "تحديث تفضيل"},
+    {"command": "/preferences", "usage": "/preferences", "description": "عرض التفضيلات الحالية"},
+    {"command": "/history", "usage": "/history", "description": "عرض سجل المحادثة"},
+    {"command": "/clear", "usage": "/clear", "description": "مسح سجل المحادثة"},
+    {"command": "/exit", "usage": "/exit", "description": "إنهاء الجلسة"},
+]
+
+
+def commands_for(language):
+    """The command catalogue in the language the session replies in."""
+    return COMMANDS_ARABIC if language_code(language) == "ar" else COMMANDS
 
 
 def now_iso():
@@ -119,8 +138,14 @@ class Session:
             "memory_entries": self.agent.memory_entries(),
             "history": list(self.agent.history),
             "memory_persisted": self.agent.memory_persistent,
-            "commands": COMMANDS,
+            "commands": commands_for(self.agent.preferences.get("language")),
         }
+
+
+class SessionIn(BaseModel):
+    """Optional at creation: the language the interface is showing, so the
+    agent's first words are already in it."""
+    language: str | None = Field(default=None, max_length=64)
 
 
 class MessageIn(BaseModel):
@@ -357,10 +382,13 @@ def create_app(config_path=None, env=None):
         }
 
     @app.post("/api/sessions", status_code=201)
-    def create_session(principal=Depends(requires("write"))):
+    def create_session(body: SessionIn | None = None,
+                       principal=Depends(requires("write"))):
         with lock:
             session = Session(config, memory_for(principal.subject),
                               owner=principal.subject)
+            if body is not None and body.language:
+                session.agent.set_preference("language", body.language)
             save_session(session)
             store.trim_sessions(MAX_SESSIONS)
             return session.snapshot()

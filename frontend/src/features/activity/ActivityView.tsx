@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react'
+import { useI18n } from '../../i18n'
+import type { MessageKey } from '../../i18n'
 import { api } from '../../shared/api'
 import { Icon } from '../../shared/components/Icon'
 import type { IconName } from '../../shared/components/Icon'
 import type { ActivityEvent, ConnectionStatus, SessionState, Usage } from '../../shared/types'
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1000) return `${bytes} B`
-  if (bytes < 1_000_000) return `${(bytes / 1000).toFixed(1)} kB`
-  return `${(bytes / 1_000_000).toFixed(1)} MB`
-}
-
 /** A limit the server enforces but the interface never shows is a trap:
  *  the first a user hears of it is a refusal. */
 function UsageCard() {
+  const { t, formatNumber } = useI18n()
   const [usage, setUsage] = useState<Usage | null>(null)
   const [failed, setFailed] = useState(false)
 
@@ -27,18 +24,25 @@ function UsageCard() {
     }
   }, [])
 
+  // Byte units stay Latin in both languages: they are symbols, not words.
+  function formatBytes(bytes: number): string {
+    if (bytes < 1000) return `${formatNumber(bytes)} B`
+    if (bytes < 1_000_000) return `${formatNumber(bytes / 1000, { maximumFractionDigits: 1 })} kB`
+    return `${formatNumber(bytes / 1_000_000, { maximumFractionDigits: 1 })} MB`
+  }
+
   if (failed) {
     return (
       <div className="card">
-        <h3 className="card__title">Usage</h3>
-        <p className="controlrow__help">Usage could not be read from the server.</p>
+        <h3 className="card__title">{t('usage.title')}</h3>
+        <p className="controlrow__help">{t('usage.unavailable')}</p>
       </div>
     )
   }
   if (!usage) {
     return (
       <div className="card">
-        <h3 className="card__title">Usage</h3>
+        <h3 className="card__title">{t('usage.title')}</h3>
         <div className="skeleton skeleton--line" />
         <div className="skeleton skeleton--line" />
       </div>
@@ -48,30 +52,39 @@ function UsageCard() {
   const rows = [
     {
       key: 'runs',
-      label: 'Runs today',
-      used: `${usage.runs_today.used} of ${usage.runs_today.limit}`,
+      label: t('usage.runs'),
+      used: t('usage.of', {
+        used: formatNumber(usage.runs_today.used),
+        limit: formatNumber(usage.runs_today.limit),
+      }),
       share: usage.runs_today.limit ? usage.runs_today.used / usage.runs_today.limit : 0,
-      help: `Resets at midnight UTC. ${usage.runs_today.remaining} left.`,
+      help: t('usage.resets', { n: formatNumber(usage.runs_today.remaining) }),
     },
     {
       key: 'datasets',
-      label: 'Datasets stored',
-      used: `${usage.datasets.used} of ${usage.datasets.limit}`,
+      label: t('usage.datasets'),
+      used: t('usage.of', {
+        used: formatNumber(usage.datasets.used),
+        limit: formatNumber(usage.datasets.limit),
+      }),
       share: usage.datasets.limit ? usage.datasets.used / usage.datasets.limit : 0,
-      help: 'Re-running a stored dataset costs nothing.',
+      help: t('usage.rerun'),
     },
     {
       key: 'bytes',
-      label: 'Storage used',
-      used: `${formatBytes(usage.dataset_bytes.used)} of ${formatBytes(usage.dataset_bytes.limit)}`,
+      label: t('usage.storage'),
+      used: t('usage.of', {
+        used: formatBytes(usage.dataset_bytes.used),
+        limit: formatBytes(usage.dataset_bytes.limit),
+      }),
       share: usage.dataset_bytes.limit ? usage.dataset_bytes.used / usage.dataset_bytes.limit : 0,
-      help: 'Uploading the same file twice stores it once.',
+      help: t('usage.dedupe'),
     },
   ]
 
   return (
     <div className="card">
-      <h3 className="card__title">Usage</h3>
+      <h3 className="card__title">{t('usage.title')}</h3>
       <ul className="usage">
         {rows.map((row) => (
           <li key={row.key} className="usage__row">
@@ -96,8 +109,8 @@ function UsageCard() {
           </li>
         ))}
       </ul>
-      <p className="privacy-note">
-        Not measured: {usage.not_tracked.join(', ')}.
+      <p className="privacy-note" dir="auto">
+        {t('usage.notMeasured', { list: usage.not_tracked.join(', ') })}
       </p>
     </div>
   )
@@ -105,37 +118,35 @@ function UsageCard() {
 
 type ActivityFilter = 'all' | 'system' | 'memory' | 'preferences' | 'errors'
 
-const FILTERS: Array<{ id: ActivityFilter; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'system', label: 'System' },
-  { id: 'memory', label: 'Memory' },
-  { id: 'preferences', label: 'Preferences' },
-  { id: 'errors', label: 'Errors' },
+const FILTERS: Array<{ id: ActivityFilter; label: MessageKey }> = [
+  { id: 'all', label: 'filter.all' },
+  { id: 'system', label: 'filter.system' },
+  { id: 'memory', label: 'filter.memory' },
+  { id: 'preferences', label: 'filter.preferences' },
+  { id: 'errors', label: 'filter.errors' },
 ]
 
+/** Events are classified by their code, which is stable across
+ *  languages — a label regex would have to be written twice. */
 function filterOf(event: ActivityEvent): ActivityFilter {
   if (event.kind === 'error') return 'errors'
-  if (/memory|data export/i.test(event.label)) return 'memory'
-  if (/preference/i.test(event.label)) return 'preferences'
+  if (event.code.startsWith('event.memory.') || event.code.startsWith('event.export.')) return 'memory'
+  if (event.code.startsWith('event.preference.')) return 'preferences'
   return 'system'
 }
 
-function formatTime(iso: string): string {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
-
-const EVENT_ICONS: Array<{ match: RegExp; icon: IconName }> = [
-  { match: /session/i, icon: 'power' },
-  { match: /preference/i, icon: 'settings' },
-  { match: /memory|data/i, icon: 'memory' },
-  { match: /history/i, icon: 'clock' },
-  { match: /connection/i, icon: 'refresh' },
+const EVENT_ICONS: Array<{ prefix: string; icon: IconName }> = [
+  { prefix: 'event.session.', icon: 'power' },
+  { prefix: 'event.signedOut', icon: 'power' },
+  { prefix: 'event.preference.', icon: 'settings' },
+  { prefix: 'event.memory.', icon: 'memory' },
+  { prefix: 'event.export.', icon: 'memory' },
+  { prefix: 'event.history.', icon: 'clock' },
+  { prefix: 'event.connection.', icon: 'refresh' },
 ]
 
-function iconFor(label: string): IconName {
-  return EVENT_ICONS.find((entry) => entry.match.test(label))?.icon ?? 'activity'
+function iconFor(code: string): IconName {
+  return EVENT_ICONS.find((entry) => code.startsWith(entry.prefix))?.icon ?? 'activity'
 }
 
 interface ActivityViewProps {
@@ -148,26 +159,26 @@ interface ActivityViewProps {
 /** Operational transparency: real events and real health facts only —
  *  no fabricated telemetry, no hidden reasoning. */
 export function ActivityView({ events, session, status, lastSyncedAt }: ActivityViewProps) {
+  const { t, plural, formatTime } = useI18n()
   const [filter, setFilter] = useState<ActivityFilter>('all')
   const online = status !== 'offline'
   const healthy = online && status !== 'error'
   const visible = filter === 'all' ? events : events.filter((event) => filterOf(event) === filter)
+  const memoryCount = Object.keys(session.memory).length
 
   return (
-    <section className="panel" aria-label="Activity">
+    <section className="panel" aria-label={t('activity.aria')}>
       <div className="panel__inner panel__inner--split">
         <div className="panel__column">
           <div className="panel__header">
             <div>
-              <h2 className="panel__title">Activity</h2>
-              <p className="panel__desc">
-                What the agent has done this session — status only, never private reasoning.
-              </p>
+              <h2 className="panel__title">{t('activity.title')}</h2>
+              <p className="panel__desc">{t('activity.desc')}</p>
             </div>
           </div>
 
           {events.length > 0 ? (
-            <div className="chips" role="group" aria-label="Filter activity">
+            <div className="chips" role="group" aria-label={t('activity.filter')}>
               {FILTERS.map((option) => (
                 <button
                   key={option.id}
@@ -176,7 +187,7 @@ export function ActivityView({ events, session, status, lastSyncedAt }: Activity
                   aria-pressed={filter === option.id}
                   onClick={() => setFilter(option.id)}
                 >
-                  {option.label}
+                  {t(option.label)}
                 </button>
               ))}
             </div>
@@ -188,12 +199,16 @@ export function ActivityView({ events, session, status, lastSyncedAt }: Activity
                 <div className="empty__icon">
                   <Icon name="activity" size={32} />
                 </div>
-                <p>No activity yet. Events appear here as you interact with the agent.</p>
+                <p>{t('activity.none')}</p>
               </div>
             </div>
           ) : visible.length === 0 ? (
             <div className="card">
-              <p className="empty">No {filter} events in this session yet.</p>
+              <p className="empty">
+                {t('activity.noneFiltered', {
+                  filter: t(FILTERS.find((option) => option.id === filter)?.label ?? 'filter.all'),
+                })}
+              </p>
             </div>
           ) : (
             <div className="card">
@@ -201,14 +216,18 @@ export function ActivityView({ events, session, status, lastSyncedAt }: Activity
                 {visible.map((event) => (
                   <li key={event.id} className="timeline__item">
                     <span className={`timeline__icon timeline__icon--${event.kind}`} aria-hidden="true">
-                      <Icon name={iconFor(event.label)} size={16} />
+                      <Icon name={iconFor(event.code)} size={16} />
                     </span>
                     <div className="timeline__body">
-                      <p className="activity__label">{event.label}</p>
-                      {event.detail ? <p className="activity__detail">{event.detail}</p> : null}
+                      <p className="activity__label">{t(event.code, event.vars)}</p>
+                      {event.detail ? (
+                        <p className="activity__detail" dir="auto">
+                          {event.detail}
+                        </p>
+                      ) : null}
                     </div>
                     <time className="activity__time" dateTime={event.time}>
-                      {formatTime(event.time)}
+                      {formatTime(event.time, true)}
                     </time>
                   </li>
                 ))}
@@ -219,7 +238,7 @@ export function ActivityView({ events, session, status, lastSyncedAt }: Activity
 
         <div className="panel__column panel__column--side">
           <div className="card">
-            <h3 className="card__title">Session health</h3>
+            <h3 className="card__title">{t('activity.health')}</h3>
             <ul className="health">
               <li className="health__row">
                 <span
@@ -227,13 +246,15 @@ export function ActivityView({ events, session, status, lastSyncedAt }: Activity
                   aria-hidden="true"
                 />
                 <span>
-                  <span className="controlrow__label">{online ? 'Agent online' : 'Agent offline'}</span>
+                  <span className="controlrow__label">
+                    {online ? t('activity.online') : t('activity.offline')}
+                  </span>
                   <span className="controlrow__help">
                     {healthy
-                      ? 'Connected and responsive.'
+                      ? t('activity.connected')
                       : online
-                        ? 'The last request failed — retry from the conversation.'
-                        : 'Requests will fail until the connection returns.'}
+                        ? t('activity.lastFailed')
+                        : t('activity.willFail')}
                   </span>
                 </span>
               </li>
@@ -244,24 +265,21 @@ export function ActivityView({ events, session, status, lastSyncedAt }: Activity
                 />
                 <span>
                   <span className="controlrow__label">
-                    {session.memory_persisted ? 'Local storage active' : 'Memory not persisted'}
+                    {session.memory_persisted
+                      ? t('activity.storageActive')
+                      : t('activity.notPersisted')}
                   </span>
                   <span className="controlrow__help">
-                    {session.memory_persisted
-                      ? 'Memory is saved to data/memory.json on this computer.'
-                      : 'No memory file is configured — memory lasts this session only.'}
+                    {session.memory_persisted ? t('activity.savedTo') : t('activity.noFile')}
                   </span>
                 </span>
               </li>
               <li className="health__row">
                 <span className="health__dot health__dot--ok" aria-hidden="true" />
                 <span>
-                  <span className="controlrow__label">
-                    {Object.keys(session.memory).length} memory entr
-                    {Object.keys(session.memory).length === 1 ? 'y' : 'ies'}
-                  </span>
+                  <span className="controlrow__label">{plural('activity.entries', memoryCount)}</span>
                   <span className="controlrow__help">
-                    {session.transcript.length} messages in this session.
+                    {plural('activity.messages', session.transcript.length)}
                   </span>
                 </span>
               </li>
@@ -272,9 +290,11 @@ export function ActivityView({ events, session, status, lastSyncedAt }: Activity
                 />
                 <span>
                   <span className="controlrow__label">
-                    {lastSyncedAt ? `Last response ${formatTime(lastSyncedAt)}` : 'No responses yet'}
+                    {lastSyncedAt
+                      ? t('activity.lastResponse', { time: formatTime(lastSyncedAt, true) })
+                      : t('activity.noResponses')}
                   </span>
-                  <span className="controlrow__help">Time of the last successful server reply.</span>
+                  <span className="controlrow__help">{t('activity.lastHelp')}</span>
                 </span>
               </li>
             </ul>

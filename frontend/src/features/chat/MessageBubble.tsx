@@ -1,12 +1,7 @@
 import { useState } from 'react'
+import { useI18n } from '../../i18n'
 import { Icon } from '../../shared/components/Icon'
 import type { TranscriptEntry } from '../../shared/types'
-
-function formatTime(iso: string): string {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
 
 interface MessageBubbleProps {
   entry: TranscriptEntry
@@ -14,6 +9,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ entry, agentName }: MessageBubbleProps) {
+  const { t, formatTime } = useI18n()
   const [copied, setCopied] = useState(false)
   const isAgent = entry.role === 'agent'
 
@@ -28,22 +24,29 @@ export function MessageBubble({ entry, agentName }: MessageBubbleProps) {
   }
 
   return (
-    <article className={`msg msg--${entry.role}`} aria-label={isAgent ? 'Agent message' : 'Your message'}>
+    <article className={`msg msg--${entry.role}`} aria-label={isAgent ? t('msg.agent') : t('msg.you')}>
       {isAgent ? (
         <div className="msg__head">
           <span className="msg__avatar" aria-hidden="true">
             A
           </span>
-          <span className="msg__author">{agentName}</span>
+          <span className="msg__author" dir="auto">
+            {agentName}
+          </span>
           <time dateTime={entry.time}>{formatTime(entry.time)}</time>
         </div>
       ) : null}
-      <div className="msg__bubble">{entry.text}</div>
+      {/* Each bubble orients by its own content: an English reply in an
+          Arabic interface, or an Arabic question in an English one, reads
+          in its own direction rather than the page's. */}
+      <div className="msg__bubble" dir="auto">
+        {entry.text}
+      </div>
       <div className="msg__meta">
         {isAgent ? (
           <button type="button" className="msg__copy" onClick={copy}>
             <Icon name={copied ? 'check' : 'copy'} size={13} />
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? t('msg.copied') : t('msg.copy')}
           </button>
         ) : (
           <time dateTime={entry.time}>{formatTime(entry.time)}</time>

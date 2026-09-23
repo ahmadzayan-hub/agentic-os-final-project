@@ -1,3 +1,4 @@
+import { translate } from '../i18n'
 import type {
   AuthConfig,
   ExportPayload,
@@ -70,10 +71,10 @@ async function request<T>(
     })
   } catch (error) {
     const timedOut = error instanceof DOMException && error.name === 'AbortError'
+    // Transport failures are the one class of message this client
+    // writes itself; everything else is the server's `detail`.
     throw new ApiError(
-      timedOut
-        ? 'The server took too long to respond. Please try again.'
-        : 'Cannot reach the Agentic OS server. Check your connection.',
+      timedOut ? translate('api.timeout') : translate('api.unreachable'),
       0,
       !timedOut,
     )
@@ -92,7 +93,7 @@ async function request<T>(
     const detail =
       body && typeof body === 'object' && 'detail' in body && typeof body.detail === 'string'
         ? body.detail
-        : `Request failed (${response.status}).`
+        : translate('api.failed', { status: response.status })
     throw new ApiError(detail, response.status)
   }
   return body as T
@@ -112,7 +113,14 @@ export const api = {
   health: () => request<{ status: string; agent_name: string; version: string }>('/api/health'),
   authConfig: () => request<AuthConfig>('/api/auth/config'),
   identity: () => request<IdentityInfo>('/api/identity'),
-  createSession: () => request<SessionState>('/api/sessions', { method: 'POST' }),
+  /** `language` seeds the agent's own reply language so the welcome
+   *  message and command descriptions arrive in the reader's language
+   *  from the first response, with no second request to correct them. */
+  createSession: (language?: string) =>
+    request<SessionState>('/api/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ language: language ?? null }),
+    }),
   getSession: (id: string) => request<SessionState>(`/api/sessions/${id}`),
   endSession: (id: string) => request<SessionState>(`/api/sessions/${id}`, { method: 'DELETE' }),
   sendMessage: (id: string, text: string) =>
