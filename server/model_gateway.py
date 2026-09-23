@@ -132,6 +132,21 @@ class ModelGateway:
             "source": "deterministic",
         }
 
+    def ask(self, system, user, provider=None, max_tokens=None):
+        """A free-form completion: the assistant's understanding step.
+
+        Returns the model's text, or None when no provider is configured
+        or the call fails — the caller decides what "no answer" means,
+        which for the assistant is "the rules decide". The same
+        no-dataset rule applies: `user` is built from verified sentences
+        and settings, never rows.
+        """
+        callers = {"ollama": self._complete_ollama,
+                   "anthropic": self._complete_anthropic,
+                   "groq": self._complete_groq}
+        caller = callers.get(provider or self.provider)
+        return caller(system, user, max_tokens) if caller else None
+
     def _prompt(self, goal, facts):
         return "Goal: " + goal + "\nVerified facts:\n- " + "\n- ".join(facts)
 
@@ -160,38 +175,53 @@ class ModelGateway:
             return None
         return text.strip() or None
 
+    # The narrator's calls: the house-style system prompt over goal + facts.
     def _call_ollama(self, goal, facts):
+        return self._complete_ollama(SYSTEM_PROMPT, self._prompt(goal, facts),
+                                     LOCAL_OUTPUT_TOKENS)
+
+    def _call_anthropic(self, goal, facts):
+        return self._complete_anthropic(SYSTEM_PROMPT, self._prompt(goal, facts),
+                                        MAX_OUTPUT_TOKENS)
+
+    def _call_groq(self, goal, facts):
+        return self._complete_groq(SYSTEM_PROMPT, self._prompt(goal, facts),
+                                   MAX_OUTPUT_TOKENS)
+
+    # The wire calls, one per provider, over an arbitrary system + user pair.
+    def _complete_ollama(self, system, user, max_tokens=None):
         body = self._post(
             self.ollama_host.rstrip("/") + "/api/chat", {},
             {"model": self.ollama_model, "stream": False,
-             "options": {"num_predict": LOCAL_OUTPUT_TOKENS},
-             "messages": [{"role": "system", "content": SYSTEM_PROMPT},
-                          {"role": "user", "content": self._prompt(goal, facts)}]})
+             "options": {"num_predict": max_tokens or LOCAL_OUTPUT_TOKENS},
+             "messages": [{"role": "system", "content": system},
+                          {"role": "user", "content": user}]})
         try:
             return self._clean(body["message"]["content"])
         except (TypeError, KeyError, IndexError):
             return None
 
-    def _call_anthropic(self, goal, facts):
+    def _complete_anthropic(self, system, user, max_tokens=None):
         body = self._post(
             ANTHROPIC_URL,
             {"x-api-key": self.anthropic_key,
              "anthropic-version": ANTHROPIC_VERSION,
              "content-type": "application/json"},
-            {"model": self.anthropic_model, "max_tokens": MAX_OUTPUT_TOKENS,
-             "system": SYSTEM_PROMPT,
-             "messages": [{"role": "user", "content": self._prompt(goal, facts)}]})
+            {"model": self.anthropic_model,
+             "max_tokens": max_tokens or MAX_OUTPUT_TOKENS,
+             "system": system,
+             "messages": [{"role": "user", "content": user}]})
         try:
             return self._clean(body["content"][0]["text"])
         except (TypeError, KeyError, IndexError):
             return None
 
-    def _call_groq(self, goal, facts):
+    def _complete_groq(self, system, user, max_tokens=None):
         body = self._post(
             GROQ_URL, {"Authorization": f"Bearer {self.groq_key}"},
-            {"model": self.groq_model, "max_tokens": MAX_OUTPUT_TOKENS,
-             "messages": [{"role": "system", "content": SYSTEM_PROMPT},
-                          {"role": "user", "content": self._prompt(goal, facts)}]})
+            {"model": self.groq_model, "max_tokens": max_tokens or MAX_OUTPUT_TOKENS,
+             "messages": [{"role": "system", "content": system},
+                          {"role": "user", "content": user}]})
         try:
             return self._clean(body["choices"][0]["message"]["content"])
         except (TypeError, KeyError, IndexError):

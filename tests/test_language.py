@@ -68,9 +68,9 @@ class ArabicRepliesTestCase(unittest.TestCase):
     def test_free_text_follows_the_tone_in_arabic(self):
         self.assertIn("يسعدني المساعدة", self.agent.process_input("مرحبا"))
         self.agent.process_input("/set tone concise")
-        self.assertIn("استلمت:", self.agent.process_input("مرحبا"))
+        self.assertIn("لم أفهم", self.agent.process_input("مرحبا"))
         self.agent.process_input("/set tone formal")
-        self.assertIn("تم استلام طلبك", self.agent.process_input("مرحبا"))
+        self.assertIn("لم يُفهم طلبك", self.agent.process_input("مرحبا"))
 
     def test_memory_confirmations_are_arabic(self):
         self.assertEqual(self.agent.process_input("/remember لغتي العربية"),

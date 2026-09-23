@@ -33,7 +33,7 @@ with.
 | Governance: metric glossary, privacy scan, causal-claim refusal, always-valid ranges | **Mature for what it claims** | ADR 0010, 0011, 0016 | Glossary is one file per process — no per-tenant glossary, no editing screen. |
 | Model gateway + per-report routing | **Mature, one caveat** | ADR 0007, 0017; LLMRouter integrated and exercised | No live hosted-model call has been made from this environment; LLMRouter's learned routers untested here. |
 | Security, tenancy, erasure, supply chain | **Mature for hosted mode** | ADR 0002–0005, 0013–0015 | IdP round-trip unverified live; no row-level security under the application boundary; no signed artifacts. |
-| **Conversational agent** | **Missing** | `agent.py:357` `generate_response` returns a tone template | The model gateway exists and the chat does not use it. No natural-language understanding, no actions from chat, no answers from memory. |
+| **Conversational agent** | **Partial → ADR 0019, shipped after this assessment** | Was: `generate_response` returned a tone template. Now: `assistant.py` + `server/assistant.py` turn a sentence into one of ten typed actions, by rules or a model, and act | Rules are a vocabulary, not language understanding; one action per sentence; no live model verified from here. The floor is real and the ceiling is the model. |
 | **Customisation / extensibility** | **Missing** | `analytics.PIPELINE` is a literal list; `docs/ROADMAP.md` lists "Pluggable Domain Expert Agent" as outstanding | No stage registry, no plugin loading, no per-project pipeline profile. The typed stage contract exists internally and is the right seam — it is just not exposed. |
 | Interface: accessibility, performance, responsive, PWA | **Mature** | WCAG 2.2 AA by axe on every view; Lighthouse 96/100/100/100; 320 px up | — |
 | **Interface: languages and direction** | **Missing → this slice** | 188 hard-coded English strings; 30 physical-direction CSS rules; `language` preference recorded and ignored | Arabic/English UI, RTL, and agent replies in the chosen language ship with this document. |
@@ -50,17 +50,17 @@ with.
    document.* Arabic and English, right-to-left layout, the agent's own
    replies in the chosen language, and the same accessibility bar in both.
 
-2. **A conversational agent that understands and acts.** Wire the chat
-   to the model gateway that already exists, with a small, typed set of
-   actions: start a run from a sentence ("analyse last quarter's sales
-   by region"), answer from memory, explain a section of a report, change
-   a preference. The deterministic command path stays as the fallback and
-   as the no-key default, so tests and CI still need no credentials.
-   Every action that writes still passes the same approval gate; nothing
-   the model says becomes a number in a report. This needs its own ADR —
-   what the model may decide, what it may never decide — and is the
-   single change that most closes the distance between the name and the
-   product. Two to three slices.
+2. **A conversational agent that understands and acts** — *shipped as
+   ADR 0019 after this assessment was written.* A small, typed set of
+   actions: start a run from a sentence ("analyse quarterly_sales by
+   team"), answer from memory, explain a section of a report, change a
+   preference. A rules-based understander in both languages is the
+   no-key default, so tests and CI need no credentials; a model picks
+   from the same actions and only its chat phrasing is shown. Every
+   write passes the same approval gate; deletion is confirmed first;
+   nothing the model says becomes a number. What remains is what a
+   model adds — breadth of phrasing — and it is unverified live from
+   this environment.
 
 3. **Custom agents as plugins.** Expose the stage contract the pipeline
    already uses internally (`status · summary · claims · calculations ·

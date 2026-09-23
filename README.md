@@ -84,6 +84,16 @@ environment — not a replacement for Windows, macOS, or Linux.
   wide, so any [LLMRouter](https://github.com/ulab-uiuc/LLMRouter) router
   works, or four lines of your own. A choice this deployment cannot reach
   is refused and said to be refused, never quietly swapped
+- **A chat that understands and acts** — “remember that the Q4 review is
+  on Monday”, “what do you remember about coffee?”, “analyse the sample
+  sales data”, “is it done?”, “why did revenue move?”, “be concise”,
+  “reply in Arabic” — each becomes one of ten typed actions, by rules
+  that work with no model, in English or Arabic. A configured model
+  widens what is understood, never what can be done: it picks from the
+  same actions, only its chat phrasing is shown, every confirmation is
+  the agent's own true sentence, deletion is confirmed first, and it
+  never sees a row or writes a number (ADR 0019). A run started from
+  the chat opens in Runs and passes the same approval gate
 - **Arabic and English** — the whole interface in either language,
   switched from the header in one click; right-to-left layout in Arabic
   through logical CSS properties rather than a second stylesheet; the
@@ -237,13 +247,13 @@ python main.py
 ```bash
 # Python: agent, utils, API, runs, analytics, sequential ranges,
 # metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
-# supply chain, launcher, routing, language, docs (457 tests)
+# supply chain, launcher, routing, language, assistant, docs (506 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (37 tests)
 cd frontend && npm test
 
-# End-to-end + accessibility (46 checks across desktop and mobile,
+# End-to-end + accessibility (48 checks across desktop and mobile,
 # in English and Arabic;
 # requires the production build: npm run build)
 cd frontend && npx playwright test
@@ -254,17 +264,17 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 457 Python tests, 37 frontend unit
-tests, and 46 end-to-end checks (45 executed, 1 desktop-only check
+PostgreSQL 16 service. Last verified: 506 Python tests, 37 frontend unit
+tests, and 48 end-to-end checks (47 executed, 1 desktop-only check
 skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:
 `PLAYWRIGHT_EXECUTABLE_PATH=/path/to/chromium npx playwright test`.
 
-Five of the 457 load real LLMRouter routers and **skip unless LLMRouter
+Five of the 506 load real LLMRouter routers and **skip unless LLMRouter
 is installed**, which in CI it is not — so CI reports `OK (skipped=5)`
 and that is the expected result, not a gap. The other 22 routing tests
 never import it and always run. Both readings were verified: with the
-library installed, 457 tests and nothing skipped.
+library installed, 506 tests and nothing skipped.
 
 ## Background worker (optional)
 
@@ -460,8 +470,10 @@ See `user_guide.md` for the full command reference.
 
 ## Known Limitations
 
-- The agent recognizes commands and produces tone-styled acknowledgements
-  for free text; it does not use an AI language model.
+- Free text is understood by a rules-based vocabulary of ten actions in
+  both languages; a sentence outside it gets an honest "not understood"
+  in the chosen tone. With no model configured the rules decide, and the
+  reply says so (ADR 0019).
 - Preference changes apply to the current session; permanent defaults are
   edited in `config.json`.
 - Sessions survive both a browser refresh and a server restart: the

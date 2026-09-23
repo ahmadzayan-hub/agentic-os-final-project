@@ -89,7 +89,13 @@ function nextTabIndex(key: string, current: number, count: number, rtl: boolean)
   return null
 }
 
-export function RunsView() {
+interface RunsViewProps {
+  /** A run to open on arrival — the one the assistant just started. */
+  openRunId?: string | null
+  openNonce?: number
+}
+
+export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
   const { t, tx, plural, isRtl } = useI18n()
   const [runs, setRuns] = useState<RunSummary[]>([])
   const [run, setRun] = useState<RunDetail | null>(null)
@@ -121,6 +127,31 @@ export function RunsView() {
   useEffect(() => {
     void refreshList()
   }, [refreshList])
+
+  useEffect(() => {
+    if (!openRunId) return
+    let cancelled = false
+    setBusy(true)
+    api
+      .getRun(openRunId)
+      .then((detail) => {
+        if (cancelled) return
+        setRun(detail)
+        setStoppedByError(false)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setErrorMessage(error instanceof ApiError ? error.message : t('runs.actionFailed'))
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false)
+      })
+    return () => {
+      cancelled = true
+    }
+    // `t` changes only with the locale; the run to open is the key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRunId, openNonce])
 
   // Bounded client-driven stepping: one task per tick while the run is
   // active and auto-run is on. Pausing simply stops advancing — the run

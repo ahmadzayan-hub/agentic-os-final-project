@@ -11,14 +11,15 @@ import { MessageBubble } from './MessageBubble'
 export interface Suggestion {
   label: MessageKey
   icon: IconName
-  insert: string
+  /** What goes into the composer — a sentence, in the reader's language. */
+  insert: MessageKey
 }
 
 export const SUGGESTIONS: Suggestion[] = [
-  { label: 'suggestion.help', icon: 'help', insert: '/help' },
-  { label: 'suggestion.remember', icon: 'memory', insert: '/remember ' },
-  { label: 'suggestion.concise', icon: 'sparkle', insert: '/set tone concise' },
-  { label: 'suggestion.history', icon: 'clock', insert: '/history' },
+  { label: 'suggestion.analyse', icon: 'sparkle', insert: 'suggestion.analyse.insert' },
+  { label: 'suggestion.remember', icon: 'memory', insert: 'suggestion.remember.insert' },
+  { label: 'suggestion.explain', icon: 'activity', insert: 'suggestion.explain.insert' },
+  { label: 'suggestion.help', icon: 'help', insert: 'suggestion.help.insert' },
 ]
 
 function periodOf(hour: number): MessageKey {
@@ -92,7 +93,7 @@ export function ChatView({
                   key={suggestion.label}
                   type="button"
                   className="suggestion"
-                  onClick={() => composerRef.current?.insert(suggestion.insert)}
+                  onClick={() => composerRef.current?.insert(t(suggestion.insert))}
                 >
                   <Icon name={suggestion.icon} size={16} />
                   {t(suggestion.label)}

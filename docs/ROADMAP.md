@@ -113,6 +113,20 @@ facts reach the narrator.
    evidence ids must stay identical across languages for provenance to
    hold; and any third language, for which the mechanism is ready and no
    dictionary is written.
+9. A conversational agent that understands and acts.
+   **Done (ADR 0019):** a sentence in the chat becomes one of ten typed
+   actions — save, recall, forget, change a preference, start an
+   analysis, report its status, explain the latest report — by rules
+   that work with no model, in both languages; a configured model picks
+   from the same actions and only its `chat` phrasing is shown; every
+   action's confirmation is the Agent's own deterministic sentence;
+   deletion is confirmed in the next message whoever understood the
+   sentence; the model never sees a row and never writes a number; a
+   run started from the chat opens in the Runs view and passes the same
+   quota and approval gate. **Not done:** a live model handling a
+   sentence (none is reachable from here); more than one action per
+   sentence; reasoning over the full report rather than quoting its
+   headlines.
 
 ## Tier 3 — Enterprise Release (scoped, not started)
 

@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from agent import Agent, language_code
+from server.assistant import Assistant
 from server.model_gateway import ModelGateway
 from server.routing import RoutedGateway, build_router
 from server.runs import RunEngine
@@ -113,13 +114,18 @@ class Session:
             "next_entry_id": self._next_entry_id,
         }
 
-    def add_entry(self, role, text):
+    def add_entry(self, role, text, **extra):
+        """Append a turn. `extra` carries what the assistant knows about an
+        agent reply — who understood it (rules, model, command), what it
+        did, and a pending confirmation — so the transcript is the record
+        and survives a restart with it."""
         entry = {
             "id": self._next_entry_id,
             "role": role,
             "text": text,
             "time": now_iso(),
         }
+        entry.update({key: value for key, value in extra.items() if value is not None})
         self._next_entry_id += 1
         self.transcript.append(entry)
         return entry
@@ -214,6 +220,9 @@ def create_app(config_path=None, env=None):
     )
     app.state.engine = engine
     app.state.store = store
+    # Free text in the chat goes here; slash commands go to the Agent.
+    assistant = Assistant(gateway, engine)
+    app.state.assistant = assistant
     # Where memory lives, and whose it is.
     #
     # Local mode is one person on one machine, and keeps the documented
@@ -424,8 +433,18 @@ def create_app(config_path=None, env=None):
                     detail="This session has ended. Start a new session to continue.",
                 )
             session.add_entry("user", text)
-            reply = session.agent.process_input(text)
-            entry = session.add_entry("agent", reply)
+            if text.startswith("/"):
+                # A command is exact and deterministic; it does not need
+                # understanding.
+                entry = session.add_entry("agent", session.agent.process_input(text),
+                                          source="command", action="command")
+            else:
+                session.agent.record_request(text)
+                outcome = assistant.handle(text, session)
+                entry = session.add_entry(
+                    "agent", outcome["text"], source=outcome.get("source"),
+                    provider=outcome.get("provider"), action=outcome.get("action"),
+                    result=outcome.get("result"), pending=outcome.get("pending"))
             if text.split()[0].lower() == "/exit":
                 session.ended = True
             save_session(session)

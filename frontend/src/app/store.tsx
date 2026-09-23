@@ -38,6 +38,8 @@ interface Store {
   failedText: string | null
   events: ActivityEvent[]
   lastSyncedAt: string | null
+  /** A run the assistant just started from the chat; the shell opens it. */
+  openRun: { id: string; nonce: number } | null
   start: () => Promise<void>
   send: (text: string) => Promise<void>
   retryFailed: () => Promise<void>
@@ -96,6 +98,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [needsSignIn, setNeedsSignIn] = useState(false)
   const pendingCount = useRef(0)
   const [pending, setPending] = useState(0)
+  const [openRun, setOpenRun] = useState<{ id: string; nonce: number } | null>(null)
 
   const pushEvent = useCallback(
     (code: MessageKey, kind: ActivityKind, detail?: string, vars?: Vars) => {
@@ -320,6 +323,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           text.length > 60 ? `${text.slice(0, 60)}…` : text,
         )
         if (result.state.ended) pushEvent('event.session.ended', 'info')
+        const runId = result.reply.result?.run_id
+        if (result.reply.action === 'start_run' && typeof runId === 'string') {
+          setOpenRun({ id: runId, nonce: Date.now() })
+        }
       } catch (error) {
         const message = error instanceof ApiError ? error.message : translate('outcome.requestFailed')
         setFailedText(text)
@@ -482,6 +489,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       failedText,
       events,
       lastSyncedAt,
+      openRun,
       start,
       send,
       retryFailed,
@@ -509,6 +517,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       failedText,
       events,
       lastSyncedAt,
+      openRun,
       start,
       send,
       retryFailed,

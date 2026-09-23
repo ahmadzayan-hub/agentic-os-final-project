@@ -51,6 +51,12 @@ export function App() {
   })
   const composerRef = useRef<ComposerHandle | null>(null)
 
+  // "Analyse the sales data" in the chat starts a run; the person
+  // should see it, not be told to go and find it.
+  useEffect(() => {
+    if (store.openRun) setTab('runs')
+  }, [store.openRun])
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -353,7 +359,9 @@ export function App() {
               composerRef={composerRef}
             />
           ) : null}
-          {tab === 'runs' ? <RunsView /> : null}
+          {tab === 'runs' ? (
+            <RunsView openRunId={store.openRun?.id ?? null} openNonce={store.openRun?.nonce ?? 0} />
+          ) : null}
           {tab === 'memory' ? (
             <MemoryView
               entries={session.memory_entries}

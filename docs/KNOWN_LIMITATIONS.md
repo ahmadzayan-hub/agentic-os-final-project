@@ -5,8 +5,18 @@ placeholder controls — absent capabilities have no UI.
 
 ## Intelligence
 
-1. The conversational agent is deterministic (command recognition +
-   tone-styled acknowledgements); it is not an LLM chat.
+1. The chat understands and acts on plain language — save, recall,
+   change a preference, start an analysis, report its status, explain a
+   report, in English or Arabic — through a **rules-based vocabulary**
+   that works with no model (ADR 0019). A configured model widens what
+   is understood, not what can be done: it picks from the same ten
+   actions, and only its `chat` phrasing is ever shown. Boundaries: a
+   sentence outside the vocabulary gets an honest "not understood, here
+   is what you can ask"; one action per sentence; "explain" quotes the
+   report's verified headlines rather than reasoning over the report;
+   and **no live model has handled a sentence from this environment**
+   (the model path is tested against a fake), so the first real one is
+   unverified and the rules fallback is what makes that safe.
 2. The analytics pipeline covers all four types (descriptive,
    diagnostic, predictive, prescriptive) deterministically, and each has
    a boundary worth knowing:

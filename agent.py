@@ -13,6 +13,7 @@ command line, `/set language العربية` does the same.
 import re
 from datetime import datetime, timezone
 
+import assistant
 from utils import load_memory, save_json, validate_input
 
 DEFAULT_MEMORY_CATEGORY = "general"
@@ -325,6 +326,11 @@ class Agent:
     # ------------------------------------------------------------------
     # History
     # ------------------------------------------------------------------
+    def record_request(self, user_input):
+        """Record a request the assistant handled, so /history is complete
+        whichever path answered it."""
+        self._record_history(user_input)
+
     def _record_history(self, user_input):
         """Append the request to history, respecting user preferences."""
         if not self.preferences.get("save_history", True):
@@ -495,6 +501,22 @@ class Agent:
     # Responses
     # ------------------------------------------------------------------
     def generate_response(self, user_input):
+        """Free text: understand it by rules and act.
+
+        "Remember that the review is on Monday" saves a memory; "what do
+        you remember?" lists it; "be concise" changes the tone. A sentence
+        the rules do not understand gets an honest answer in the chosen
+        tone that says what can be asked — not an acknowledgement that
+        pretends to have understood. The web interface adds a model and
+        the analytics actions on top of the same rules (ADR 0019).
+        """
+        understood = assistant.understand(user_input)
+        return assistant.execute_local(understood["action"],
+                                       understood["arguments"], self, user_input)
+
+    def acknowledge(self, user_input):
+        """The original tone templates, kept for the tone preference's
+        documentation and tests: one sentence in the chosen tone."""
         tone = self.preferences.get("tone", "friendly")
         styles = TONE_STYLES_ARABIC if self.language() == "ar" else TONE_STYLES
         template = styles.get(tone, styles["friendly"])

@@ -65,7 +65,25 @@ and does the same thing, minus the address detection.
 
 Type in the composer and press <kbd>Enter</kbd> to send;
 <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line break. Anything starting
-with `/` is a command; everything else gets a tone-styled acknowledgement.
+with `/` is a command. Everything else is understood as a sentence, in
+English or Arabic, and acted on:
+
+| You write | The agent does |
+| --- | --- |
+| “Remember that the Q4 review is on Monday” | saves it to memory |
+| “What do you remember about coffee?” | lists matching memory |
+| “Analyse the sample sales data” / “analyse quarterly_sales by team” | starts a run and opens it in Runs |
+| “Is it done?” | reports the latest run's progress |
+| “Why did revenue move?” / “What should we do?” | quotes that section's headline from the latest report |
+| “Be concise” / “Reply in Arabic” / “Call me Ahmad” | changes a preference |
+| “Forget everything” | asks you to confirm — nothing is deleted until you reply “yes” |
+| “What can you do?” | lists the above |
+
+A sentence outside that vocabulary gets an honest “not understood” in
+your chosen tone, with examples of what to ask. With no language model
+configured — the default — a set of rules does the understanding and
+every reply is marked as such; a configured model widens what is
+understood but never what can be done (ADR 0019).
 
 You never need to memorize commands:
 
@@ -241,9 +259,12 @@ To stop, enter `/exit` — anything typed after it on the same line is
 ignored, so `/exit now` also closes the application. Pressing Ctrl+C
 (or Ctrl+D) closes it safely as well.
 
-Every line you type after `You:` is sent to the agent. Empty input is
-rejected with a gentle reminder — the application never crashes on blank
-lines.
+Every line you type after `You:` is sent to the agent. Sentences work
+here too — “remember that…”, “what do you remember?”, “be concise”,
+“reply in Arabic” — through the same rules the web interface uses;
+analytics runs need the web interface, and the agent says so. Empty
+input is rejected with a gentle reminder — the application never crashes
+on blank lines.
 
 ---
 

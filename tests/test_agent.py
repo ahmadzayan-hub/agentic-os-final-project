@@ -190,9 +190,13 @@ class TestPreferences(unittest.TestCase):
         self.assertIn("language: English", response)
 
     def test_tone_changes_the_response_style(self):
+        # A sentence the rules cannot act on gets the honest "not
+        # understood" reply, phrased in the chosen tone (ADR 0019).
         self.agent.process_input("/set tone formal")
         response = self.agent.process_input("Hello there")
-        self.assertIn("has been received", response)
+        self.assertIn("was not understood", response)
+        self.agent.process_input("/set tone concise")
+        self.assertIn("Not sure what to do with", self.agent.process_input("Hello there"))
 
     def test_unknown_tone_falls_back_to_friendly(self):
         self.agent.process_input("/set tone sarcastic")

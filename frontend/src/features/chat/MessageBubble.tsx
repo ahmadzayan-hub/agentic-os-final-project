@@ -44,10 +44,19 @@ export function MessageBubble({ entry, agentName }: MessageBubbleProps) {
       </div>
       <div className="msg__meta">
         {isAgent ? (
-          <button type="button" className="msg__copy" onClick={copy}>
-            <Icon name={copied ? 'check' : 'copy'} size={13} />
-            {copied ? t('msg.copied') : t('msg.copy')}
-          </button>
+          <>
+            <button type="button" className="msg__copy" onClick={copy}>
+              <Icon name={copied ? 'check' : 'copy'} size={13} />
+              {copied ? t('msg.copied') : t('msg.copy')}
+            </button>
+            {/* Honest about who understood: a model's phrasing is
+                labelled as such, the way a report names its narrator. */}
+            {entry.source === 'model' ? (
+              <span className="msg__source">
+                {t('msg.viaModel', { provider: entry.provider ?? 'model' })}
+              </span>
+            ) : null}
+          </>
         ) : (
           <time dateTime={entry.time}>{formatTime(entry.time)}</time>
         )}

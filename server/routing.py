@@ -112,6 +112,13 @@ class RoutedGateway:
         ]
         return status
 
+    def ask(self, system, user, provider=None, max_tokens=None):
+        """The assistant's understanding step is not routed: routing
+        chooses the narrator of a report, and this is a different job.
+        The gateway's own priority order applies."""
+        return self.gateway.ask(system, user, provider=provider,
+                                max_tokens=max_tokens)
+
     def narrate(self, goal, facts):
         """Narrate, having asked the router which model should do it.
 
