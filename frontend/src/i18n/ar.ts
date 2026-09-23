@@ -105,6 +105,7 @@ export const ar: Record<MessageKey, string> = {
   'msg.copy': 'نسخ',
   'msg.copied': 'تم النسخ',
   'msg.viaModel': 'فهمه نموذج ({provider})',
+  'msg.viaRuntime': 'نفّذه {name}',
 
   'onboard.title': 'مرحبًا بك في Agentic OS',
   'onboard.intro': 'مساحة عملك الذكية الشخصية: المحادثة والذاكرة والتفضيلات في مكان واحد.',
@@ -380,5 +381,13 @@ export const arPlurals: Record<PluralKey, PluralForms> = {
     few: '{n} رسائل',
     many: '{n} رسالة',
     other: '{n} رسالة',
+  },
+  'msg.toolCalls': {
+    zero: 'بلا استدعاء أدوات',
+    one: 'استدعاء أداة واحد',
+    two: 'استدعاءا أداتين',
+    few: '{n} استدعاءات أدوات',
+    many: '{n} استدعاء أدوات',
+    other: '{n} استدعاء أدوات',
   },
 }

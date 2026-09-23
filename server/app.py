@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from agent import Agent, language_code
+from server.agent_runtime import build_runtime
 from server.assistant import Assistant
 from server.model_gateway import ModelGateway
 from server.routing import RoutedGateway, build_router
@@ -229,7 +230,12 @@ def create_app(config_path=None, env=None):
     app.state.engine = engine
     app.state.store = store
     # Free text in the chat goes here; slash commands go to the Agent.
-    assistant = Assistant(gateway, engine)
+    # An agent runtime (ADR 0021) is optional and, like the router and
+    # the stages, a load failure is reported rather than raised.
+    runtime, runtime_name, runtime_problem = build_runtime(env, config)
+    app.state.runtime_name = runtime_name
+    app.state.runtime_problem = runtime_problem
+    assistant = Assistant(gateway, engine, runtime=runtime, runtime_name=runtime_name)
     app.state.assistant = assistant
     # Where memory lives, and whose it is.
     #
@@ -397,6 +403,8 @@ def create_app(config_path=None, env=None):
             # will not find it unless something says so.
             "router_problem": app.state.router_problem,
             "stage_problems": app.state.stage_problems,
+            "agent_runtime": app.state.runtime_name,
+            "runtime_problem": app.state.runtime_problem,
         }
 
     @app.post("/api/sessions", status_code=201)
@@ -453,7 +461,8 @@ def create_app(config_path=None, env=None):
                 entry = session.add_entry(
                     "agent", outcome["text"], source=outcome.get("source"),
                     provider=outcome.get("provider"), action=outcome.get("action"),
-                    result=outcome.get("result"), pending=outcome.get("pending"))
+                    result=outcome.get("result"), pending=outcome.get("pending"),
+                    steps=outcome.get("steps"), why=outcome.get("why"))
             if text.split()[0].lower() == "/exit":
                 session.ended = True
             save_session(session)

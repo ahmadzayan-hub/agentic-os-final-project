@@ -146,6 +146,17 @@ REPLIES = {
         "report_intro": "From analysis {run_id} (“{goal}”):",
         "report_outro": "The full report, with every calculation, is in Runs.",
         "dataset_sample": "the sample sales dataset",
+        # What an outside driver — an agent runtime or an MCP client — is
+        # told when it asks for something the catalogue does not offer.
+        "tool_unknown": "There is no tool called “{name}”. Available: {available}.",
+        "tool_not_offered":
+            "Deleting is not offered to an automated driver. Ask me directly "
+            "— “forget memory_3” — and confirm.",
+        "tool_limit":
+            "The step limit ({limit}) for one message was reached; nothing "
+            "further was run.",
+        "tool_bad_arguments":
+            "The arguments for “{name}” were not valid, so it was not run.",
     },
     "ar": {
         "fallback_friendly":
@@ -201,6 +212,13 @@ REPLIES = {
         "report_intro": "من التحليل {run_id} («{goal}»):",
         "report_outro": "التقرير الكامل، بكل حساباته، في التحليلات.",
         "dataset_sample": "مجموعة بيانات المبيعات النموذجية",
+        "tool_unknown": "لا توجد أداة باسم «{name}». المتاح: {available}.",
+        "tool_not_offered":
+            "الحذف غير متاح لمشغّل آلي. اطلبه مني مباشرة — «انسَ memory_3» — "
+            "وأكّد.",
+        "tool_limit":
+            "بلغنا حد الخطوات ({limit}) للرسالة الواحدة؛ لم يُنفَّذ شيء آخر.",
+        "tool_bad_arguments": "وسائط «{name}» غير صالحة، فلم تُنفَّذ.",
     },
 }
 
@@ -498,6 +516,31 @@ def execute_local(action, arguments, agent, text, model_reply=None):
         return reply(language, "cli_needs_web")
     # chat: a model's phrasing if one answered, else the honest fallback.
     return (model_reply or "").strip() or fallback(agent, text)
+
+
+def arguments_valid(action, arguments):
+    """Whether arguments someone other than the rules produced — a model,
+    an agent runtime, an MCP client — are ones the executor can act on.
+    Normalises in place where a loose value has an obvious reading."""
+    if action == "set_preference":
+        key = str(arguments.get("key") or "").lower()
+        if key not in PREFERENCE_KEYS:
+            return False
+        if key == "tone" and str(arguments.get("value") or "").lower() not in TONES:
+            return False
+    if action == "forget":
+        key = str(arguments.get("key") or "")
+        if key.lower() != "all" and not re.fullmatch(r"memory_\d+", key):
+            return False
+    if action == "explain_report":
+        section = arguments.get("section")
+        if section is not None and section not in SECTIONS + ("all",):
+            arguments["section"] = "all"
+    if action == "remember" and not str(arguments.get("information") or "").strip():
+        return False
+    if action == "start_run" and not str(arguments.get("goal") or "").strip():
+        return False
+    return True
 
 
 def confirmation_prompt(action, arguments, agent):

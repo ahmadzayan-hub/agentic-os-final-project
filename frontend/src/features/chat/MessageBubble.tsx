@@ -9,7 +9,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ entry, agentName }: MessageBubbleProps) {
-  const { t, formatTime } = useI18n()
+  const { t, plural, formatTime } = useI18n()
   const [copied, setCopied] = useState(false)
   const isAgent = entry.role === 'agent'
 
@@ -54,6 +54,15 @@ export function MessageBubble({ entry, agentName }: MessageBubbleProps) {
             {entry.source === 'model' ? (
               <span className="msg__source">
                 {t('msg.viaModel', { provider: entry.provider ?? 'model' })}
+              </span>
+            ) : null}
+            {/* An agent runtime's reply carries what it called: the tools'
+                own texts are in the bubble verbatim; this says who drove
+                them and how many calls it took. */}
+            {entry.source === 'runtime' ? (
+              <span className="msg__source">
+                {t('msg.viaRuntime', { name: entry.provider ?? 'runtime' })} ·{' '}
+                {plural('msg.toolCalls', entry.steps?.length ?? 0)}
               </span>
             ) : null}
           </>

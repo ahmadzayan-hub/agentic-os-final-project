@@ -5,13 +5,25 @@ export interface TranscriptEntry {
   role: 'user' | 'agent'
   text: string
   time: string
-  /** Who understood an agent reply: a slash command, the rules, or a
-   *  model (then `provider` names it). Absent on user turns. */
-  source?: 'command' | 'rules' | 'model'
+  /** Who understood an agent reply: a slash command, the rules, a
+   *  model (then `provider` names it), or an agent runtime (then
+   *  `provider` names it and `steps` lists what it called). Absent on
+   *  user turns. */
+  source?: 'command' | 'rules' | 'model' | 'runtime'
   provider?: string
   /** The action the reply took, e.g. `start_run`, and what it produced. */
   action?: string
   result?: { run_id?: string } | null
+  steps?: TranscriptStep[]
+}
+
+/** One tool call an agent runtime made for a message: what it asked
+ *  for, whether it was allowed, and the tool's own text. */
+export interface TranscriptStep {
+  tool: string
+  arguments: Record<string, unknown>
+  ok: boolean
+  text: string
 }
 
 export interface CommandInfo {

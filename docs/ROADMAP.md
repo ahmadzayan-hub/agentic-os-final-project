@@ -137,6 +137,16 @@ facts reach the narrator.
    complete example stage; `/api/pipelines` and health reporting.
    **Not done:** a sandbox (a plugin is trusted Python); per-tenant
    registries; hot reload; a custom stage that narrates or charts.
+11. Frameworks and interoperability.
+   **Done (ADR 0021):** the core stays framework-free by decision; an
+   optional agent runtime behind the chat (rules first; one tool box;
+   no deletions; a step cap; every call on the transcript verbatim)
+   with LangGraph and Pydantic AI examples; an MCP server in the
+   standard library driven by the official client in tests; a custom
+   stage built as a LangGraph graph; footprints measured.
+   **Not done:** a live model behind either runtime from this
+   environment; an HTTP MCP transport with authentication for hosted
+   deployments; a runtime that can approve or publish (deliberately).
 
 ## Tier 3 — Enterprise Release (scoped, not started)
 

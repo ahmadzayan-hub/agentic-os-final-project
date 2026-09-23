@@ -113,6 +113,7 @@ export const en = {
   'msg.copy': 'Copy',
   'msg.copied': 'Copied',
   'msg.viaModel': 'understood by a model ({provider})',
+  'msg.viaRuntime': 'run by {name}',
 
   // Onboarding
   'onboard.title': 'Welcome to Agentic OS',
@@ -377,6 +378,7 @@ export const enPlurals = {
   'activity.messages': { one: '{n} message in this session.', other: '{n} messages in this session.' },
   'runs.rows': { one: '{n} data row', other: '{n} data rows' },
   'session.restoredMessages': { one: '{n} message', other: '{n} messages' },
+  'msg.toolCalls': { one: '{n} tool call', other: '{n} tool calls' },
 } as const satisfies Record<string, PluralForms>
 
 export type PluralKey = keyof typeof enPlurals

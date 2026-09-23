@@ -102,6 +102,13 @@ environment — not a replacement for Windows, macOS, or Linux.
   appear in the same provenance chain, and its section in the same report
   the approval gate binds to. Profiles choose which stages a run includes
   (ADR 0020). `examples/stages/target_attainment.py` is a complete one
+- **Frameworks on your terms** — the core is framework-free by decision,
+  and three seams let you bring one: an optional *agent runtime* behind
+  the chat (LangGraph and Pydantic AI examples, each a screen of code)
+  that may call several tools for one sentence but never widen what a
+  caller may do; an MCP server in the standard library, so any editor's
+  agent can start a run and read its report; and a custom stage built as
+  a LangGraph graph, audited like every other (ADR 0021)
 - **Arabic and English** — the whole interface in either language,
   switched from the header in one click; right-to-left layout in Arabic
   through logical CSS properties rather than a second stylesheet; the
@@ -256,13 +263,13 @@ python main.py
 # Python: agent, utils, API, runs, analytics, sequential ranges,
 # metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
 # supply chain, launcher, routing, language, assistant, custom stages,
-# docs (534 tests)
+# agent runtimes, MCP, frameworks, docs (584 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (37 tests)
 cd frontend && npm test
 
-# End-to-end + accessibility (50 checks across desktop and mobile,
+# End-to-end + accessibility (52 checks across desktop and mobile,
 # in English and Arabic;
 # requires the production build: npm run build)
 cd frontend && npx playwright test
@@ -273,17 +280,19 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 534 Python tests, 37 frontend unit
-tests, and 50 end-to-end checks (49 executed, 1 desktop-only check
-skipped on the mobile project). In environments with a pre-installed
+PostgreSQL 16 service. Last verified: 584 Python tests (573 run in CI;
+the 11 that need an optional agent framework or the MCP SDK skip there),
+37 frontend unit tests, and 52 end-to-end checks (51 executed, 1
+desktop-only check skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:
 `PLAYWRIGHT_EXECUTABLE_PATH=/path/to/chromium npx playwright test`.
 
-Five of the 534 load real LLMRouter routers and **skip unless LLMRouter
+Five of the 584 load real LLMRouter routers and **skip unless LLMRouter
 is installed**, which in CI it is not — so CI reports `OK (skipped=5)`
 and that is the expected result, not a gap. The other 22 routing tests
 never import it and always run. Both readings were verified: with the
-library installed, 534 tests and nothing skipped.
+library and the optional frameworks (ADR 0021) installed, 584 tests and
+nothing skipped.
 
 ## Background worker (optional)
 
@@ -387,6 +396,44 @@ continues and the report says the stage failed — unless it declares
 `stages_path` makes a plain folder importable; `/api/pipelines` lists
 what loaded and why anything did not. A plugin is trusted Python, not a
 sandbox. Details: `docs/adr/0020-custom-agents-as-plugins.md`.
+
+## Agent runtimes and MCP (optional)
+
+The chat's rules turn one sentence into one action with no model. A
+sentence that asks for several things needs a loop — decide, call a
+tool, read the result, decide again — and that loop is what agent
+frameworks are for. Rather than pick one, the assistant takes one
+(ADR 0021):
+
+```bash
+pip install langgraph        # optional; measured at 72 megabytes with its dependencies
+AGENTIC_OS_AGENT_RUNTIME=examples.runtimes.langgraph_runtime.LangGraphRuntime
+```
+
+A runtime is one method, `run(message, tools, context) -> str | None`. It
+gets the sentences the rules cannot place — an exact sentence stays an
+exact action — may decline one by returning `None`, and calls tools only
+through one tool box: the assistant's
+catalogue minus `chat` and minus every deletion, arguments checked, eight
+calls per message at most. What the person sees is every tool's own text
+verbatim, then the runtime's closing line, labelled *run by LangGraph ·
+2 tool calls*. `examples/runtimes/` has the LangGraph example (the model
+is the deployment's own gateway; a thread per session) and a Pydantic AI
+one (the framework's native loop; its own providers).
+
+The same catalogue is served over the Model Context Protocol by
+`scripts/mcp_server.py` — standard library only, stdio, local mode —
+so an editor's agent can start an analysis and read its status while
+publishing still waits for your approval in Runs. Copy
+`.mcp.json.example` to `.mcp.json`, or:
+
+```bash
+claude mcp add agentic-os -- python /path/to/scripts/mcp_server.py
+```
+
+And a framework may live *inside* a stage: `examples/stages/graph_stage.py`
+is a custom stage built as a three-node LangGraph graph, with no model in
+any node, audited exactly like the rest.
 
 ## Failure injection
 

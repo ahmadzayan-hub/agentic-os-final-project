@@ -208,3 +208,16 @@ required local files. Both behaviors are covered by tests
     stages in a hosted install, and a new stage needs a restart, as
     with the glossary and the router. A custom stage cannot narrate (it
     gets no model gateway) and cannot chart; its figures are tables.
+19. An agent runtime (ADR 0021) is optional and bounded, and both
+    halves have edges. **No live model has driven either example
+    runtime from this environment** — the LangGraph and Pydantic AI
+    examples were exercised with scripted models, so the first real
+    provider is unverified, and the rules path is what makes that safe.
+    A runtime may call at most eight tools for one sentence, may never
+    delete, and cannot approve or publish; its closing line is model
+    text and is labelled as such. The MCP server is **stdio and local
+    mode only** — no HTTP transport, no authentication, no resources or
+    prompts — so a hosted deployment has no MCP surface. The frameworks
+    are not in `requirements.txt` and CI does not install them; their
+    tests skip there, and the versions verified are the ones in the
+    ADR's table.

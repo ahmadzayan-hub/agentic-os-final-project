@@ -30,10 +30,12 @@ do everything, and the reply says so (`source: "rules"`).
 import json
 import re
 
-from assistant import (ACTIONS, DESTRUCTIVE, PREFERENCE_KEYS, SECTIONS, TONES,
-                       RUN_STATES, SECTION_QUESTIONS, confirmation_prompt,
-                       execute_local, intent, is_no, is_yes, reply, understand)
+from assistant import (ACTIONS, DESTRUCTIVE, PREFERENCE_KEYS, RUN_STATES,
+                       SECTION_QUESTIONS, arguments_valid, confirmation_prompt,
+                       execute_local, fallback, intent, is_no, is_yes, reply,
+                       understand)
 from server import quota
+from server.tools import ToolBox
 
 MAX_MEMORY_IN_CONTEXT = 20
 MAX_TURNS_IN_CONTEXT = 6
@@ -72,9 +74,14 @@ SYSTEM_PROMPT = (
 
 
 class Assistant:
-    def __init__(self, gateway, engine):
+    def __init__(self, gateway, engine, runtime=None, runtime_name=None):
         self.gateway = gateway
         self.engine = engine
+        # Optional (ADR 0021): a loop that may call several tools for one
+        # sentence. It gets the sentences the rules cannot place, and
+        # nothing the rules can — one exact action stays one exact action.
+        self.runtime = runtime
+        self.runtime_name = runtime_name
 
     # ------------------------------------------------------------------
     # Entry point
@@ -95,6 +102,13 @@ class Assistant:
                         "action": "cancel"}
             # Anything else is a new request; the earlier one is dropped
             # rather than executed on the strength of an unrelated sentence.
+
+        if self.runtime is not None and understand(text)["action"] == "chat":
+            outcome = self._via_runtime(text, session)
+            if outcome is not None:
+                return outcome
+            # The runtime declined: the model-or-rules path answers, as
+            # if no runtime were configured.
 
         understood = self.understand(text, session)
         action, arguments = understood["action"], understood["arguments"]
@@ -190,23 +204,48 @@ class Assistant:
 
     @staticmethod
     def _arguments_valid(action, arguments, session):
-        if action == "set_preference":
-            key = str(arguments.get("key") or "").lower()
-            if key not in PREFERENCE_KEYS:
-                return False
-            if key == "tone" and str(arguments.get("value") or "").lower() not in TONES:
-                return False
-        if action == "forget":
-            key = str(arguments.get("key") or "")
-            if key.lower() != "all" and not re.fullmatch(r"memory_\d+", key):
-                return False
-        if action == "explain_report":
-            section = arguments.get("section")
-            if section is not None and section not in SECTIONS + ("all",):
-                arguments["section"] = "all"
-        if action == "remember" and not str(arguments.get("information") or "").strip():
-            return False
-        return True
+        return arguments_valid(action, arguments)
+
+    # ------------------------------------------------------------------
+    # An agent runtime (ADR 0021): several tools for one sentence
+    # ------------------------------------------------------------------
+    def _via_runtime(self, text, session):
+        """Hand the sentence to the configured runtime with the tool box.
+
+        What comes back on screen is every tool's own text, verbatim and
+        in order — the same sentences the rules path would have produced
+        — and then the runtime's closing line, which is the one piece of
+        text of its making, labelled as such. If the runtime raises, the
+        rules answer, the transcript says why, and whatever tools it did
+        call before failing are still on the record: those happened.
+        A runtime that returns None having called nothing has declined,
+        and the caller answers the sentence the ordinary way.
+        """
+        agent = session.agent
+        tools = ToolBox(self, session)
+        context = {"language": agent.language(), "notes": self._context(session),
+                   "thread_id": getattr(session, "id", None),
+                   "ask": self.gateway.ask}
+        try:
+            closing = self.runtime.run(text, tools, context)
+        except Exception as error:
+            outcome = self._execute("chat", {}, session, text, source="rules")
+            outcome["why"] = (f"the agent runtime “{self.runtime_name}” failed "
+                              f"({type(error).__name__}: {error}); the rules "
+                              "answered instead")
+            if tools.steps:
+                outcome["steps"] = tools.steps
+            return outcome
+        if closing is None and not tools.steps:
+            return None
+        closing = str(closing or "").strip()[:MAX_REPLY_CHARS]
+        parts = [step["text"] for step in tools.steps if step["text"]]
+        if closing:
+            parts.append(closing)
+        return {"source": "runtime", "provider": self.runtime_name,
+                "action": "runtime", "steps": tools.steps,
+                "result": tools.last_result,
+                "text": "\n\n".join(parts) or fallback(agent, text)}
 
     # ------------------------------------------------------------------
     # Execution

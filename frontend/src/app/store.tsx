@@ -324,7 +324,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         )
         if (result.state.ended) pushEvent('event.session.ended', 'info')
         const runId = result.reply.result?.run_id
-        if (result.reply.action === 'start_run' && typeof runId === 'string') {
+        const startedRun = result.reply.action === 'start_run' || result.reply.action === 'runtime'
+        if (startedRun && typeof runId === 'string') {
           setOpenRun({ id: runId, nonce: Date.now() })
         }
       } catch (error) {

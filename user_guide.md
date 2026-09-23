@@ -96,6 +96,15 @@ You never need to memorize commands:
 If a message fails to send (for example, offline), it is not lost — a
 retry option appears, and the status badge shows the connection state.
 
+If the operator has configured an **agent runtime** — an optional loop
+that may call several of the assistant's tools for one sentence — a
+sentence the assistant cannot place as one exact action goes to it. The
+reply then shows every tool's own text, verbatim and in order, followed
+by the runtime's closing line, and is labelled *run by <name> · N tool
+calls*. A runtime can never delete anything: deletion is asked for
+directly and confirmed in the next message, exactly as before. An exact
+sentence such as “remember that …” never reaches the runtime.
+
 ### Managing memory and your data
 
 Open **Memory** to see everything the agent has saved. Each entry carries

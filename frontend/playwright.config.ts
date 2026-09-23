@@ -14,7 +14,9 @@ const PREPARE_CONFIG =
   '\'vault_dir\':\'frontend/e2e/.tmp/vault\',\'maximum_history_items\':50,' +
   '\'stages\':[{\'path\':\'examples.stages.target_attainment.TargetAttainment\',' +
   '\'options\':{\'target\':3000000}}],' +
-  '\'profiles\':{\'default\':[],\'with-target\':[\'target_attainment\']}},' +
+  '\'profiles\':{\'default\':[],\'with-target\':[\'target_attainment\']},' +
+  '\'agent_runtime\':{\'path\':\'tests.test_agent_runtime.ScriptedRuntime\',' +
+  '\'options\':{\'calls\':[[\'help\',{}]],\'closing\':\'Over to you.\',\'trigger\':\'sort out\'}}},' +
   'open(\'frontend/e2e/.tmp/config.json\',\'w\')); ' +
   'json.dump({},open(\'frontend/e2e/.tmp/memory.json\',\'w\'))"'
 

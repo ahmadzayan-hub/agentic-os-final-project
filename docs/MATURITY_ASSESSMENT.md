@@ -35,6 +35,7 @@ with.
 | Security, tenancy, erasure, supply chain | **Mature for hosted mode** | ADR 0002–0005, 0013–0015 | IdP round-trip unverified live; no row-level security under the application boundary; no signed artifacts. |
 | **Conversational agent** | **Partial → ADR 0019, shipped after this assessment** | Was: `generate_response` returned a tone template. Now: `assistant.py` + `server/assistant.py` turn a sentence into one of ten typed actions, by rules or a model, and act | Rules are a vocabulary, not language understanding; one action per sentence; no live model verified from here. The floor is real and the ceiling is the model. |
 | **Customisation / extensibility** | **Partial → ADR 0020, shipped after this assessment** | Was: `analytics.PIPELINE` a literal list. Now: `server/stages.py` loads stages by dotted path, validates the contract, places them before the auditors; profiles per run; `examples/stages/target_attainment.py` | A plugin is trusted Python, not sandboxed; the registry is per process; a custom stage cannot narrate or chart. |
+| **Frameworks and interoperability** | **Shipped after this assessment → ADR 0021** | No agent framework in the core, by decision; an optional agent runtime behind the chat with LangGraph and Pydantic AI examples; an MCP server in the standard library; a stage built as a graph | Neither runtime has been driven by a live model from this environment; MCP is stdio and local only. |
 | Interface: accessibility, performance, responsive, PWA | **Mature** | WCAG 2.2 AA by axe on every view; Lighthouse 96/100/100/100; 320 px up | — |
 | **Interface: languages and direction** | **Missing → this slice** | 188 hard-coded English strings; 30 physical-direction CSS rules; `language` preference recorded and ignored | Arabic/English UI, RTL, and agent replies in the chosen language ship with this document. |
 | Report language | **English only** | ~2,400 lines of narrative strings in `analytics.py` | Arabic reports are a separate slice, not a switch. |
@@ -71,20 +72,26 @@ with.
    what a registry cannot give — a sandbox, per-tenant stages, hot
    reload.
 
-4. **Arabic reports.** A report-language layer over the narrative
+4. **Frameworks, where they earn their place** — *shipped as ADR 0021
+   after this assessment was written.* The core stays framework-free;
+   the assistant takes an optional runtime that may call several tools
+   for one sentence but cannot widen what a caller may do; the workspace
+   is served as MCP tools; a framework may live inside a custom stage.
+
+5. **Arabic reports.** A report-language layer over the narrative
    strings. Separate from the interface work because the volume is
    different by an order of magnitude and because the numbers, evidence
    ids and calculation names must stay identical across languages for the
    provenance chain to hold.
 
-5. **More inputs** — XLSX and JSON first (they are parsing); database
+6. **More inputs** — XLSX and JSON first (they are parsing); database
    connectors later (they are credentials, scheduling and governance).
 
-6. **Scheduling** — a schedule table the existing worker polls, so a run
+7. **Scheduling** — a schedule table the existing worker polls, so a run
    can recur. Small, and it is what makes the output arrive without a
    person clicking.
 
-7. **Deployment** — an owner action: import at vercel.com/new with
+8. **Deployment** — an owner action: import at vercel.com/new with
    Framework Preset *Other*, set `DATABASE_URL`, confirm the sign-in
    round-trip once by hand.
 

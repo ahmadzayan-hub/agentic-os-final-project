@@ -25,3 +25,15 @@ pyjwt[crypto]>=2.8
 #     pip install -e /path/to/LLMRouter
 #
 # With it absent, five tests skip and nothing else changes.
+
+# Also deliberately absent: agent frameworks (ADR 0021). The core needs
+# none. The optional runtime examples and the graph-built stage need one
+# each, measured with their dependencies on this machine:
+#
+#     pip install langgraph          # 72 MB, 38 packages
+#     pip install pydantic-ai-slim   # 35 MB, 17 packages
+#     pip install mcp                # 44 MB — only to *test* the MCP
+#                                    # server with the official client;
+#                                    # serving it needs nothing
+#
+# With them absent, their tests skip and nothing else changes.
