@@ -153,6 +153,9 @@ export interface RunDetail {
   updated_at: string
   /** Server-side pause: honoured by clients and background workers alike. */
   paused: boolean
+  /** The language the run's reports are written in, fixed when it was
+   *  created (ADR 0022). Runs from before reports had a language are 'en'. */
+  report_language: 'en' | 'ar'
   tasks: RunTask[]
   /** One report per business-analytics type, in maturity-ladder order. */
   reports: {

@@ -149,7 +149,7 @@ export const en = {
   'prefs.namePlaceholder': 'e.g. Ahmad',
   'prefs.language': 'Language',
   'prefs.languageHelp':
-    'Changes the interface and the language the agent replies in. Reports are written in English.',
+    'Changes the interface and the language the agent replies in. A report is written in the language in use when its run starts.',
   'prefs.history': 'Record session history',
   'prefs.historyHelp': 'When off, your requests are not recorded in this session’s history.',
   'prefs.saving': 'Saving…',
@@ -302,6 +302,7 @@ export const en = {
   'runs.slowing': 'Slowing down to stay within the request limit…',
   'runs.advanceFailed': 'Advance failed.',
   'runs.startFailed': 'Could not start the run.',
+  'runs.riskHigh': 'high',
   'runs.actionFailed': 'The action failed.',
   'runs.pastedName': 'pasted CSV',
   'runs.detailAria': 'Run detail',

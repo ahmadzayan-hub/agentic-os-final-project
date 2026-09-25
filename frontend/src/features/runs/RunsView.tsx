@@ -105,7 +105,7 @@ function stageTitles(pipelines: Pipelines, profile: string): string[] {
 }
 
 export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
-  const { t, tx, plural, isRtl } = useI18n()
+  const { t, tx, plural, isRtl, locale } = useI18n()
   const [runs, setRuns] = useState<RunSummary[]>([])
   const [run, setRun] = useState<RunDetail | null>(null)
   const [goal, setGoal] = useState(() => t('runs.goalDefault'))
@@ -218,6 +218,9 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
         useUpload && csvDraft.trim() ? csvDraft : undefined,
         useUpload && csvDraft.trim() ? (fileName ?? t('runs.pastedName')) : undefined,
         profile || undefined,
+        // The report is written in the reader's language, and stays in it:
+        // switching the interface later does not rewrite an approved artifact.
+        locale,
       )
       setRun(detail)
       setStoppedByError(false)
@@ -445,6 +448,9 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
     )
   }
 
+  const reportLang = run.report_language === 'ar' ? 'ar' : 'en'
+  const reportDir = reportLang === 'ar' ? 'rtl' : 'ltr'
+
   return (
     <section className="panel" aria-label={t('runs.detailAria')}>
       <div className="panel__inner panel__inner--split">
@@ -515,7 +521,9 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                 </div>
                 <div className="rail__row">
                   <dt>{t('runs.risk')}</dt>
-                  <dd dir="auto">{pendingApproval.risk}</dd>
+                  <dd dir="auto">
+                    {pendingApproval.risk === 'high' ? t('runs.riskHigh') : pendingApproval.risk}
+                  </dd>
                 </div>
                 <div className="rail__row">
                   <dt>{t('runs.impact')}</dt>
@@ -612,16 +620,16 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                       </p>
                     ) : null}
                     {/* The <pre> is what scrolls, so the tab stop belongs
-                        here rather than on the panel around it. Reports
-                        are written in English (see KNOWN_LIMITATIONS), so
-                        the block is marked as such for readers and the
-                        bidi algorithm alike. */}
+                        here rather than on the panel around it. The block
+                        carries the report's own language, which is the
+                        run's, not the interface's (ADR 0022), so a screen
+                        reader and the bidi algorithm read it correctly. */}
                     <pre
                       className="runreport"
                       tabIndex={0}
                       role="region"
-                      lang="en"
-                      dir="ltr"
+                      lang={reportLang}
+                      dir={reportDir}
                       aria-label={t('runs.reportText', { type: typeLabel(t, section.type, section.title) })}
                     >
                       {section.content}
@@ -646,8 +654,8 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                 className="runreport runreport--full"
                 tabIndex={0}
                 role="region"
-                lang="en"
-                dir="ltr"
+                lang={reportLang}
+                dir={reportDir}
                 aria-label={t('runs.comprehensiveText')}
               >
                 {run.report.content}

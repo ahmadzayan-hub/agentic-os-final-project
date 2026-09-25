@@ -228,6 +228,14 @@ them:
 | **Predictive** | What will happen? | The next three periods, if the current pattern continues, with the accuracy this method achieved when tested against past periods it had not seen. Too little history and it tells you so instead of guessing |
 | **Prescriptive** | What should I do? | The options your data supports, what each is worth, a recommendation, and — stated plainly — the assumption behind the ranking and how close the call was |
 
+Reports are written in the language the interface was in when you
+started the run: start it in Arabic and every headline, finding and
+report is Arabic, right-to-left, with the same figures the English would
+show. Column names, group names and the calculation table keep the
+notation of your data. To get the other language, switch and start a new
+run; an existing report is never rewritten, because what you approve is
+what gets published.
+
 Each report opens with one sentence in plain business language. That
 sentence is the point: a finding nobody can act on is not a finding. The
 technical method for every figure is kept in a table at the bottom of each

@@ -113,8 +113,13 @@ environment — not a replacement for Windows, macOS, or Linux.
   switched from the header in one click; right-to-left layout in Arabic
   through logical CSS properties rather than a second stylesheet; the
   agent's own replies, welcome message and command list follow the
-  chosen language; the same WCAG 2.2 AA bar in both. Reports are written
-  in English and are marked as such for screen readers (ADR 0018)
+  chosen language; the same WCAG 2.2 AA bar in both (ADR 0018)
+- **Reports in Arabic or English** — a run is written in the language it
+  was started in: headlines, claims, section reports and the full report.
+  English stays the audited record and calculations are untouched; the
+  validator rejects an Arabic claim that cites different figures from its
+  English twin, so a translation cannot publish a number nobody
+  calculated (ADR 0022)
 - **Installable PWA** — manifest, icons, and a service worker make the
   mobile-first app installable on Android via "Add to Home screen"
 - **Session restore** — refreshing the browser reconnects to the same
@@ -263,7 +268,7 @@ python main.py
 # Python: agent, utils, API, runs, analytics, sequential ranges,
 # metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
 # supply chain, launcher, routing, language, assistant, custom stages,
-# agent runtimes, MCP, frameworks, docs (584 tests)
+# agent runtimes, MCP, frameworks, report language, docs (616 tests)
 python -m unittest discover tests
 
 # Frontend unit tests (37 tests)
@@ -280,19 +285,21 @@ cd frontend && npm run typecheck
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 584 Python tests (573 run in CI;
-the 11 that need an optional agent framework or the MCP SDK skip there),
+PostgreSQL 16 service. Last verified: 616 Python tests (600 run in CI;
+the 11 that need an optional agent framework or the MCP SDK, and the 5
+that need LLMRouter, skip there),
 37 frontend unit tests, and 52 end-to-end checks (51 executed, 1
 desktop-only check skipped on the mobile project). In environments with a pre-installed
 browser, point Playwright at it:
 `PLAYWRIGHT_EXECUTABLE_PATH=/path/to/chromium npx playwright test`.
 
-Five of the 584 load real LLMRouter routers and **skip unless LLMRouter
+Five of the 616 load real LLMRouter routers and **skip unless LLMRouter
 is installed**, which in CI it is not — so CI reports `OK (skipped=5)`
 and that is the expected result, not a gap. The other 22 routing tests
 never import it and always run. Both readings were verified: with the
-library and the optional frameworks (ADR 0021) installed, 584 tests and
-nothing skipped.
+library and the optional frameworks (ADR 0021) installed, nothing
+skipped (checked at 584 tests; the 32 that ADR 0022 added need neither
+and run everywhere).
 
 ## Background worker (optional)
 

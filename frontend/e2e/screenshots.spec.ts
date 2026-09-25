@@ -48,6 +48,11 @@ test('capture interface screenshots', async ({ page }, testInfo) => {
     // header the way a reader would.
     await page.getByRole('button', { name: 'Change language' }).click()
     await page.getByRole('status').filter({ hasText: 'جاهز' }).waitFor()
+    // A report keeps the language its run was started in, so the Arabic
+    // screenshot starts an Arabic run (ADR 0022).
+    await page.getByRole('button', { name: 'كل التحليلات' }).click()
+    await page.getByRole('button', { name: 'بدء التحليل' }).click()
+    await page.locator('pre.runreport--full[lang="ar"]').waitFor({ timeout: 20_000 })
     await page.getByRole('region', { name: 'موافقة مطلوبة' }).waitFor()
     await shot('runs-arabic-dark')
 

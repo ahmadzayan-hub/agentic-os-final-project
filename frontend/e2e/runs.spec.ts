@@ -24,6 +24,9 @@ test('analytics run: goal to approved, published, evidence-backed report', async
   await expect(page.locator('.runchart__svg')).toHaveCount(4)
   await expect(page.locator('.runreport--full')).toContainText('Every claim in this report')
   await expect(page.locator('.runreport--full')).toContainText('verified')
+  // Started from the English interface, so written and marked in English.
+  await expect(page.locator('.runreport--full')).toHaveAttribute('lang', 'en')
+  await expect(page.locator('.runreport--full')).toHaveAttribute('dir', 'ltr')
 
   // Approve: the report is published to the Obsidian-compatible vault.
   await approval.getByRole('button', { name: 'Approve and publish' }).click()

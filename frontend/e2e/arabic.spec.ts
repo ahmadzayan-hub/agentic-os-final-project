@@ -114,9 +114,17 @@ test.describe('Arabic interface', () => {
     await expect(page.getByRole('region', { name: 'موافقة مطلوبة' })).toBeVisible({
       timeout: 40_000,
     })
-    // The report itself is English and is marked as such, so a screen
-    // reader switches voice rather than reading English with Arabic rules.
-    await expect(page.locator('pre.runreport').first()).toHaveAttribute('lang', 'en')
+    // A run started in Arabic writes its reports in Arabic (ADR 0022), and
+    // the blocks say so, so a screen reader and the bidi algorithm read
+    // them as Arabic rather than as English.
+    const sectionReport = page.locator('pre.runreport').first()
+    await expect(sectionReport).toHaveAttribute('lang', 'ar')
+    await expect(sectionReport).toHaveAttribute('dir', 'rtl')
+    await expect(sectionReport).toContainText('التحليل الوصفي: ماذا حدث؟')
+    const fullReport = page.locator('pre.runreport--full')
+    await expect(fullReport).toHaveAttribute('lang', 'ar')
+    await expect(fullReport).toContainText('# تقرير تحليل الأعمال')
+    await expect(fullReport).toContainText('both_languages_cite_the_same_figures')
     await expectNoViolations(page, 'runs view with approval, charts and reports (ar)')
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0)
 

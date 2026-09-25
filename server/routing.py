@@ -119,7 +119,7 @@ class RoutedGateway:
         return self.gateway.ask(system, user, provider=provider,
                                 max_tokens=max_tokens)
 
-    def narrate(self, goal, facts):
+    def narrate(self, goal, facts, language="en"):
         """Narrate, having asked the router which model should do it.
 
         The returned dict carries the routing decision as well as the
@@ -128,8 +128,10 @@ class RoutedGateway:
         """
         available = self.gateway.providers()
         decision = self._decide(goal, facts, available)
-        result = self.gateway.narrate(goal, facts,
-                                      provider=decision["provider"])
+        result = (self.gateway.narrate(goal, facts, provider=decision["provider"],
+                                       language=language)
+                  if language != "en" else
+                  self.gateway.narrate(goal, facts, provider=decision["provider"]))
         result["routing"] = decision
         return result
 

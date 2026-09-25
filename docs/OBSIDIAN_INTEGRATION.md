@@ -13,7 +13,9 @@ instructions.
 - Approving a run's publish step writes exactly two notes:
   - `vault/Reports/<goal-slug>-<run-id>.md` — the full report with YAML
     provenance frontmatter (`type`, `run`, `generated`, `status:
-    approved`, `dataset`) and a `[[run-id]]` wikilink to its log.
+    approved`, `dataset`, `lang`) and a `[[run-id]]` wikilink to its log.
+    An Arabic report (`lang: ar`) reads right-to-left in Obsidian when
+    its right-to-left setting is on.
   - `vault/Runs/<run-id>.md` — the run log: goal plus every specialist
     stage and its outcome, backlinking the report.
 - Write-back is **approval-gated on the server** and bound to the exact

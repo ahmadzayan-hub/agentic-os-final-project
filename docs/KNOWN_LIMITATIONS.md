@@ -168,15 +168,19 @@ required local files. Both behaviors are covered by tests
 13. Obsidian integration is approval-gated write-back into a vault
     folder; reading/sync/retrieval from a vault is not implemented.
 14. The interface is Arabic or English (ADR 0018), right-to-left in
-    Arabic, and the agent's own replies follow the chosen language. Three
-    boundaries: **reports are written in English** — the analytics
-    narrative is a separate slice and every report block is marked
-    `lang="en"` so a screen reader knows; the choice is per browser and
-    per session, so a hosted install has no organisation-wide default;
-    and Arabic uses system fonts, so the face varies by operating system
-    (no font is downloaded, because the app works offline). Digits are
-    Western in both languages so a figure on screen matches the same
-    figure in the report.
+    Arabic, and the agent's own replies follow the chosen language.
+    Reports are written in the language a run was started in (ADR 0022),
+    with the same figures, verified by the validator claim by claim.
+    Boundaries: a report's language is fixed when its run starts, so the
+    other language means a new run and a new approval; calculation names
+    and methods, column and group names and period labels stay as the
+    data and the evidence wrote them; a custom stage's text appears as its
+    author wrote it; the choice is per browser and per session, so a
+    hosted install has no organisation-wide default; and Arabic uses
+    system fonts, so the face varies by operating system (no font is
+    downloaded, because the app works offline). Digits are Western in
+    both languages so a figure on screen matches the same figure in any
+    report.
 15. Backups are on-demand: `scripts/backup.py` produces a verified,
     restorable backup (the drill in `tests/test_backup.py` destroys the
     database and rebuilds it on every push), but **nothing schedules

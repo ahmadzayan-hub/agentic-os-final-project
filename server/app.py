@@ -176,6 +176,9 @@ class RunIn(BaseModel):
     dataset_text: str | None = Field(default=None, max_length=2_100_000)
     dataset_id: str | None = Field(default=None, max_length=32)
     dataset_name: str | None = Field(default=None, max_length=100)
+    # The language the report is written in (ADR 0022). The interface
+    # sends the reader's language.
+    language: str = Field(default="en", pattern="^(en|ar)$")
 
 
 class ApprovalIn(BaseModel):
@@ -605,7 +608,8 @@ def create_app(config_path=None, env=None):
                                          run.dataset_name,
                                          owner=principal.subject,
                                          dataset_id=run.dataset_id,
-                                         profile=run.profile)
+                                         profile=run.profile,
+                                         language=run.language)
             except KeyError:
                 raise HTTPException(status_code=404, detail='Dataset not found.')
             except ValueError as error:

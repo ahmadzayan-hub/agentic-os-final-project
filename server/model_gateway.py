@@ -55,6 +55,16 @@ SYSTEM_PROMPT = (
     "vocabulary, no hedging about methodology."
 )
 
+# Added for a report written in Arabic (ADR 0022). The facts arrive in
+# Arabic already; the instruction is about register and about figures,
+# because a model rewriting 1,234.56 as ١٬٢٣٤٫٥٦ or rounding it would break
+# the report's promise that its figures are the calculated ones.
+ARABIC_INSTRUCTION = (
+    " Write the summary in Arabic, in the formal register of a Gulf business "
+    "report. Copy every number exactly as it appears in the facts, with the "
+    "same digits (0-9), separators and percent signs."
+)
+
 
 class ModelGateway:
     def __init__(self, env=None):
@@ -110,23 +120,29 @@ class ModelGateway:
                       "local_only": True})
         return found
 
-    def narrate(self, goal, facts, provider=None):
+    def narrate(self, goal, facts, provider=None, language="en"):
         """Return {'text', 'source'}. Facts are short verified statements;
         the model is asked only to phrase them.
 
         `provider` overrides the priority order for this call. The gateway
         could always reach all three; until now nothing could ask it for
         a particular one.
+
+        `language` is the report's language; the facts are already in it.
         """
         callers = {"ollama": self._call_ollama,
                    "anthropic": self._call_anthropic,
                    "groq": self._call_groq}
         caller = callers.get(provider or self.provider)
         if caller:
-            text = caller(goal, facts)
+            text = (caller(goal, facts, language=language) if language != "en"
+                    else caller(goal, facts))
             if text:
                 return {"text": text, "source": "model"}
         summary = " ".join(facts[:4])
+        if language == "ar":
+            return {"text": f"تحليل الهدف «{goal}»: {summary}",
+                    "source": "deterministic"}
         return {
             "text": f"Analysis of the goal “{goal}”: {summary}",
             "source": "deterministic",
@@ -176,16 +192,20 @@ class ModelGateway:
         return text.strip() or None
 
     # The narrator's calls: the house-style system prompt over goal + facts.
-    def _call_ollama(self, goal, facts):
-        return self._complete_ollama(SYSTEM_PROMPT, self._prompt(goal, facts),
+    @staticmethod
+    def _system(language):
+        return SYSTEM_PROMPT + (ARABIC_INSTRUCTION if language == "ar" else "")
+
+    def _call_ollama(self, goal, facts, language="en"):
+        return self._complete_ollama(self._system(language), self._prompt(goal, facts),
                                      LOCAL_OUTPUT_TOKENS)
 
-    def _call_anthropic(self, goal, facts):
-        return self._complete_anthropic(SYSTEM_PROMPT, self._prompt(goal, facts),
-                                        MAX_OUTPUT_TOKENS)
+    def _call_anthropic(self, goal, facts, language="en"):
+        return self._complete_anthropic(self._system(language),
+                                        self._prompt(goal, facts), MAX_OUTPUT_TOKENS)
 
-    def _call_groq(self, goal, facts):
-        return self._complete_groq(SYSTEM_PROMPT, self._prompt(goal, facts),
+    def _call_groq(self, goal, facts, language="en"):
+        return self._complete_groq(self._system(language), self._prompt(goal, facts),
                                    MAX_OUTPUT_TOKENS)
 
     # The wire calls, one per provider, over an arbitrary system + user pair.

@@ -150,9 +150,13 @@ class RunEngine:
         return roles + ["publish"]
 
     def create_run(self, goal, dataset_text=None, dataset_name=None,
-                   owner="local-owner", dataset_id=None, profile=None):
-        # An unknown profile is refused before anything is written.
+                   owner="local-owner", dataset_id=None, profile=None,
+                   language="en"):
+        # An unknown profile, or a language reports are not written in, is
+        # refused before anything is written.
         roles = self.roles_for(profile)
+        if language not in analytics.REPORT_LANGUAGES:
+            raise ValueError(f"Reports are not written in “{language}”.")
         # Checked before anything is written, so a refused run leaves no
         # half-created rows behind.
         if self.limits:
@@ -175,9 +179,13 @@ class RunEngine:
             # rows written before datasets were content-addressed.
             "dataset_text": "", "state": "queued",
             "created_at": now, "updated_at": now, "error": None,
-            "owner": owner, "dataset_id": dataset["id"]})
+            "owner": owner, "dataset_id": dataset["id"],
+            # Fixed for the run's life: the approval gate binds to the hash
+            # of one artifact, written in one language (ADR 0022).
+            "report_language": language})
+        titles = analytics.ROLE_TITLES_AR if language == "ar" else analytics.ROLE_TITLES
         for idx, role in enumerate(roles):
-            title = analytics.ROLE_TITLES.get(role) or self.stages[role].title
+            title = titles.get(role) or self.stages[role].title
             self.store.insert("tasks", {
                 "id": uuid.uuid4().hex[:12], "run_id": run_id, "idx": idx,
                 "role": role, "title": title,
@@ -196,7 +204,8 @@ class RunEngine:
     def _context(self, run, tasks):
         ctx = {"goal": run["goal"], "dataset_text": self._dataset_text(run),
                "dataset_name": run["dataset_name"], "run_id": run["id"],
-               "glossary": self.glossary}
+               "glossary": self.glossary,
+               "report_language": run.get("report_language") or "en"}
         for task in tasks:
             if task["state"] == "succeeded" and task["result_json"]:
                 result = json.loads(task["result_json"])
@@ -352,23 +361,33 @@ class RunEngine:
         return self.get_run(run_id)
 
     def _request_publish_approval(self, run_id, task):
+        # The approval is read by the same person who reads the report, so
+        # it is in the report's language. `risk` stays an enum (ADR 0022).
+        arabic = (self._row(run_id).get("report_language") or "en") == "ar"
         artifact = self.store.latest_artifact(run_id)
         if artifact is None:
-            self._set_task(task["id"], "skipped", summary="No artifact to publish.")
+            self._set_task(task["id"], "skipped",
+                           summary="لا يوجد ما يُنشر." if arabic
+                           else "No artifact to publish.")
             self._set_run_state(run_id, "completed")
             return self.get_run(run_id)
         if self.store.pending_approval(run_id) is None:
             content_hash = hashlib.sha256(artifact["content"].encode()).hexdigest()
             self.store.insert("approvals", {
                 "id": uuid.uuid4().hex[:12], "run_id": run_id,
-                "action": "Publish the analytics report to the Obsidian vault",
+                "action": ("نشر تقرير التحليل في مخزن Obsidian" if arabic else
+                           "Publish the analytics report to the Obsidian vault"),
                 "target": str(self.vault_dir / "Reports"), "risk": "high",
-                "impact": "Writes two markdown notes (report + run log) to the local vault.",
-                "reversibility": "Reversible: delete the created notes.",
+                "impact": ("يكتب ملاحظتين بصيغة Markdown (التقرير وسجل التشغيل) في "
+                           "المخزن المحلي." if arabic else
+                           "Writes two markdown notes (report + run log) to the local vault."),
+                "reversibility": ("قابل للتراجع: احذف الملاحظتين المنشأتين." if arabic
+                                  else "Reversible: delete the created notes."),
                 "content_hash": content_hash, "state": "pending",
                 "created_at": _now(), "decided_at": None})
         self._set_task(task["id"], "awaiting_approval",
-                       summary="Waiting for human approval to publish.")
+                       summary="بانتظار موافقة بشرية على النشر." if arabic
+                       else "Waiting for human approval to publish.")
         self._set_run_state(run_id, "awaiting_approval")
         return self.get_run(run_id)
 
@@ -414,7 +433,8 @@ class RunEngine:
             "---\n"
             f"type: analytics-report\nrun: {run_id}\n"
             f"generated: {_now()}\nstatus: approved\n"
-            f"dataset: \"{run['dataset_name']}\"\n---\n\n"
+            f"dataset: \"{run['dataset_name']}\"\n"
+            f"lang: {run.get('report_language') or 'en'}\n---\n\n"
         )
         note.write_text(frontmatter + artifact["content"]
                         + f"\n\nRun log: [[{run_id}]]\n", encoding="utf-8")
@@ -487,7 +507,8 @@ class RunEngine:
                 content = result["output"].get("report_markdown")
                 if content:
                     reports.append({"type": t["role"], "question": questions[t["role"]],
-                                    "title": analytics.ROLE_TITLES[t["role"]],
+                                    # As stored at creation: in the run's language.
+                                    "title": t["title"],
                                     # The one sentence a business reader needs,
                                     # surfaced rather than left inside the markdown.
                                     "headline": result["output"].get("headline", ""),
@@ -514,6 +535,7 @@ class RunEngine:
         ]
         return {"id": run["id"], "goal": run["goal"],
                 "dataset_name": run["dataset_name"], "state": run["state"],
+                "report_language": run.get("report_language") or "en",
                 "error": run["error"], "created_at": run["created_at"],
                 "updated_at": run["updated_at"], "tasks": tasks,
                 "paused": bool(run.get("paused")),

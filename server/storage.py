@@ -130,7 +130,10 @@ class SqlStore:
                 # local owner, matching pre-auth behavior.
                 self._exec(
                     f"UPDATE {table} SET owner = 'local-owner' WHERE owner IS NULL")
-        for column in ("dataset_id", "lease_owner", "lease_expires_at"):
+        # report_language: NULL for runs written before reports had a
+        # language, which were all English (ADR 0022).
+        for column in ("dataset_id", "lease_owner", "lease_expires_at",
+                       "report_language"):
             try:
                 self._exec(f"ALTER TABLE runs ADD COLUMN {column} TEXT")
             except Exception:

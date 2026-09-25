@@ -153,7 +153,13 @@ export const api = {
   exportData: (id: string) => request<ExportPayload>(`/api/sessions/${id}/export`),
   clearMemory: (id: string) =>
     request<OperationResult>(`/api/sessions/${id}/memory`, { method: 'DELETE' }),
-  createRun: (goal: string, datasetText?: string, datasetName?: string, profile?: string) =>
+  createRun: (
+    goal: string,
+    datasetText?: string,
+    datasetName?: string,
+    profile?: string,
+    language: 'en' | 'ar' = 'en',
+  ) =>
     request<RunDetail>('/api/runs', {
       method: 'POST',
       body: JSON.stringify({
@@ -161,6 +167,7 @@ export const api = {
         dataset_text: datasetText ?? null,
         dataset_name: datasetName ?? null,
         profile: profile || null,
+        language,
       }),
     }),
   pipelines: () => request<Pipelines>('/api/pipelines'),

@@ -276,8 +276,10 @@ class Assistant:
         dataset_id, dataset_name = self._resolve_dataset(
             arguments.get("dataset"), text, session.owner)
         try:
+            # The report is written in the language the person is using.
             run = self.engine.create_run(goal, owner=session.owner,
-                                         dataset_id=dataset_id)
+                                         dataset_id=dataset_id,
+                                         language="ar" if language == "ar" else "en")
         except quota.QuotaExceeded as error:
             return {"text": error.message, "result": None}
         shown = dataset_name or reply(language, "dataset_sample")

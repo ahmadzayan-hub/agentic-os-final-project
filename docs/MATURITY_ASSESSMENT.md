@@ -38,7 +38,7 @@ with.
 | **Frameworks and interoperability** | **Shipped after this assessment → ADR 0021** | No agent framework in the core, by decision; an optional agent runtime behind the chat with LangGraph and Pydantic AI examples; an MCP server in the standard library; a stage built as a graph | Neither runtime has been driven by a live model from this environment; MCP is stdio and local only. |
 | Interface: accessibility, performance, responsive, PWA | **Mature** | WCAG 2.2 AA by axe on every view; Lighthouse 96/100/100/100; 320 px up | — |
 | **Interface: languages and direction** | **Missing → this slice** | 188 hard-coded English strings; 30 physical-direction CSS rules; `language` preference recorded and ignored | Arabic/English UI, RTL, and agent replies in the chosen language ship with this document. |
-| Report language | **English only** | ~2,400 lines of narrative strings in `analytics.py` | Arabic reports are a separate slice, not a switch. |
+| **Report language** | **Shipped after this assessment → ADR 0022** | Was: English only, ~2,400 lines of narrative in `analytics.py`. Now: a run is written in Arabic or English; English stays the audited record; a validator check holds every Arabic claim to its English figures | Fixed per run; identifiers, data and custom stages stay as written; no live model narration verified in Arabic. |
 | Data ingestion | **Partial** | CSV, 2 MB, 50,000 rows, in-memory | No XLSX/JSON/Parquet, no database connectors, no larger-than-memory. |
 | Scheduling and automation | **Missing** | Runs start from a click or an API call | No "re-run every Monday", no "when this file changes". The lease worker is the right base for it. |
 | Obsidian | **Partial** | Approval-gated write-back with provenance frontmatter | Write-only; nothing reads a vault. |
@@ -78,11 +78,13 @@ with.
    for one sentence but cannot widen what a caller may do; the workspace
    is served as MCP tools; a framework may live inside a custom stage.
 
-5. **Arabic reports.** A report-language layer over the narrative
-   strings. Separate from the interface work because the volume is
-   different by an order of magnitude and because the numbers, evidence
-   ids and calculation names must stay identical across languages for the
-   provenance chain to hold.
+5. **Arabic reports** — *shipped as ADR 0022 after this assessment was
+   written.* Every sentence a stage writes carries its Arabic beside it;
+   calculations and the English claims the validator audits are
+   unchanged; a new check rejects any Arabic claim whose figures differ
+   from its English twin. What remains is what a translation layer cannot
+   give: Arabic month names, and custom stages in a language their
+   author did not write.
 
 6. **More inputs** — XLSX and JSON first (they are parsing); database
    connectors later (they are credentials, scheduling and governance).

@@ -108,11 +108,13 @@ facts reach the narrator.
    properties rather than a second stylesheet; every interface string in
    two typed dictionaries the compiler keeps in step; the agent's own
    replies, welcome and command catalogue in the chosen language; the
-   same WCAG 2.2 AA bar in both. **Not done:** Arabic reports — the
-   analytics narrative — which is its own slice because the numbers and
-   evidence ids must stay identical across languages for provenance to
-   hold; and any third language, for which the mechanism is ready and no
-   dictionary is written.
+   same WCAG 2.2 AA bar in both. **Done (ADR 0022):** Arabic reports.
+   A run is written in the language it starts in; English stays the
+   audited record; calculations are untouched; the validator rejects a
+   claim whose Arabic cites different figures, or a built-in claim left in
+   English. **Not done:** any third language, for which the mechanism is
+   ready and no dictionary is written; Arabic month names for period
+   labels; translation of custom stages' text.
 9. A conversational agent that understands and acts.
    **Done (ADR 0019):** a sentence in the chat becomes one of ten typed
    actions — save, recall, forget, change a preference, start an
