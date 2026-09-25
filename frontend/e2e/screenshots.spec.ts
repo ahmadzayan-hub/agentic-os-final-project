@@ -43,5 +43,18 @@ test('capture interface screenshots', async ({ page }, testInfo) => {
       .getByRole('region', { name: 'Approval required' })
       .waitFor({ timeout: 20_000 })
     await shot('runs-dark')
+
+    // The same screens in Arabic, right-to-left, switched from the
+    // header the way a reader would.
+    await page.getByRole('button', { name: 'Change language' }).click()
+    await page.getByRole('status').filter({ hasText: 'جاهز' }).waitFor()
+    await page.getByRole('region', { name: 'موافقة مطلوبة' }).waitFor()
+    await shot('runs-arabic-dark')
+
+    await page.getByRole('button', { name: /^مساحة العمل/ }).first().click()
+    await lastAgentBubble(page).waitFor()
+    await shot('chat-arabic-dark')
+    await theme('light')
+    await shot('chat-arabic-light')
   }
 })

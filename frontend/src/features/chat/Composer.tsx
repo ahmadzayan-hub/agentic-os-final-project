@@ -1,4 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
+import { useI18n } from '../../i18n'
 import { Icon } from '../../shared/components/Icon'
 
 export interface ComposerHandle {
@@ -17,9 +18,10 @@ interface ComposerProps {
  *  While a request is in flight the send action is disabled, which also
  *  prevents duplicate submissions. */
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { onSend, busy, disabled = false, placeholder = 'Message the agent, or type / for a command' },
+  { onSend, busy, disabled = false, placeholder },
   ref,
 ) {
+  const { t, tx } = useI18n()
   const [text, setText] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -64,15 +66,18 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         }}
       >
         <label className="visually-hidden" htmlFor="composer-input">
-          Message
+          {t('composer.label')}
         </label>
+        {/* dir="auto": a message is typed in whichever language the person
+            thinks in, not necessarily the interface language. */}
         <textarea
           id="composer-input"
           ref={textareaRef}
           className="composer__input"
           rows={1}
+          dir="auto"
           value={text}
-          placeholder={disabled ? 'This session has ended' : placeholder}
+          placeholder={disabled ? t('composer.ended') : (placeholder ?? t('composer.placeholder'))}
           disabled={disabled}
           onChange={(event) => {
             setText(event.target.value)
@@ -89,18 +94,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           type="submit"
           className="composer__send"
           disabled={busy || disabled || !text.trim()}
-          aria-label={busy ? 'Sending…' : 'Send message'}
+          aria-label={busy ? t('composer.sending') : t('composer.send')}
         >
           {busy ? <span className="spinner" aria-hidden="true" /> : <Icon name="send" size={18} />}
         </button>
       </form>
       <p className="composer__hint">
         <span>
-          <kbd>Enter</kbd> to send · <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line
+          {tx('composer.hintSend', { enter: <kbd>Enter</kbd>, shift: <kbd>Shift</kbd> })}
         </span>
-        <span>
-          <kbd>Ctrl</kbd>+<kbd>K</kbd> for commands
-        </span>
+        <span>{tx('composer.hintCommands', { ctrl: <kbd>Ctrl</kbd>, k: <kbd>K</kbd> })}</span>
       </p>
     </div>
   )

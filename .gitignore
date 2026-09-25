@@ -1,6 +1,14 @@
 data/memory.json
-data/agentic.db
+# The database plus the -wal/-shm sidecars WAL mode creates alongside it.
+data/agentic.db*
+# A relative `database_file` resolves against the working directory, so a
+# script run from the repository root leaves one here. Runtime data, not
+# source, wherever it lands.
+/agentic.db*
+/sbom.json
 vault/
+# Backups contain every row of the database, including user data.
+backups/
 __pycache__/
 *.pyc
 .venv/

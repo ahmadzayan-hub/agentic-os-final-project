@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../../i18n'
+import type { MessageKey } from '../../i18n'
 import { Icon } from '../../shared/components/Icon'
 import type { IconName } from '../../shared/components/Icon'
 import type { SessionState } from '../../shared/types'
@@ -7,21 +9,21 @@ import type { ComposerHandle } from './Composer'
 import { MessageBubble } from './MessageBubble'
 
 export interface Suggestion {
-  label: string
+  label: MessageKey
   icon: IconName
-  insert: string
+  /** What goes into the composer — a sentence, in the reader's language. */
+  insert: MessageKey
 }
 
 export const SUGGESTIONS: Suggestion[] = [
-  { label: 'See what the agent can do', icon: 'help', insert: '/help' },
-  { label: 'Remember something', icon: 'memory', insert: '/remember ' },
-  { label: 'Switch to concise replies', icon: 'sparkle', insert: '/set tone concise' },
-  { label: 'Show session history', icon: 'clock', insert: '/history' },
+  { label: 'suggestion.analyse', icon: 'sparkle', insert: 'suggestion.analyse.insert' },
+  { label: 'suggestion.remember', icon: 'memory', insert: 'suggestion.remember.insert' },
+  { label: 'suggestion.explain', icon: 'activity', insert: 'suggestion.explain.insert' },
+  { label: 'suggestion.help', icon: 'help', insert: 'suggestion.help.insert' },
 ]
 
-function greetingFor(hour: number, name: string | null): string {
-  const period = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-  return name ? `${period}, ${name}` : period
+function periodOf(hour: number): MessageKey {
+  return hour < 12 ? 'greeting.morning' : hour < 18 ? 'greeting.afternoon' : 'greeting.evening'
 }
 
 interface ChatViewProps {
@@ -47,6 +49,7 @@ export function ChatView({
   onDismissFailed,
   composerRef,
 }: ChatViewProps) {
+  const { t, tx } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [pinnedToBottom, setPinnedToBottom] = useState(true)
   const transcriptLength = session.transcript.length
@@ -71,32 +74,42 @@ export function ChatView({
   // retry affordance), not the empty-state hero.
   const empty = transcriptLength === 0 && !failedText && !sending
 
+  const period = t(periodOf(new Date().getHours()))
+  const greeting = userName ? t('greeting.withName', { period, name: userName }) : period
+
   return (
-    <section className="chat" aria-label="Conversation">
+    <section className="chat" aria-label={t('chat.aria')}>
       <div className="chat__scroll" ref={scrollRef} onScroll={handleScroll}>
         {empty ? (
           <div className="chat__empty">
             <div className="hero__orb" aria-hidden="true">
               <Icon name="sparkle" size={26} />
             </div>
-            <h2 className="hero__greeting">{greetingFor(new Date().getHours(), userName)}</h2>
-            <p className="hero__question">What would you like to accomplish?</p>
+            <h2 className="hero__greeting">{greeting}</h2>
+            <p className="hero__question">{t('chat.question')}</p>
             <div className="suggestions">
               {SUGGESTIONS.map((suggestion) => (
                 <button
                   key={suggestion.label}
                   type="button"
                   className="suggestion"
-                  onClick={() => composerRef.current?.insert(suggestion.insert)}
+                  onClick={() => composerRef.current?.insert(t(suggestion.insert))}
                 >
                   <Icon name={suggestion.icon} size={16} />
-                  {suggestion.label}
+                  {t(suggestion.label)}
                 </button>
               ))}
             </div>
             <p className="hero__hint">
-              {session.welcome} Commands begin with <kbd>/</kbd> — browse them any time with{' '}
-              <kbd>Ctrl</kbd>+<kbd>K</kbd>.
+              <span dir="auto">{session.welcome}</span>{' '}
+              {tx('chat.hint', {
+                slash: <kbd>/</kbd>,
+                shortcut: (
+                  <>
+                    <kbd>Ctrl</kbd>+<kbd>K</kbd>
+                  </>
+                ),
+              })}
             </p>
           </div>
         ) : (
@@ -105,7 +118,7 @@ export function ChatView({
               <MessageBubble key={entry.id} entry={entry} agentName={session.agent_name} />
             ))}
             {sending ? (
-              <div className="typing" role="status" aria-label="The agent is preparing a response">
+              <div className="typing" role="status" aria-label={t('chat.typing')}>
                 <span className="typing__dot" />
                 <span className="typing__dot" />
                 <span className="typing__dot" />
@@ -114,16 +127,16 @@ export function ChatView({
             {failedText ? (
               <div className="alertbar" role="alert">
                 <Icon name="alert" size={16} />
-                <span>Your message didn’t go through.</span>
+                <span>{t('chat.failed')}</span>
                 <button type="button" className="alertbar__retry" onClick={onRetry}>
-                  Retry
+                  {t('chat.retry')}
                 </button>
                 <button
                   type="button"
                   className="iconbtn"
                   style={{ width: 28, height: 28 }}
                   onClick={onDismissFailed}
-                  aria-label="Dismiss error"
+                  aria-label={t('chat.dismiss')}
                 >
                   <Icon name="x" size={14} />
                 </button>
@@ -132,7 +145,7 @@ export function ChatView({
             {session.ended ? (
               <div className="alertbar alertbar--info" role="status">
                 <Icon name="power" size={16} />
-                <span>This session has ended. Start a new session to continue.</span>
+                <span>{t('chat.ended')}</span>
               </div>
             ) : null}
           </div>
@@ -150,7 +163,7 @@ export function ChatView({
           }}
         >
           <Icon name="arrowDown" size={14} />
-          Latest
+          {t('chat.latest')}
         </button>
       ) : null}
 

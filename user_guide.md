@@ -11,18 +11,40 @@ workspace and the command line. For installation and testing, see
 ### Starting and stopping
 
 ```bash
-python -m uvicorn server.app:app --port 8000
+python scripts/serve.py
 ```
 
 Open <http://localhost:8000>. A session starts automatically, and
-**refreshing the page reconnects to the same conversation** (a new session
-begins only when you ask for one, end the current one, or restart the
-server). Stop the server with Ctrl+C; use **End session** in the sidebar
-to close a session gracefully first (the agent says goodbye and the
-composer locks).
+**refreshing the page reconnects to the same conversation** — as does
+restarting the server, because conversations are stored durably. A new
+session begins only when you ask for one or end the current one. Stop the
+server with Ctrl+C; use **End session** in the sidebar to close a session
+gracefully first (the agent says goodbye and the composer locks).
 
 On your first visit a short onboarding dialog explains the basics — it
 appears once and can be dismissed permanently.
+
+### Opening it on a phone
+
+`scripts/serve.py` also prints an address for phones on the same Wi-Fi —
+something like `http://192.168.1.20:8000`. Type that into the phone's
+browser; no install step is involved.
+
+Two things are worth knowing before you do:
+
+- **Local mode has no login.** Anyone on that network can open the app and
+  read or change its saved memory. On a network you do not control, start
+  it with `python scripts/serve.py --local-only`, which makes it reachable
+  from your own computer only.
+- **"Add to Home screen" needs HTTPS** on most phones. The app ships as an
+  installable PWA, but a phone will only offer to install it from an
+  address served over HTTPS — that is, from a deployment, not from a
+  laptop on the local network. Over plain HTTP the app still works in the
+  browser; it just is not offered as an icon.
+
+`--port 9000` moves it off port 8000 if something else is already there.
+The original `python -m uvicorn server.app:app --port 8000` still works
+and does the same thing, minus the address detection.
 
 ### The workspace at a glance
 
@@ -43,7 +65,25 @@ appears once and can be dismissed permanently.
 
 Type in the composer and press <kbd>Enter</kbd> to send;
 <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a line break. Anything starting
-with `/` is a command; everything else gets a tone-styled acknowledgement.
+with `/` is a command. Everything else is understood as a sentence, in
+English or Arabic, and acted on:
+
+| You write | The agent does |
+| --- | --- |
+| “Remember that the Q4 review is on Monday” | saves it to memory |
+| “What do you remember about coffee?” | lists matching memory |
+| “Analyse the sample sales data” / “analyse quarterly_sales by team” | starts a run and opens it in Runs |
+| “Is it done?” | reports the latest run's progress |
+| “Why did revenue move?” / “What should we do?” | quotes that section's headline from the latest report |
+| “Be concise” / “Reply in Arabic” / “Call me Ahmad” | changes a preference |
+| “Forget everything” | asks you to confirm — nothing is deleted until you reply “yes” |
+| “What can you do?” | lists the above |
+
+A sentence outside that vocabulary gets an honest “not understood” in
+your chosen tone, with examples of what to ask. With no language model
+configured — the default — a set of rules does the understanding and
+every reply is marked as such; a configured model widens what is
+understood but never what can be done (ADR 0019).
 
 You never need to memorize commands:
 
@@ -55,6 +95,15 @@ You never need to memorize commands:
 
 If a message fails to send (for example, offline), it is not lost — a
 retry option appears, and the status badge shows the connection state.
+
+If the operator has configured an **agent runtime** — an optional loop
+that may call several of the assistant's tools for one sentence — a
+sentence the assistant cannot place as one exact action goes to it. The
+reply then shows every tool's own text, verbatim and in order, followed
+by the runtime's closing line, and is labelled *run by <name> · N tool
+calls*. A runtime can never delete anything: deletion is asked for
+directly and confirmed in the next message, exactly as before. An exact
+sentence such as “remember that …” never reaches the runtime.
 
 ### Managing memory and your data
 
@@ -77,8 +126,10 @@ sessions and restarts. Do not store passwords or confidential information.
 
 Open **Preferences** to switch the response tone (Friendly, Concise, or
 Formal — replies change immediately), set **your name** (used in the
-workspace greeting), set the language label, and turn session-history
-recording on or off. Changes apply to the current session; permanent
+workspace greeting), choose the **language** (English or العربية — the
+interface switches at once, right-to-left in Arabic, and the agent's
+replies follow; the same switch sits in the header), and turn
+session-history recording on or off. Changes apply to the current session; permanent
 defaults are edited in `config.json`. The **Interface** card holds
 browser-side settings: theme (Dark, Light, or System) and a reduced-motion
 switch.
@@ -86,13 +137,107 @@ switch.
 ### Analytics runs
 
 Open **Runs** to turn a goal into a governed analytics pipeline. Choose
-the bundled sample sales dataset or paste your own CSV (header row first,
-up to 250 KB / 5000 rows), then start the run. Ten specialist agents
-execute in order — planning, ingestion, profiling, cleaning, preparation,
-analysis, visualization, business insights, independent validation, and
-reporting — and you can **Pause**, **Resume**, or **Cancel** at any time.
+the bundled sample sales dataset, upload a CSV file, or paste one (header
+row first, up to 2 MB / 50,000 rows), then start the run. Uploading the
+same file twice stores it once, and a previous upload can be re-analysed
+without sending it again. Twenty-one specialist agents execute in order,
+sequenced by **Hermes**, the orchestrator — planning, ingestion, data
+contract, profiling, quality scoring, privacy scanning, cleaning, metric
+governance, preparation, segment concentration, the four analytics
+agents, causal inference, anomaly detection, sensitivity testing,
+visualization, provenance, validation, and reporting. Hermes runs the stages, holds the
+approval gate, and recovers an interrupted run; it never analyses
+anything itself. You can
+**Pause**, **Resume**, or **Cancel** at any time. Pausing is
+recorded on the server, so it holds across a refresh and applies to a
+background worker too, not just the tab you clicked in.
+
+If the operator has registered **custom stages** — a domain agent written
+outside this repository, such as the bundled target-attainment example —
+they appear in the same pipeline list at the place they asked for, and a
+stage with a question of its own gets its own report tab plus a **Custom
+stages** section in the full report. Where the operator has also defined
+**profiles**, a *Pipeline profile* selector appears above the goal; the
+text under it names the stages the chosen profile adds, and the run
+records which profile it ran with. A custom stage's claims pass through
+the same validator as the built-in ones, and if a custom stage fails the
+report says so rather than leaving it out. Registering a stage is an
+operator task: see "Custom agents" in the README.
+
+### Defining what a number means
+
+By default a run picks the column it analyses by its name — a column
+called `revenue`, or failing that the first numeric column — and the
+report says which rule applied. That is a guess, and the report calls it
+one: "this run analyses **revenue** because it was chosen by column name.
+No definition exists for it."
+
+To replace the guess with a decision, copy `metrics.example.json` to
+`metrics.json` and describe your metrics:
+
+```json
+{
+  "version": 1,
+  "metrics": [
+    {
+      "name": "revenue",
+      "title": "Net Revenue",
+      "definition": "Invoiced amount after discounts, excluding tax and shipping.",
+      "owner": "Finance — Group Controller",
+      "certified": true,
+      "columns": ["revenue", "net_revenue"],
+      "formula": { "multiply": ["unit_price", "units"] }
+    }
+  ]
+}
+```
+
+What each part buys you:
+
+- **definition and owner** appear in every report, so the person
+  approving it can see whose definition they are publishing. A metric
+  marked `certified` must name an owner — certification with nobody
+  accountable is a rubber stamp, and the file is rejected with a reason.
+- **columns** decides which column the run analyses, replacing the name
+  guess. If two of them are in the same dataset, the report names the one
+  it analysed and the one it did not.
+- **formula** is optional and is the part a document cannot do. Where its
+  inputs are in the data, every row is checked: a `revenue` that does not
+  equal `unit_price × units` is reported, with the worst rows and the
+  size of each gap. One operation only — `sum`, `multiply`, `subtract`,
+  `divide` — so anyone can check a row with a calculator.
+
+No glossary ships with the project, because certifying a metric is a
+statement about *your* organisation and a default owner would be an
+invented one. Runs without a glossary work exactly as before and say
+plainly that their measure is undefined. The file is read when the server
+starts, so restart it after an edit.
+
+### The four questions, and the one that guards them
+
+The run answers the four questions of business analytics, each with its
+own agent and its own report, plus a fifth tab that says what those
+answers may be used for. Use the tabs above the report to move between
+them:
+
+| Tab | Question | What you get |
+| --- | --- | --- |
+| **Descriptive** | What happened? | Totals, the typical value, how much things vary, the change across the period, the biggest segment, and records worth a second look |
+| **Diagnostic** | Why did it happen? | Which segment moved the number and by how much (the parts add up to the whole), and which columns move together — described as association, because moving together is not proof of cause |
+| **Experiment** | Can we claim a cause? | Whether this data is entitled to a causal claim at all. If it records a control and a treatment group, the difference between them as a **range** — because one number implies a precision no sample has — and whether that range is wide enough to include no change. If it does not, a plain no, followed by the experiment that would settle it: how many observations per group, and the smallest change your existing rows could already detect |
+| **Predictive** | What will happen? | The next three periods, if the current pattern continues, with the accuracy this method achieved when tested against past periods it had not seen. Too little history and it tells you so instead of guessing |
+| **Prescriptive** | What should I do? | The options your data supports, what each is worth, a recommendation, and — stated plainly — the assumption behind the ranking and how close the call was |
+
+Each report opens with one sentence in plain business language. That
+sentence is the point: a finding nobody can act on is not a finding. The
+technical method for every figure is kept in a table at the bottom of each
+report, so anything can be checked without cluttering what you read
+first.
+
 A closed or crashed browser loses nothing: runs are stored durably and
-resume from where they stopped.
+resume from where they stopped. By default a run advances while the Runs
+view is open; if the person running the server has started a background
+worker (`python scripts/worker.py`), runs continue with no browser open.
 
 The finished report shows charts, key metrics, and a findings table where
 every claim lists its evidence. Publishing the report into the local
@@ -135,9 +280,12 @@ To stop, enter `/exit` — anything typed after it on the same line is
 ignored, so `/exit now` also closes the application. Pressing Ctrl+C
 (or Ctrl+D) closes it safely as well.
 
-Every line you type after `You:` is sent to the agent. Empty input is
-rejected with a gentle reminder — the application never crashes on blank
-lines.
+Every line you type after `You:` is sent to the agent. Sentences work
+here too — “remember that…”, “what do you remember?”, “be concise”,
+“reply in Arabic” — through the same rules the web interface uses;
+analytics runs need the web interface, and the agent says so. Empty
+input is rejected with a gentle reminder — the application never crashes
+on blank lines.
 
 ---
 
@@ -165,7 +313,7 @@ the requests that came before it.
 | Preference     | Default    | Effect                                                  |
 | -------------- | ---------- | ------------------------------------------------------- |
 | `tone`         | `friendly` | Response style: `friendly`, `concise`, or `formal`      |
-| `language`     | `English`  | Recorded for reference; responses are in English        |
+| `language`     | `English`  | `English` or `Arabic`: the agent replies in it and the web interface follows |
 | `save_history` | `true`     | When `false`, requests are not recorded in the history  |
 
 Values `true` and `false` are stored as real booleans, so
@@ -213,8 +361,9 @@ always answers with an explanation of what to do instead.
   reports are written to `vault/`. Everything stays on the machine running
   Agentic OS — nothing is sent over the internet unless you configure the
   optional Groq narrator on the server.
-- Conversation history and activity exist in memory for the current
-  session only and disappear when the server restarts.
+- Conversations (messages, preferences, and history) are stored durably
+  alongside runs, so they survive a restart. The Activity timeline is
+  browser-side and resets on reload.
 - The web app stores three things in your browser: the theme choice, the
   onboarding-dismissed flag, and the current session id (so a refresh can
   reconnect). It stores no personal content.

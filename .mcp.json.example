@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "agentic-os": {
+      "command": "python",
+      "args": ["scripts/mcp_server.py"],
+      "env": {}
+    }
+  }
+}

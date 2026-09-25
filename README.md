@@ -10,6 +10,8 @@ environment — not a replacement for Windows, macOS, or Linux.
 
 ![Agentic OS — workspace, dark theme](docs/screenshots/desktop-hero-dark.png)
 
+![Agentic OS — the same workspace in Arabic, right-to-left](docs/screenshots/desktop-chat-arabic-dark.png)
+
 ## Main Features
 
 - **Web workspace** — a responsive React application with a greeting hero,
@@ -20,31 +22,117 @@ environment — not a replacement for Windows, macOS, or Linux.
   fully preserved and dependency-free
 - **One brain, two faces** — both interfaces drive the same tested Python
   `Agent` class; no logic is duplicated in the frontend
-- **Analytics runs** — a goal becomes a governed pipeline of specialist
-  agents (planner, data collection, profiling, cleaning, preparation,
-  analysis, visualization, business analysis, independent validation,
-  reporting) executed as durable, bounded tasks in SQLite: pause, cancel,
-  restart recovery, truthful SVG charts, and a report where **every claim
-  links to a calculation**
+- **All four business-analytics types, one agent each** — Descriptive
+  (*what happened?*), Diagnostic (*why?*), Predictive (*what will
+  happen?*), Prescriptive (*what should I do?*), running as a maturity
+  ladder where each consumes the one below it. **Each produces its own
+  report**, plus a comprehensive report embedding all four. Every type
+  opens with a headline in plain business language — "Revenue is up 45%
+  over the period", not "the mean increased by 2.3 standard deviations" —
+  and statistical jargon in a claim or headline **fails validation**
+- **Association is never reported as cause** — a dedicated Experiment and
+  Causal Inference agent decides whether the data is *entitled* to a
+  causal claim. Where rows record assignment to a control and a treatment
+  group it compares them, reports each difference as a **range** rather
+  than a falsely precise number, widens that range when several groups are
+  compared, and flags a split too lopsided to have been random. Where they
+  do not — which is most business data — it refuses the causal claim and
+  computes the experiment that would settle it: how many observations per
+  group, and the smallest change the data already in hand could detect
+- **A result that survives being looked at twice** — the range carrying
+  the verdict is an *always-valid* one, so checking a running test on
+  Tuesday and again on Thursday, and stopping when it looks good, does
+  not break it. Simulated, an ordinary range checked that way calls a
+  difference real in **31.5% of experiments where nothing is happening**;
+  the always-valid range does it in 1.0%, while still finding a genuine
+  effect every time. It is ~1.55× wider, the report says why, and the
+  narrower reading is printed beside it for anyone who really did fix
+  their sample size in advance (ADR 0016)
+- **Every figure says what it measures and who owns that definition** —
+  a metric glossary (`metrics.json`) gives each metric a definition, an
+  owner, and optionally the arithmetic it must satisfy. The glossary
+  decides which column a run analyses; where it says nothing, the run
+  states plainly that its measure is undefined, and **validation fails a
+  run that stays quiet about it**. Where a definition is arithmetic over
+  columns present in the data — `revenue = unit_price × units` — every
+  row is checked against it and the ones that disagree are named
+- **Twenty-one governed specialists, orchestrated by Hermes** — planning,
+  ingestion, data contract, profiling, quality scoring, privacy scanning,
+  cleaning, metric governance, preparation, segment concentration, the
+  four analytics agents, causal inference, anomaly detection, sensitivity
+  testing, visualization, provenance, independent validation, and
+  reporting, then an approval-gated publish. **Hermes sequences them and holds the gate; it
+  analyses nothing itself**, which is what keeps "no stage approves its
+  own work" structural. Every stage computes something no other stage
+  computes (ADR 0009–0011). Runs are durable, bounded tasks: pause,
+  cancel, restart recovery, truthful SVG charts, and a report where
+  **every claim links to a calculation**. Forecast accuracy is measured by backtesting, and a
+  forecast that could not be tested says so
 - **Approval-gated publishing** — reports publish into an
   **Obsidian-compatible vault** (`vault/`) with provenance frontmatter and
   run-log backlinks, only after explicit approval bound to the exact
   artifact hash
 - **Provider-neutral model gateway** — deterministic by default (tests and
-  CI never need credentials); optional Groq narration via server-side env
-  vars, used only to phrase already-verified facts, never to calculate
+  CI never need credentials); optional narration by a **local Ollama
+  model**, **Claude**, or **Groq**, configured server-side. Local is
+  preferred when set because nothing leaves the machine. The model only
+  phrases already-verified facts: it never sees the dataset and never
+  produces a number, and the report names which narrator wrote the summary
+- **Pluggable model routing** — that priority order is a default, not a
+  verdict. An optional router picks the narrator **per report** and the
+  report prints **why that one** (ADR 0017). The contract is one method
+  wide, so any [LLMRouter](https://github.com/ulab-uiuc/LLMRouter) router
+  works, or four lines of your own. A choice this deployment cannot reach
+  is refused and said to be refused, never quietly swapped
+- **A chat that understands and acts** — “remember that the Q4 review is
+  on Monday”, “what do you remember about coffee?”, “analyse the sample
+  sales data”, “is it done?”, “why did revenue move?”, “be concise”,
+  “reply in Arabic” — each becomes one of ten typed actions, by rules
+  that work with no model, in English or Arabic. A configured model
+  widens what is understood, never what can be done: it picks from the
+  same actions, only its chat phrasing is shown, every confirmation is
+  the agent's own true sentence, deletion is confirmed first, and it
+  never sees a row or writes a number (ADR 0019). A run started from
+  the chat opens in Runs and passes the same approval gate
+- **Custom agents as plugins** — a domain stage is a file: a class with a
+  role, a title, a place in the pipeline and a `run(ctx)`, registered by
+  dotted path like the router. It runs on a copy of the context, before
+  provenance, validation and reporting — there is no placement after
+  them — so its claims are audited by the same validator, its figures
+  appear in the same provenance chain, and its section in the same report
+  the approval gate binds to. Profiles choose which stages a run includes
+  (ADR 0020). `examples/stages/target_attainment.py` is a complete one
+- **Frameworks on your terms** — the core is framework-free by decision,
+  and three seams let you bring one: an optional *agent runtime* behind
+  the chat (LangGraph and Pydantic AI examples, each a screen of code)
+  that may call several tools for one sentence but never widen what a
+  caller may do; an MCP server in the standard library, so any editor's
+  agent can start a run and read its report; and a custom stage built as
+  a LangGraph graph, audited like every other (ADR 0021)
+- **Arabic and English** — the whole interface in either language,
+  switched from the header in one click; right-to-left layout in Arabic
+  through logical CSS properties rather than a second stylesheet; the
+  agent's own replies, welcome message and command list follow the
+  chosen language; the same WCAG 2.2 AA bar in both. Reports are written
+  in English and are marked as such for screen readers (ADR 0018)
 - **Installable PWA** — manifest, icons, and a service worker make the
   mobile-first app installable on Android via "Add to Home screen"
 - **Session restore** — refreshing the browser reconnects to the same
   conversation (sessions expire when the server restarts; saved memory
   does not)
+- **Memory belongs to its owner** — in hosted mode each tenant's memory
+  is scoped to them in the database, and the tests are written from the
+  attacker's side of that boundary: a second authenticated user must not
+  read, overwrite, or delete the first one's. Until ADR 0014 they could
+  do all three
 - **Persistent memory** in `data/memory.json` that survives restarts, with
   **categories and timestamps**, search, category filters, add, **in-place
   edit**, delete, and delete-all controls — destructive actions always
   require confirmation (old plain-text memory files load transparently)
 - **Data controls** — export everything (memory, preferences, history,
   transcript) as JSON, clear history, or delete all memory from one place
-- **Preferences** (tone, your name, language, history recording) applied to
+- **Preferences** (tone, your name, language — English or Arabic — and
+  history recording) applied to
   responses immediately, plus interface settings (theme, reduced motion)
 - **Responsive by design** — sidebar navigation on desktop, a bottom tab
   bar on phones and tablets, verified from 320 px up
@@ -85,10 +173,18 @@ and returns fresh state snapshots.
 ├── main.py                # CLI entry point
 ├── agent.py               # The Agent class (commands, memory, preferences)
 ├── utils.py               # Config loading, JSON persistence, validation
-├── server/app.py          # FastAPI adapter + static hosting
+├── server/                # FastAPI adapter, run engine, storage, auth,
+│                          # backup/restore
+├── scripts/               # serve.py · backup.py · restore.py · worker.py
+│                          # · sbom.py · erase.py
 ├── config.json            # User-editable settings
+├── metrics.example.json   # Metric glossary template (copy to metrics.json)
 ├── data/memory.json       # Persistent memory (starts empty)
-├── tests/                 # Python unittest suite (agent, utils, API)
+├── tests/                 # Python unittest suite (agent, utils, API,
+│                          # runs, analytics, metric glossary, auth,
+│                          # quotas, backups, worker, failure injection,
+│                          # tenancy, erasure, supply chain, model
+│                          # gateway, launcher, docs)
 ├── frontend/
 │   ├── src/
 │   │   ├── app/           # Shell, store, theme
@@ -99,6 +195,7 @@ and returns fresh state snapshots.
 │   └── e2e/               # Playwright end-to-end + accessibility tests
 ├── docs/
 │   ├── UI_UX_AUDIT.md     # Audit, plan, and acceptance criteria
+│   ├── adr/               # Decision records (database, auth, analytics…)
 │   └── screenshots/       # Final interface captures
 ├── README.md · user_guide.md · requirements.txt · .env.example
 ```
@@ -107,9 +204,10 @@ and returns fresh state snapshots.
 
 - Python 3.10+ (CLI alone needs only the standard library)
 - Node.js 20.19+ or 22+ and npm (web interface only)
-- No API keys, no external services, no credentials required
-  (optional: `GROQ_API_KEY` on the server enables model-phrased report
-  narration — see `.env.example`)
+- No API keys, no external services, no credentials required. Optional
+  narration by a local Ollama model (`OLLAMA_MODEL=qwen3:4b`, no key), Claude
+  (`ANTHROPIC_API_KEY`), or Groq (`GROQ_API_KEY`) — all server-side, see
+  `.env.example`
 
 ## Installation
 
@@ -128,16 +226,28 @@ cd frontend && npm install && npm run build && cd ..
 **Web interface (recommended):**
 
 ```bash
-python -m uvicorn server.app:app --port 8000
+python scripts/serve.py
 ```
 
 Then open <http://localhost:8000>. The server hosts both the API and the
-built frontend.
+built frontend. The launcher also prints an address for **a phone on the
+same Wi-Fi** (`http://192.168.x.x:8000`) — with the consequence stated,
+because binding to the network is a real decision: local mode has no
+login, so anyone on that network can read and change the saved memory.
+Use `--local-only` on a network you do not trust, and `--port 9000` if
+8000 is taken.
+
+"Add to Home screen" needs HTTPS on most phones, so the *installable* app
+comes from a deployment rather than from a laptop on the local network;
+over plain HTTP the app still runs fine in the phone's browser.
+
+`python -m uvicorn server.app:app --port 8000` remains equivalent — the
+launcher only adds the address detection and the warning.
 
 **Development mode** (hot reload, two terminals):
 
 ```bash
-python -m uvicorn server.app:app --reload --port 8000   # terminal 1
+python scripts/serve.py --reload                        # terminal 1
 cd frontend && npm run dev                              # terminal 2 → http://localhost:5173
 ```
 
@@ -150,13 +260,17 @@ python main.py
 ## Testing
 
 ```bash
-# Python: agent, utils, API, and run-engine tests (88 tests)
+# Python: agent, utils, API, runs, analytics, sequential ranges,
+# metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
+# supply chain, launcher, routing, language, assistant, custom stages,
+# agent runtimes, MCP, frameworks, docs (584 tests)
 python -m unittest discover tests
 
-# Frontend unit tests (18 tests)
+# Frontend unit tests (37 tests)
 cd frontend && npm test
 
-# End-to-end + accessibility (23 checks across desktop and mobile;
+# End-to-end + accessibility (52 checks across desktop and mobile,
+# in English and Arabic;
 # requires the production build: npm run build)
 cd frontend && npx playwright test
 
@@ -165,9 +279,247 @@ cd frontend && npm run typecheck
 ```
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
-every push. All 129 tests pass on the submitted version. In environments with a
-pre-installed browser, point Playwright at it:
+every push, including the run-engine and backup suites against a real
+PostgreSQL 16 service. Last verified: 584 Python tests (573 run in CI;
+the 11 that need an optional agent framework or the MCP SDK skip there),
+37 frontend unit tests, and 52 end-to-end checks (51 executed, 1
+desktop-only check skipped on the mobile project). In environments with a pre-installed
+browser, point Playwright at it:
 `PLAYWRIGHT_EXECUTABLE_PATH=/path/to/chromium npx playwright test`.
+
+Five of the 584 load real LLMRouter routers and **skip unless LLMRouter
+is installed**, which in CI it is not — so CI reports `OK (skipped=5)`
+and that is the expected result, not a gap. The other 22 routing tests
+never import it and always run. Both readings were verified: with the
+library and the optional frameworks (ADR 0021) installed, 584 tests and
+nothing skipped.
+
+## Background worker (optional)
+
+Runs advance while the Runs view is open. To advance them with no browser
+open, run a worker:
+
+```bash
+python scripts/worker.py          # poll for work until Ctrl-C
+python scripts/worker.py --once   # advance one run, then exit
+```
+
+The worker claims a run with a database lease, advances it one task at a
+time, and releases the lease when the run needs a human or ends. It never
+decides an approval — it stops at the gate like any other caller. A
+worker that crashes stops renewing its lease, and the next worker (or an
+open browser) picks the run up from its durable state — including the
+stage the crash interrupted, which is re-run rather than skipped. Details
+and trade-offs: `docs/adr/0006-durable-execution.md`.
+
+## Choosing the narrator (optional)
+
+Without configuration the gateway narrates by a fixed priority: local
+Ollama if set, else Claude, else Groq, else the deterministic template.
+A **router** replaces that one guess with a decision made per report, and
+the report prints the reason.
+
+```bash
+export AGENTIC_OS_ROUTER=llmrouter.models.smallest_llm.router.SmallestLLM
+export AGENTIC_OS_ROUTER_CONFIG=router.yaml
+python scripts/serve.py
+```
+
+The contract is one method: `route_single({"query": ...})` returning a
+`model_name`. Every [LLMRouter](https://github.com/ulab-uiuc/LLMRouter)
+router satisfies it, and so does this:
+
+```python
+class PreferLocal:
+    def route_single(self, query):
+        return {"model_name": "qwen3:4b"}
+```
+
+**LLMRouter is optional and is not in `requirements.txt`** — it brings
+torch, transformers and CUDA wheels totalling 5.3 GB measured here, which
+a CLI that otherwise needs only the standard library should not require.
+Install it separately if you want it:
+
+```bash
+pip install -e /path/to/LLMRouter     # only if you want LLMRouter's routers
+```
+
+What the router is given is the narration prompt — the goal and the
+verified facts — and **never the dataset**; that rule does not relax
+because the router runs locally. What it chooses is mapped to a provider
+this deployment can actually reach, and a choice that maps to nothing is
+**refused and reported as refused**, because silently narrating with a
+different model would make the report's "narrated by" line untrue:
+
+```
+*(Narrative source: deterministic, after LargestLLM's choice was not used —
+The router chose "claude-sonnet-4-5", which this deployment cannot reach, so
+the gateway's own priority order applied; every figure in this report is
+deterministically calculated.)*
+```
+
+A router that fails to load leaves the application exactly as it was and
+says so in `/api/health` under `router_problem`. Details and trade-offs:
+`docs/adr/0017-choosing-the-narrator.md`.
+
+## Custom agents (optional)
+
+The built-in pipeline is a closed roster. To add a stage for your own
+domain, write a file and register it — nothing in `analytics.py` changes:
+
+```json
+{
+  "stages": [
+    {"path": "examples.stages.target_attainment.TargetAttainment",
+     "options": {"target": 3000000}}
+  ],
+  "profiles": {"default": [], "with-target": ["target_attainment"]}
+}
+```
+
+A stage is a class with `role`, `title`, `after` (the built-in stage it
+follows), an optional `question` (set, it gets its own report tab), and
+`run(ctx)` returning the shape every built-in stage returns —
+`status · summary · claims · calculations · quality_checks · output`.
+That shape is checked before anything is recorded, and ids must carry
+the role (`target_attainment.c_gap`) so a plugin can never be mistaken
+for a built-in calculation.
+
+What being admitted means: the stage runs before provenance, validation
+and reporting, so a claim without evidence or in statistical jargon is
+rejected by the same validator that rejects a built-in one; its figures
+sit in the same provenance chain and key-metrics table; its section is
+embedded in the same report. It sees a copy of the context and cannot
+change what the built-in stages found. Its failure is its own — the run
+continues and the report says the stage failed — unless it declares
+`can_fail_run`. `AGENTIC_OS_STAGES` registers stages without options;
+`stages_path` makes a plain folder importable; `/api/pipelines` lists
+what loaded and why anything did not. A plugin is trusted Python, not a
+sandbox. Details: `docs/adr/0020-custom-agents-as-plugins.md`.
+
+## Agent runtimes and MCP (optional)
+
+The chat's rules turn one sentence into one action with no model. A
+sentence that asks for several things needs a loop — decide, call a
+tool, read the result, decide again — and that loop is what agent
+frameworks are for. Rather than pick one, the assistant takes one
+(ADR 0021):
+
+```bash
+pip install langgraph        # optional; measured at 72 megabytes with its dependencies
+AGENTIC_OS_AGENT_RUNTIME=examples.runtimes.langgraph_runtime.LangGraphRuntime
+```
+
+A runtime is one method, `run(message, tools, context) -> str | None`. It
+gets the sentences the rules cannot place — an exact sentence stays an
+exact action — may decline one by returning `None`, and calls tools only
+through one tool box: the assistant's
+catalogue minus `chat` and minus every deletion, arguments checked, eight
+calls per message at most. What the person sees is every tool's own text
+verbatim, then the runtime's closing line, labelled *run by LangGraph ·
+2 tool calls*. `examples/runtimes/` has the LangGraph example (the model
+is the deployment's own gateway; a thread per session) and a Pydantic AI
+one (the framework's native loop; its own providers).
+
+The same catalogue is served over the Model Context Protocol by
+`scripts/mcp_server.py` — standard library only, stdio, local mode —
+so an editor's agent can start an analysis and read its status while
+publishing still waits for your approval in Runs. Copy
+`.mcp.json.example` to `.mcp.json`, or:
+
+```bash
+claude mcp add agentic-os -- python /path/to/scripts/mcp_server.py
+```
+
+And a framework may live *inside* a stage: `examples/stages/graph_stage.py`
+is a custom stage built as a three-node LangGraph graph, with no model in
+any node, audited exactly like the rest.
+
+## Failure injection
+
+`tests/test_recovery.py` breaks things on purpose and asserts the run
+still reaches the approval gate: the database connection is closed
+underneath a lease claim, the server hangs up mid-heartbeat
+(`pg_terminate_backend`), a real worker process is killed with SIGKILL
+mid-stage, and the engine is thrown away and rebuilt mid-run. It runs in
+CI against PostgreSQL like the rest.
+
+These drills found three defects that reasoning had not: the lease
+statements never reconnected, the reconnect caught only one of the two
+ways a connection dies, and a crash *during* a stage left that stage
+marked running forever — so the run continued without it and failed later
+with an unrelated error. A full database outage
+(`pg_ctl stop -m immediate`) was executed by hand with measured recovery
+times, because CI's database is a service container a test cannot stop.
+Findings and numbers: `docs/adr/0012-business-continuity.md`.
+
+## Erasing one owner
+
+```bash
+python scripts/erase.py --owner alice@example.com          # survey only
+python scripts/erase.py --owner alice@example.com --yes    # delete
+```
+
+Removes that owner's sessions, runs, tasks, approvals, artifacts,
+datasets, vault notes and memory — **and the published markdown files on
+disk**, because a report exists in two places and deleting only the
+database row turns "erased" into a false statement. The survey is the
+default: the operation is irreversible and the owner identifier is a
+string somebody typed.
+
+Every report ends with what the command could **not** reach — backups
+first, since they still contain the rows and restoring one restores
+them. That list prints whether or not anything was found, because
+"nothing here" and "nothing anywhere" are different answers. Details:
+`docs/adr/0015-per-owner-erasure.md`.
+
+## Supply chain
+
+```bash
+python scripts/sbom.py            # → sbom.json (CycloneDX), plus a summary
+python scripts/sbom.py --check    # also fail on a shipped copyleft licence
+```
+
+Every third-party GitHub Action is pinned to a **commit SHA**, never a
+tag: `actions/checkout@v4` before and after a compromise of that
+repository are the same line of YAML running different code, with a token
+that can write here. The release is named in a comment so an upgrade
+stays a readable diff, and a test fails the build if a pin reverts to a
+tag or loses its comment.
+
+The bill of materials is generated on every CI run and kept as an
+artifact. It covers both ecosystems — npm from the lock file with
+integrity hashes, Python from the closure `requirements.txt` actually
+reaches — and needs no network, because an SBOM you cannot read during an
+incident is not worth having. Current composition: **302 components (275
+npm, 27 pypi); 286 permissive, 16 weak-copyleft, none strong**, of which
+exactly one copyleft package ships (`psycopg2-binary`, LGPL with
+exceptions) and is named in the build output every time. Details:
+`docs/adr/0013-supply-chain.md`.
+
+## Backup and restore
+
+```bash
+python scripts/backup.py                      # → backups/agentic-<utc>.json
+python scripts/restore.py <file> --dry-run    # inspect without writing
+python scripts/restore.py <file> --yes        # replace the database
+```
+
+Both honour `DATABASE_URL` (hosted PostgreSQL) and fall back to the local
+SQLite database. A backup is one dialect-neutral JSON document, so a
+local backup restores into hosted PostgreSQL — which is also the
+supported way to move an existing install to a server. Restore replaces
+the database rather than merging into it, and refuses an unreadable or
+unknown-version file before deleting anything.
+
+`tests/test_backup.py` is a genuine drill, not a file check: it destroys
+the database and rebuilds it through these scripts, then asserts the runs,
+evidence, approval decisions, published notes, sessions, and datasets
+survived — and that a restored run can still be advanced to completion.
+It runs against both SQLite and PostgreSQL on every push. Measured times
+and the RPO/RTO position are in `docs/adr/0005-backup-and-restore.md`;
+in local mode remember that `data/memory.json` sits outside the database
+and needs backing up alongside it.
 
 ## Basic Usage Example (web)
 
@@ -209,20 +561,27 @@ See `user_guide.md` for the full command reference.
 
 ## Known Limitations
 
-- The agent recognizes commands and produces tone-styled acknowledgements
-  for free text; it does not use an AI language model.
+- Free text is understood by a rules-based vocabulary of ten actions in
+  both languages; a sentence outside it gets an honest "not understood"
+  in the chosen tone. With no model configured the rules decide, and the
+  reply says so (ADR 0019).
 - Preference changes apply to the current session; permanent defaults are
   edited in `config.json`.
-- Sessions survive a browser refresh but not a server restart; after a
-  restart the app starts a fresh session (saved memory persists).
-- The server is designed for local, single-user use — there is no
-  authentication layer.
+- Sessions survive both a browser refresh and a server restart: the
+  conversation, its preferences, and its history are stored durably
+  (SQLite locally, PostgreSQL when `DATABASE_URL` is set).
+- Local mode runs single-user with no login. Hosted mode verifies a
+  managed provider's tokens with server-side roles and per-owner
+  isolation; the live provider round-trip has never been executed here.
+- Nothing schedules backups: `scripts/backup.py` runs when someone runs
+  it. See `docs/KNOWN_LIMITATIONS.md` for the full list.
 
 ## Future Improvements
 
 - Persist preference changes back to `config.json` on request
 - Streamed responses and a pluggable AI-model backend
-- Session restore across server restarts
+- A scheduled off-site backup job (see ADR 0005 for why it is not a
+  workflow in this public repository)
 - Named memory keys (e.g. `/remember birthday = 1 May`)
 
 ## Author and Course Information

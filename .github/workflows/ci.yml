@@ -5,14 +5,41 @@ on:
     branches: ['**']
   pull_request:
 
+# Third-party actions are pinned to a commit, never to a tag. A tag is a
+# label its owner can move: `actions/checkout@v4` today and after a
+# compromise of that repository are the same line of YAML running
+# different code, with a token that can write to this repository. The
+# comment names the release each commit was, so upgrading stays a
+# readable diff. Re-resolve with:
+#   git ls-remote --tags https://github.com/actions/checkout
+
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dev
+          POSTGRES_DB: agentic_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # The run-engine suite runs against BOTH SQLite and PostgreSQL.
+      # REQUIRE_PG turns an unreachable database into a hard failure so
+      # the Postgres path can never be silently skipped in CI.
+      PG_TEST_URL: postgresql://dev@127.0.0.1:5432/agentic_test
+      REQUIRE_PG: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: '3.11'
 
@@ -28,7 +55,22 @@ jobs:
         continue-on-error: true
         run: pip install --quiet pip-audit && pip-audit
 
-      - uses: actions/setup-node@v4
+      - name: Bill of materials and licence check
+        # Runs after the Python dependencies are installed and before the
+        # npm ones, because it reads the lock file rather than
+        # node_modules. Fails the build only on a shipped strong-copyleft
+        # dependency; everything else it reports.
+        run: python scripts/sbom.py --output sbom.json --check
+
+      - name: Upload the bill of materials
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 30
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: '22'
           cache: npm
@@ -60,7 +102,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
           name: playwright-report
           path: frontend/playwright-report

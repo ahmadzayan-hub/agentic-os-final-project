@@ -1,10 +1,12 @@
 """Durable run engine: goal -> plan -> tasks -> approval -> artifact.
 
-State is persisted to SQLite (WAL) after every transition, so runs survive
-an application restart and can be resumed, cancelled, or approved later.
-Execution is client-stepped: each `advance()` call executes exactly one
-bounded task under a lock, which gives honest pause (stop advancing),
-cancel, and recovery semantics without a background worker.
+State is persisted through a storage adapter (SQLite locally, hosted
+PostgreSQL via DATABASE_URL — see server/storage.py) after every
+transition, so runs survive an application restart and can be resumed,
+cancelled, or approved later. Execution is client-stepped: each
+`advance()` call executes exactly one bounded task under a lock, which
+gives honest pause (stop advancing), cancel, and recovery semantics
+without a background worker.
 
 The publish step writes the approved report into an Obsidian-compatible
 vault folder (markdown + provenance frontmatter + [[wikilinks]]) and is
@@ -12,15 +14,16 @@ gated by a server-enforced approval bound to the exact artifact hash —
 a manipulated client cannot publish unapproved or altered content.
 """
 
+import copy
 import hashlib
 import json
 import re
-import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from server import analytics
+from server import analytics, metrics, quota
+from server import stages as stage_registry
 
 RUN_STATES = {"queued", "running", "awaiting_approval", "verifying",
               "completed", "partially_completed", "failed", "cancelled"}
@@ -37,118 +40,254 @@ RUN_TRANSITIONS = {
     "cancelled": set(),
 }
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS runs (
-  id TEXT PRIMARY KEY, goal TEXT NOT NULL, dataset_name TEXT NOT NULL,
-  dataset_text TEXT NOT NULL, state TEXT NOT NULL,
-  created_at TEXT NOT NULL, updated_at TEXT NOT NULL, error TEXT
-);
-CREATE TABLE IF NOT EXISTS tasks (
-  id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id),
-  idx INTEGER NOT NULL, role TEXT NOT NULL, title TEXT NOT NULL,
-  state TEXT NOT NULL, summary TEXT, result_json TEXT, updated_at TEXT
-);
-CREATE TABLE IF NOT EXISTS approvals (
-  id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id),
-  action TEXT NOT NULL, target TEXT NOT NULL, risk TEXT NOT NULL,
-  impact TEXT NOT NULL, reversibility TEXT NOT NULL,
-  content_hash TEXT NOT NULL, state TEXT NOT NULL,
-  created_at TEXT NOT NULL, decided_at TEXT
-);
-CREATE TABLE IF NOT EXISTS artifacts (
-  id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES runs(id),
-  name TEXT NOT NULL, kind TEXT NOT NULL, version INTEGER NOT NULL,
-  content TEXT NOT NULL, published_path TEXT, created_at TEXT NOT NULL
-);
-"""
-
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def _utcnow():
+    return datetime.now(timezone.utc)
+
+
+def _stamp(moment):
+    """Lease timestamps are compared as text by the database, so they use
+    a fixed width — `isoformat()` drops the fraction on a whole second."""
+    return moment.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+
+
 class RunEngine:
-    def __init__(self, db_path, vault_dir, gateway):
-        self.db_path = str(db_path)
+    def __init__(self, store, vault_dir, gateway, limits=None, glossary=None,
+                 stages=None, profiles=None):
+        self.store = store
+        # Custom stages (ADR 0020): role -> descriptor, in registration
+        # order, and the named profiles that choose among them.
+        self.stages = dict(stages or {})
+        self.profiles = dict(profiles or {})
         self.vault_dir = Path(vault_dir)
         self.gateway = gateway
-        Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
-        self._db = sqlite3.connect(self.db_path, check_same_thread=False)
-        self._db.row_factory = sqlite3.Row
-        self._db.execute("PRAGMA journal_mode=WAL")
-        self._db.executescript(SCHEMA)
+        # None disables quota enforcement entirely (the CLI and tests that
+        # are not about quotas); the API always passes limits.
+        self.limits = limits
+        # The metric glossary is read once at startup rather than per run,
+        # so every run in a process agrees about what a metric means and
+        # editing the file mid-run cannot change a report halfway through.
+        # None means "read the configured file"; pass a dict to override.
+        if glossary is None:
+            entries, problems = metrics.load_glossary()
+            glossary = {"metrics": entries, "problems": problems}
+        self.glossary = glossary
 
     # -- state helpers ----------------------------------------------------
     def _set_run_state(self, run_id, new_state, error=None):
-        row = self._db.execute("SELECT state FROM runs WHERE id=?", (run_id,)).fetchone()
-        if row is None:
+        run = self.store.get_run(run_id)
+        if run is None:
             raise KeyError(run_id)
-        current = row["state"]
+        current = run["state"]
         if new_state != current and new_state not in RUN_TRANSITIONS[current]:
             raise ValueError(f"Illegal run transition {current} -> {new_state}")
-        self._db.execute(
-            "UPDATE runs SET state=?, error=?, updated_at=? WHERE id=?",
-            (new_state, error, _now(), run_id))
-        self._db.commit()
+        self.store.update(
+            "runs", run_id,
+            {"state": new_state, "error": error, "updated_at": _now()})
 
     def _set_task(self, task_id, state, summary=None, result=None):
-        self._db.execute(
-            "UPDATE tasks SET state=?, summary=COALESCE(?, summary), "
-            "result_json=COALESCE(?, result_json), updated_at=? WHERE id=?",
-            (state, summary, json.dumps(result) if result is not None else None,
-             _now(), task_id))
-        self._db.commit()
+        fields = {"state": state, "updated_at": _now()}
+        if summary is not None:
+            fields["summary"] = summary
+        if result is not None:
+            fields["result_json"] = json.dumps(result)
+        self.store.update("tasks", task_id, fields)
 
     # -- API --------------------------------------------------------------
-    def create_run(self, goal, dataset_text=None, dataset_name=None):
+    def store_dataset(self, text, name, owner):
+        """Content-addressed storage: identical uploads share one row."""
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        existing = self.store.find_dataset(digest, owner)
+        if existing:
+            # Already stored: consumes no new space, so no quota applies.
+            return existing
+        if self.limits:
+            quota.check_dataset(self.store, owner, self.limits,
+                                len(text.encode()))
+        dataset_id = uuid.uuid4().hex[:12]
+        self.store.insert("datasets", {
+            "id": dataset_id, "sha256": digest, "name": name,
+            "content": text, "byte_size": len(text.encode()),
+            "owner": owner, "created_at": _now()})
+        return self.store.get_dataset(dataset_id)
+
+    def custom_roles_for(self, profile=None):
+        """Which registered stages a run includes. A profile names a
+        subset; no profile means the "default" profile when one is
+        configured, else every registered stage."""
+        if profile is None:
+            chosen = self.profiles.get("default")
+            if chosen is None:
+                return list(self.stages)
+        else:
+            chosen = self.profiles.get(profile)
+            if chosen is None:
+                available = ", ".join(sorted(self.profiles)) or "none"
+                raise ValueError(f"Unknown pipeline profile “{profile}”. "
+                                 f"Available: {available}.")
+        unknown = [role for role in chosen if role not in self.stages]
+        if unknown:
+            raise ValueError(f"Profile “{profile or 'default'}” names stages "
+                             f"that are not registered: {', '.join(unknown)}.")
+        return list(chosen)
+
+    def roles_for(self, profile=None):
+        """The run's stage order: the built-in pipeline with each custom
+        stage inserted after the built-in stage it asked for. Custom
+        stages can only be placed before the governed tail, so every
+        one of them runs before provenance, validation and reporting."""
+        custom = self.custom_roles_for(profile)
+        roles = []
+        for role, _ in analytics.PIPELINE:
+            roles.append(role)
+            roles.extend(r for r in custom
+                         if getattr(self.stages[r], "after",
+                                    stage_registry.DEFAULT_AFTER) == role)
+        return roles + ["publish"]
+
+    def create_run(self, goal, dataset_text=None, dataset_name=None,
+                   owner="local-owner", dataset_id=None, profile=None):
+        # An unknown profile is refused before anything is written.
+        roles = self.roles_for(profile)
+        # Checked before anything is written, so a refused run leaves no
+        # half-created rows behind.
+        if self.limits:
+            quota.check_run(self.store, owner, self.limits)
         run_id = uuid.uuid4().hex[:12]
-        text = dataset_text or analytics.sample_dataset()
-        name = dataset_name or ("uploaded dataset" if dataset_text else "sample sales dataset")
+        if dataset_id:
+            dataset = self.store.get_dataset(dataset_id)
+            if dataset is None or dataset["owner"] != owner:
+                raise KeyError(dataset_id)
+        else:
+            text = dataset_text or analytics.sample_dataset()
+            name = dataset_name or (
+                "uploaded dataset" if dataset_text else "sample sales dataset")
+            dataset = self.store_dataset(text, name, owner)
         now = _now()
-        self._db.execute(
-            "INSERT INTO runs VALUES (?,?,?,?,?,?,?,NULL)",
-            (run_id, goal.strip(), name, text, "queued", now, now))
-        roles = [role for role, _ in analytics.PIPELINE] + ["publish"]
+        self.store.insert("runs", {
+            "id": run_id, "goal": goal.strip(),
+            "dataset_name": dataset["name"],
+            # dataset_text stays populated for backward compatibility with
+            # rows written before datasets were content-addressed.
+            "dataset_text": "", "state": "queued",
+            "created_at": now, "updated_at": now, "error": None,
+            "owner": owner, "dataset_id": dataset["id"]})
         for idx, role in enumerate(roles):
-            self._db.execute(
-                "INSERT INTO tasks VALUES (?,?,?,?,?,?,NULL,NULL,?)",
-                (uuid.uuid4().hex[:12], run_id, idx, role,
-                 analytics.ROLE_TITLES[role], "pending", now))
-        self._db.commit()
+            title = analytics.ROLE_TITLES.get(role) or self.stages[role].title
+            self.store.insert("tasks", {
+                "id": uuid.uuid4().hex[:12], "run_id": run_id, "idx": idx,
+                "role": role, "title": title,
+                "state": "pending", "summary": None, "result_json": None,
+                "updated_at": now})
         return self.get_run(run_id)
 
+    def _dataset_text(self, run):
+        dataset_id = run.get("dataset_id")
+        if dataset_id:
+            dataset = self.store.get_dataset(dataset_id)
+            if dataset is not None:
+                return dataset["content"]
+        return run.get("dataset_text") or ""
+
     def _context(self, run, tasks):
-        ctx = {"goal": run["goal"], "dataset_text": run["dataset_text"],
-               "dataset_name": run["dataset_name"], "run_id": run["id"]}
+        ctx = {"goal": run["goal"], "dataset_text": self._dataset_text(run),
+               "dataset_name": run["dataset_name"], "run_id": run["id"],
+               "glossary": self.glossary}
         for task in tasks:
             if task["state"] == "succeeded" and task["result_json"]:
                 result = json.loads(task["result_json"])
                 ctx[task["role"]] = result.get("output", {})
                 ctx[task["role"] + "_result"] = result
+        # The run declares its custom stages, and provenance, validation
+        # and the report audit exactly that list (analytics.evidence_stages).
+        custom = [t["role"] for t in tasks
+                  if t["role"] not in analytics.ROLE_TITLES]
+        ctx["custom_stages"] = custom
+        ctx["custom_titles"] = {t["role"]: t["title"] for t in tasks
+                                if t["role"] in custom}
+        ctx["custom_failures"] = {t["role"]: t["summary"] for t in tasks
+                                  if t["role"] in custom and t["state"] == "failed"}
         return ctx
 
-    def advance(self, run_id):
-        """Execute exactly one bounded task; every transition is durable."""
+    def _reclaim_orphaned_tasks(self, run_id):
+        """Put back any task a crash left marked running.
+
+        A worker killed between tasks leaves nothing behind; killed
+        *during* one it leaves that task marked running forever, and the
+        engine used to walk straight past it to the next pending task.
+        The run then continued without a stage its successors depend on
+        and failed several stages later, with an error naming the wrong
+        thing entirely — a crash mid-stage silently producing a broken
+        run, which is the failure durability was supposed to rule out.
+
+        Reaching this point means nobody holds a live lease on the run
+        (the caller's own, or none), so a task marked running is not
+        being executed by anyone: it is debris. Re-running it is safe
+        because a stage is a pure function of the results before it, and
+        a task's result is written once, at the end.
+        """
+        tasks = self.store.get_tasks(run_id)
+        orphans = [t for t in tasks if t["state"] == "running"]
+        for task in orphans:
+            self.store.update("tasks", task["id"],
+                              {"state": "pending", "summary": None,
+                               "result_json": None})
+        return self.store.get_tasks(run_id) if orphans else tasks
+
+    def advance(self, run_id, lease_owner=None):
+        """Execute exactly one bounded task; every transition is durable.
+
+        If a background worker holds a live lease on this run, a client's
+        advance is a no-op that simply returns the current state: the two
+        never execute the same task. When the worker dies its lease
+        expires and clients resume stepping the run themselves.
+        """
         run = self._row(run_id)
+        if run.get("paused"):
+            raise ValueError("Run is paused — resume it before advancing.")
+        holder = run.get("lease_owner")
+        if (holder and holder != lease_owner
+                and (run.get("lease_expires_at") or "") > _stamp(_utcnow())):
+            return self.get_run(run_id)
         if run["state"] in ("completed", "partially_completed", "failed", "cancelled"):
             raise ValueError(f"Run is {run['state']} and cannot advance.")
         if run["state"] == "awaiting_approval":
             raise ValueError("Run is awaiting approval — decide the approval first.")
-        tasks = self._tasks(run_id)
+        tasks = self._reclaim_orphaned_tasks(run_id)
         task = next((t for t in tasks if t["state"] == "pending"), None)
         if task is None:
             return self.get_run(run_id)
         self._set_run_state(run_id, "running")
 
         if task["role"] == "publish":
-            return self._request_publish_approval(run_id, task, tasks)
+            return self._request_publish_approval(run_id, task)
+
+        stage = dict(analytics.PIPELINE).get(task["role"])
+        custom = self.stages.get(task["role"])
+        if stage is None and custom is None:
+            # A run created by an earlier pipeline version, or with a
+            # custom stage that is no longer registered. Say so plainly
+            # rather than failing with an unrelated error later.
+            message = (f"This run was created with a pipeline this server does "
+                       f"not have (stage “{task['role']}” is not built in and not "
+                       "registered) and cannot be resumed. Its stored results "
+                       "remain readable; start a new run to analyze the same "
+                       "data with the current pipeline.")
+            self._set_task(task["id"], "failed", summary=message)
+            self._set_run_state(run_id, "failed", error=message)
+            return self.get_run(run_id)
 
         self._set_task(task["id"], "running")
         ctx = self._context(run, tasks)
-        stage = dict(analytics.PIPELINE)[task["role"]]
+        if custom is not None:
+            return self._advance_custom(run_id, task, custom, ctx)
         try:
             result = (stage(ctx, gateway=self.gateway)
-                      if task["role"] == "business" else stage(ctx))
+                      if task["role"] in analytics.NARRATED_STAGES else stage(ctx))
         except Exception as error:  # defensive: a stage bug must not hang the run
             self._set_task(task["id"], "failed", summary=f"Stage error: {error}")
             self._set_run_state(run_id, "failed", error=str(error))
@@ -163,7 +302,7 @@ class RunEngine:
 
         if task["role"] == "validator" and not result["output"]["passed"]:
             # Rejected work: skip publishing, finish as partially completed.
-            for t in self._tasks(run_id):
+            for t in self.store.get_tasks(run_id):
                 if t["state"] == "pending":
                     self._set_task(t["id"], "skipped",
                                    summary="Skipped: validation rejected the work.")
@@ -172,70 +311,92 @@ class RunEngine:
             return self.get_run(run_id)
 
         if task["role"] == "reporter":
-            self._db.execute(
-                "INSERT INTO artifacts VALUES (?,?,?,?,?,?,NULL,?)",
-                (uuid.uuid4().hex[:12], run_id, "analytics-report", "markdown", 1,
-                 result["output"]["report_markdown"], _now()))
-            self._db.commit()
+            self.store.insert("artifacts", {
+                "id": uuid.uuid4().hex[:12], "run_id": run_id,
+                "name": "analytics-report", "kind": "markdown", "version": 1,
+                "content": result["output"]["report_markdown"],
+                "published_path": None, "created_at": _now()})
         return self.get_run(run_id)
 
-    def _request_publish_approval(self, run_id, task, tasks):
-        artifact = self._db.execute(
-            "SELECT * FROM artifacts WHERE run_id=? ORDER BY version DESC",
-            (run_id,)).fetchone()
+    def _advance_custom(self, run_id, task, descriptor, ctx):
+        """Run a registered stage under the contract (ADR 0020).
+
+        What the built-in stages found is safe from it because every
+        stage's context is rebuilt from the stored results (a write to
+        this dict reaches no later stage). The copy is for the one live
+        object in the context: the glossary, read once per process and
+        shared by every run — a stage must not be able to certify its
+        own definition of revenue for everyone who runs after it. Its
+        result is checked against the contract before anything is
+        recorded. A failure is the stage's, not the run's, unless the
+        stage declared otherwise — and the report then says the stage
+        failed rather than silently lacking it.
+        """
+        try:
+            result = descriptor.run(copy.deepcopy(ctx))
+            result = stage_registry.validate_result(task["role"], result)
+        except Exception as error:
+            message = f"Custom stage “{task['role']}” failed: {error}"
+            return self._custom_failed(run_id, task, descriptor, message)
+        if result["status"] == "failed":
+            return self._custom_failed(run_id, task, descriptor,
+                                       result["summary"], result)
+        self._set_task(task["id"], "succeeded", summary=result["summary"],
+                       result=result)
+        return self.get_run(run_id)
+
+    def _custom_failed(self, run_id, task, descriptor, message, result=None):
+        self._set_task(task["id"], "failed", summary=message, result=result)
+        if getattr(descriptor, "can_fail_run", False):
+            self._set_run_state(run_id, "failed", error=message)
+        return self.get_run(run_id)
+
+    def _request_publish_approval(self, run_id, task):
+        artifact = self.store.latest_artifact(run_id)
         if artifact is None:
             self._set_task(task["id"], "skipped", summary="No artifact to publish.")
             self._set_run_state(run_id, "completed")
             return self.get_run(run_id)
-        existing = self._db.execute(
-            "SELECT id FROM approvals WHERE run_id=? AND state='pending'",
-            (run_id,)).fetchone()
-        if existing is None:
+        if self.store.pending_approval(run_id) is None:
             content_hash = hashlib.sha256(artifact["content"].encode()).hexdigest()
-            self._db.execute(
-                "INSERT INTO approvals VALUES (?,?,?,?,?,?,?,?,?,?,NULL)",
-                (uuid.uuid4().hex[:12], run_id,
-                 "Publish the analytics report to the Obsidian vault",
-                 str(self.vault_dir / "Reports"), "high",
-                 "Writes two markdown notes (report + run log) to the local vault.",
-                 "Reversible: delete the created notes.",
-                 content_hash, "pending", _now()))
-            self._db.commit()
+            self.store.insert("approvals", {
+                "id": uuid.uuid4().hex[:12], "run_id": run_id,
+                "action": "Publish the analytics report to the Obsidian vault",
+                "target": str(self.vault_dir / "Reports"), "risk": "high",
+                "impact": "Writes two markdown notes (report + run log) to the local vault.",
+                "reversibility": "Reversible: delete the created notes.",
+                "content_hash": content_hash, "state": "pending",
+                "created_at": _now(), "decided_at": None})
         self._set_task(task["id"], "awaiting_approval",
                        summary="Waiting for human approval to publish.")
         self._set_run_state(run_id, "awaiting_approval")
         return self.get_run(run_id)
 
     def decide_approval(self, run_id, approval_id, decision):
-        approval = self._db.execute(
-            "SELECT * FROM approvals WHERE id=? AND run_id=?",
-            (approval_id, run_id)).fetchone()
+        approval = self.store.get_approval(approval_id, run_id)
         if approval is None:
             raise KeyError(approval_id)
         if approval["state"] != "pending":
             raise ValueError(f"Approval already {approval['state']}.")
-        task = next(t for t in self._tasks(run_id) if t["role"] == "publish")
-        artifact = self._db.execute(
-            "SELECT * FROM artifacts WHERE run_id=? ORDER BY version DESC",
-            (run_id,)).fetchone()
+        task = next(t for t in self.store.get_tasks(run_id)
+                    if t["role"] == "publish")
+        artifact = self.store.latest_artifact(run_id)
         # Approval binds to the exact content hash: altered content invalidates it.
         current_hash = hashlib.sha256(artifact["content"].encode()).hexdigest()
         if current_hash != approval["content_hash"]:
             raise ValueError("Artifact changed after approval was requested.")
         if decision == "approve":
             path = self._publish(run_id, artifact)
-            self._db.execute("UPDATE approvals SET state='approved_once', decided_at=? WHERE id=?",
-                             (_now(), approval_id))
-            self._db.execute("UPDATE artifacts SET published_path=? WHERE id=?",
-                             (str(path), artifact["id"]))
-            self._db.commit()
+            self.store.update("approvals", approval_id,
+                              {"state": "approved_once", "decided_at": _now()})
+            self.store.update("artifacts", artifact["id"],
+                              {"published_path": str(path)})
             self._set_task(task["id"], "succeeded",
                            summary=f"Published to {path}.")
             self._set_run_state(run_id, "completed")
         else:
-            self._db.execute("UPDATE approvals SET state='rejected', decided_at=? WHERE id=?",
-                             (_now(), approval_id))
-            self._db.commit()
+            self.store.update("approvals", approval_id,
+                              {"state": "rejected", "decided_at": _now()})
             self._set_task(task["id"], "skipped",
                            summary="Publishing rejected by the user; no note was written.")
             self._set_run_state(run_id, "completed")
@@ -260,45 +421,60 @@ class RunEngine:
         log_lines = [f"---\ntype: run-log\nrun: {run_id}\ngenerated: {_now()}\n---",
                      f"# Run {run_id}", "", f"**Goal:** {run['goal']}", "",
                      "| Stage | Outcome |", "| --- | --- |"]
-        for t in self._tasks(run_id):
+        for t in self.store.get_tasks(run_id):
             log_lines.append(f"| {t['title']} | {t['state']}: {t['summary'] or ''} |")
         log_lines.append(f"\nReport: [[{note.stem}]]\n")
-        (logs / f"{run_id}.md").write_text("\n".join(log_lines), encoding="utf-8")
+        log_note = logs / f"{run_id}.md"
+        log_note.write_text("\n".join(log_lines), encoding="utf-8")
+        # Durable record: published notes also live in the store, so hosted
+        # (stateless) backends keep them and /api/vault can serve them.
+        now = _now()
+        self.store.upsert_note(f"Reports/{note.name}", run_id,
+                               note.read_text(encoding="utf-8"), now)
+        self.store.upsert_note(f"Runs/{run_id}.md", run_id,
+                               log_note.read_text(encoding="utf-8"), now)
         return note
+
+    def set_paused(self, run_id, paused):
+        """Pause is durable, not a client-side toggle: a background worker
+        must honour it too, or the button would stop meaning anything."""
+        run = self._row(run_id)
+        if run["state"] not in ("queued", "running"):
+            raise ValueError(f"Run is {run['state']} and cannot be paused.")
+        self.store.update("runs", run_id,
+                          {"paused": 1 if paused else 0, "updated_at": _now()})
+        return self.get_run(run_id)
 
     def cancel(self, run_id):
         self._set_run_state(run_id, "cancelled")
-        for t in self._tasks(run_id):
+        for t in self.store.get_tasks(run_id):
             if t["state"] in ("pending", "awaiting_approval"):
                 self._set_task(t["id"], "cancelled")
-        self._db.execute(
-            "UPDATE approvals SET state='cancelled', decided_at=? "
-            "WHERE run_id=? AND state='pending'", (_now(), run_id))
-        self._db.commit()
+        pending = self.store.pending_approval(run_id)
+        if pending is not None:
+            self.store.update("approvals", pending["id"],
+                              {"state": "cancelled", "decided_at": _now()})
         return self.get_run(run_id)
 
     # -- reads ------------------------------------------------------------
     def _row(self, run_id):
-        row = self._db.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
-        if row is None:
+        run = self.store.get_run(run_id)
+        if run is None:
             raise KeyError(run_id)
-        return row
+        return run
 
-    def _tasks(self, run_id):
-        return self._db.execute(
-            "SELECT * FROM tasks WHERE run_id=? ORDER BY idx", (run_id,)).fetchall()
+    def list_runs(self, owner=None):
+        return self.store.list_runs(owner=owner)
 
-    def list_runs(self):
-        rows = self._db.execute(
-            "SELECT id, goal, dataset_name, state, created_at, updated_at "
-            "FROM runs ORDER BY created_at DESC LIMIT 50").fetchall()
-        return [dict(r) for r in rows]
+    def owner_of(self, run_id):
+        return self._row(run_id).get("owner") or "local-owner"
 
     def get_run(self, run_id):
         run = self._row(run_id)
         tasks = []
-        charts, report = [], None
-        for t in self._tasks(run_id):
+        charts, report, reports = [], None, []
+        questions = dict(analytics.REPORT_SECTIONS)
+        for t in self.store.get_tasks(run_id):
             result = json.loads(t["result_json"]) if t["result_json"] else None
             tasks.append({"id": t["id"], "role": t["role"], "title": t["title"],
                           "state": t["state"], "summary": t["summary"],
@@ -306,19 +482,40 @@ class RunEngine:
                           "claims": (result or {}).get("claims", [])})
             if result and t["role"] == "visuals":
                 charts = result["output"].get("charts", [])
-        artifact = self._db.execute(
-            "SELECT * FROM artifacts WHERE run_id=? ORDER BY version DESC",
-            (run_id,)).fetchone()
+            # One report per analytics type, readable on its own.
+            if result and t["role"] in questions:
+                content = result["output"].get("report_markdown")
+                if content:
+                    reports.append({"type": t["role"], "question": questions[t["role"]],
+                                    "title": analytics.ROLE_TITLES[t["role"]],
+                                    # The one sentence a business reader needs,
+                                    # surfaced rather than left inside the markdown.
+                                    "headline": result["output"].get("headline", ""),
+                                    "content": content})
+            # A custom stage that wrote a section gets its own tab too.
+            if result and t["role"] not in analytics.ROLE_TITLES:
+                content = result["output"].get("report_markdown")
+                if content:
+                    reports.append({"type": t["role"],
+                                    "question": result["output"].get("question") or "",
+                                    "title": t["title"],
+                                    "headline": result["output"].get("headline", ""),
+                                    "content": content})
+        artifact = self.store.latest_artifact(run_id)
         if artifact:
             report = {"id": artifact["id"], "name": artifact["name"],
                       "version": artifact["version"], "content": artifact["content"],
                       "published_path": artifact["published_path"]}
-        approvals = [dict(a) for a in self._db.execute(
-            "SELECT id, action, target, risk, impact, reversibility, state, "
-            "created_at, decided_at FROM approvals WHERE run_id=?",
-            (run_id,)).fetchall()]
+        approvals = [
+            {key: a[key] for key in ("id", "action", "target", "risk", "impact",
+                                     "reversibility", "state", "created_at",
+                                     "decided_at")}
+            for a in self.store.approvals_for_run(run_id)
+        ]
         return {"id": run["id"], "goal": run["goal"],
                 "dataset_name": run["dataset_name"], "state": run["state"],
                 "error": run["error"], "created_at": run["created_at"],
                 "updated_at": run["updated_at"], "tasks": tasks,
-                "approvals": approvals, "charts": charts, "report": report}
+                "paused": bool(run.get("paused")),
+                "approvals": approvals, "charts": charts, "report": report,
+                "reports": reports}

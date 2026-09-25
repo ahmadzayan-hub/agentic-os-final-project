@@ -11,9 +11,13 @@ export async function skipOnboarding(page: Page) {
  *  desktop, the bottom tab bar on mobile, or the drawer for actions that
  *  only exist in the sidebar. */
 export async function openTab(page: Page, name: RegExp) {
+  const menu = page.getByRole('button', { name: 'Open navigation' })
   const target = page.getByRole('button', { name }).filter({ visible: true })
-  if ((await target.count()) === 0) {
-    await page.getByRole('button', { name: 'Open navigation' }).click()
+  // count() does not auto-wait, so wait for the shell to finish booting
+  // before deciding between the sidebar and the mobile drawer.
+  await menu.or(target.first()).first().waitFor()
+  if (await menu.isVisible()) {
+    await menu.click()
   }
   await target.first().click()
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useI18n } from '../../i18n'
 import type { CommandInfo } from '../../shared/types'
 
 interface CommandPaletteProps {
@@ -10,6 +11,7 @@ interface CommandPaletteProps {
 /** Searchable command palette (opened with Ctrl/Cmd+K). Picking a command
  *  inserts its usage into the composer so nobody has to memorize syntax. */
 export function CommandPalette({ commands, onPick, onClose }: CommandPaletteProps) {
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -63,24 +65,25 @@ export function CommandPalette({ commands, onPick, onClose }: CommandPaletteProp
         if (event.target === event.currentTarget) onClose()
       }}
     >
-      <div className="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+      <div className="palette" role="dialog" aria-modal="true" aria-label={t('palette.aria')}>
         <input
           ref={inputRef}
           className="palette__input"
           type="text"
           role="combobox"
+          dir="auto"
           aria-expanded="true"
           aria-controls={listId}
           aria-activedescendant={filtered[activeIndex] ? `palette-option-${activeIndex}` : undefined}
-          placeholder="Search commands…"
+          placeholder={t('palette.placeholder')}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onKeyDown={onKeyDown}
         />
         {filtered.length === 0 ? (
-          <p className="palette__empty">No commands match “{query}”.</p>
+          <p className="palette__empty">{t('palette.empty', { query })}</p>
         ) : (
-          <ul className="palette__list" role="listbox" id={listId} aria-label="Commands">
+          <ul className="palette__list" role="listbox" id={listId} aria-label={t('palette.list')}>
             {filtered.map((command, index) => (
               <li
                 key={command.command}
@@ -92,8 +95,12 @@ export function CommandPalette({ commands, onPick, onClose }: CommandPaletteProp
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => onPick(command)}
               >
-                <span className="palette__cmd">{command.usage}</span>
-                <span className="palette__desc">{command.description}</span>
+                <span className="palette__cmd" dir="ltr">
+                  {command.usage}
+                </span>
+                <span className="palette__desc" dir="auto">
+                  {command.description}
+                </span>
               </li>
             ))}
           </ul>

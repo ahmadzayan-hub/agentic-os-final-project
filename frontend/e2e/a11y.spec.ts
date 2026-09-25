@@ -37,6 +37,17 @@ test('all views and dialogs pass automated WCAG 2.2 AA checks', async ({ page })
   await openTab(page, /^Activity/)
   await expectNoViolations(page, 'activity view')
 
+  // The Runs view is the most complex screen in the app — approval card,
+  // charts, and the analytics-type tablist — so it is scanned in the
+  // state that has all of them on screen at once.
+  await openTab(page, /^Runs/)
+  await expectNoViolations(page, 'runs view (setup)')
+  await page.getByRole('button', { name: 'Start run' }).click()
+  await expect(page.getByRole('region', { name: 'Approval required' })).toBeVisible({
+    timeout: 40_000,
+  })
+  await expectNoViolations(page, 'runs view (approval, charts, reports)')
+
   await page.keyboard.press('ControlOrMeta+k')
   await page.getByRole('dialog', { name: 'Command palette' }).waitFor()
   await expectNoViolations(page, 'command palette')

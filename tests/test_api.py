@@ -27,7 +27,7 @@ class ApiTestCase(unittest.TestCase):
         self.addCleanup(self.temp_dir.cleanup)
         root = Path(self.temp_dir.name)
         self.memory_path = root / "memory.json"
-        config_path = root / "config.json"
+        self.config_path = config_path = root / "config.json"
         config_path.write_text(
             json.dumps(
                 {
@@ -35,6 +35,8 @@ class ApiTestCase(unittest.TestCase):
                     "version": "9.9.9",
                     "preferences": {"tone": "concise"},
                     "memory_file": str(self.memory_path),
+                    "database_file": str(root / "agentic.db"),
+                    "vault_dir": str(root / "vault"),
                     "maximum_history_items": 50,
                 }
             ),
@@ -241,6 +243,27 @@ class ApiTestCase(unittest.TestCase):
         self.assertNotIn("memory_file", response.text)
         response = self.client.get("/..%2F..%2Fconfig.json")
         self.assertNotIn("memory_file", response.text)
+
+    def test_sessions_survive_an_application_restart(self):
+        state = self.open_session()
+        sid = state["session_id"]
+        self.client.post(f"/api/sessions/{sid}/messages", json={"text": "Hello"})
+        self.client.put(f"/api/sessions/{sid}/preferences",
+                        json={"key": "tone", "value": "formal"})
+
+        # Simulate a full restart: a brand-new app over the same config.
+        fresh = TestClient(create_app(self.config_path),
+                           raise_server_exceptions=False)
+        restored = fresh.get(f"/api/sessions/{sid}")
+        self.assertEqual(restored.status_code, 200)
+        body = restored.json()
+        self.assertEqual(len(body["transcript"]), 2)
+        self.assertEqual(body["preferences"]["tone"], "formal")
+        self.assertFalse(body["ended"])
+        follow_up = fresh.post(f"/api/sessions/{sid}/messages",
+                               json={"text": "Still here?"})
+        self.assertEqual(follow_up.status_code, 200)
+        self.assertEqual(len(follow_up.json()["state"]["transcript"]), 4)
 
     def test_end_session_marks_session_ended(self):
         state = self.open_session()

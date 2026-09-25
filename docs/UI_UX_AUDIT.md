@@ -143,9 +143,17 @@ GitHub Actions CI workflow running the full suite on every push.
   recommends publishing an llms.txt file, which is out of scope for a
   local application.)
 - Automated axe-core WCAG 2.2 A/AA scans pass on every view and dialog in
-  both viewports; the one real finding it caught during development
-  (faint-text contrast 4.16:1 at 12 px) was fixed by darkening the token
-  to ≥ 4.78:1 on every light surface.
+  both viewports — including the Runs view in its fullest state (approval
+  card, four charts, analytics-type tabs). Two real findings have been
+  caught this way rather than by assertion: faint-text contrast at 12 px
+  (4.16:1, fixed by darkening the token to ≥ 4.78:1 on every light
+  surface), and `scrollable-region-focusable` on the report panes, where
+  the scrolling `<pre>` could not be reached by keyboard at all.
+- The analytics-type tabs implement the WAI-ARIA tabs pattern: roving
+  tabindex, Left/Right/Home/End with wrap-around, and selection following
+  focus. axe cannot detect a missing arrow key, so `e2e/keyboard.spec.ts`
+  drives it explicitly — the tablist is one tab stop, and the next stop is
+  the report text itself.
 - Main journey (open session → message → save memory → change preference →
   view history → clear history with confirmation → end session → new
   session) passes on desktop (1440 px) and mobile (375 px) with zero

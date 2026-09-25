@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "_comment": [
+    "Copy this file to metrics.json to put a metric glossary in force.",
+    "No glossary ships with the repository: certifying a metric is a",
+    "statement that an organisation agrees on a definition and that a named",
+    "person owns it, and a default owner would be a fabricated one.",
+    "Runs without a glossary say plainly that their measure is undefined.",
+    "",
+    "Each entry: name, a definition in words, the columns the metric may",
+    "appear as, and optionally a formula. Certified entries must name an",
+    "owner — certification with nobody accountable is a rubber stamp.",
+    "",
+    "A formula is one operation over column names: sum, multiply (two or",
+    "more columns), subtract or divide (exactly two). Where the formula's",
+    "columns are present, every row is checked against it and rows that do",
+    "not match are reported. That is the difference between a glossary and",
+    "a document: this one can be wrong out loud."
+  ],
+  "metrics": [
+    {
+      "name": "revenue",
+      "title": "Net Revenue",
+      "definition": "Invoiced amount after discounts, excluding tax and shipping.",
+      "owner": "Finance — Group Controller",
+      "unit": "AED",
+      "certified": true,
+      "certified_on": "2026-01-31",
+      "columns": ["revenue", "net_revenue", "revenue_net"],
+      "formula": { "multiply": ["unit_price", "units"] }
+    },
+    {
+      "name": "gross_margin",
+      "title": "Gross Margin",
+      "definition": "Net revenue less cost of goods sold, before operating costs.",
+      "owner": "Finance — Group Controller",
+      "unit": "AED",
+      "certified": true,
+      "certified_on": "2026-01-31",
+      "columns": ["gross_margin", "margin"],
+      "formula": { "subtract": ["revenue", "cogs"] }
+    },
+    {
+      "name": "average_order_value",
+      "title": "Average Order Value",
+      "definition": "Net revenue divided by the number of completed orders. Cancelled orders are excluded from both parts.",
+      "owner": "Commercial — Head of Sales",
+      "unit": "AED",
+      "certified": false,
+      "columns": ["aov", "average_order_value"],
+      "formula": { "divide": ["revenue", "orders"] }
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { useI18n } from '../../i18n'
 import { Dialog } from './Dialog'
 
 interface ConfirmDialogProps {
@@ -18,12 +19,13 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useI18n()
   return (
     <Dialog title={title} onClose={onCancel} labelledById="confirm-title">
       <p className="dialog__body">{message}</p>
       <div className="dialog__actions">
         <button type="button" className="btn btn--ghost" onClick={onCancel} disabled={busy}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button type="button" className="btn btn--danger" onClick={onConfirm} disabled={busy}>
           {busy ? <span className="spinner" aria-hidden="true" /> : null}

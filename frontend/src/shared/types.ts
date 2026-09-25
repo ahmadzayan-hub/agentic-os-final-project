@@ -1,8 +1,29 @@
+import type { MessageKey, Vars } from '../i18n'
+
 export interface TranscriptEntry {
   id: number
   role: 'user' | 'agent'
   text: string
   time: string
+  /** Who understood an agent reply: a slash command, the rules, a
+   *  model (then `provider` names it), or an agent runtime (then
+   *  `provider` names it and `steps` lists what it called). Absent on
+   *  user turns. */
+  source?: 'command' | 'rules' | 'model' | 'runtime'
+  provider?: string
+  /** The action the reply took, e.g. `start_run`, and what it produced. */
+  action?: string
+  result?: { run_id?: string } | null
+  steps?: TranscriptStep[]
+}
+
+/** One tool call an agent runtime made for a message: what it asked
+ *  for, whether it was allowed, and the tool's own text. */
+export interface TranscriptStep {
+  tool: string
+  arguments: Record<string, unknown>
+  ok: boolean
+  text: string
 }
 
 export interface CommandInfo {
@@ -48,15 +69,39 @@ export interface ExportPayload {
 
 export type ActivityKind = 'info' | 'success' | 'error'
 
+/** An activity event records *what happened* as a message code, not as a
+ *  sentence, so the timeline reads in whichever language the interface
+ *  is in when it is looked at — including after a switch. `detail` is
+ *  free text (a server reply, a filename) and stays as it came. */
 export interface ActivityEvent {
   id: number
-  label: string
+  code: MessageKey
+  vars?: Vars
   detail?: string
   kind: ActivityKind
   time: string
 }
 
 export type ConnectionStatus = 'ready' | 'working' | 'offline' | 'error' | 'ended'
+
+export interface AuthConfig {
+  mode: 'local' | 'jwt'
+  provider?: string
+  provider_url: string
+  publishable_key: string
+  flows: string[]
+}
+
+export interface IdentityInfo {
+  mode: string
+  principal: {
+    subject: string
+    role: string
+    provider: string
+    email: string
+    permissions: string[]
+  }
+}
 
 export type RunState =
   | 'queued'
@@ -106,7 +151,18 @@ export interface RunDetail {
   error: string | null
   created_at: string
   updated_at: string
+  /** Server-side pause: honoured by clients and background workers alike. */
+  paused: boolean
   tasks: RunTask[]
+  /** One report per business-analytics type, in maturity-ladder order. */
+  reports: {
+    type: string
+    question: string
+    title: string
+    /** One sentence in business language: the answer to this type's question. */
+    headline: string
+    content: string
+  }[]
   approvals: RunApproval[]
   charts: ChartSpec[]
   report: {
@@ -125,4 +181,36 @@ export interface RunSummary {
   state: RunState
   created_at: string
   updated_at: string
+}
+
+/** Registered custom stages and the profiles that choose among them,
+ *  from GET /api/pipelines (ADR 0020). */
+export interface Pipelines {
+  stages: Array<{
+    role: string
+    title: string
+    after: string
+    question: string | null
+    can_fail_run: boolean
+  }>
+  profiles: Record<string, string[]>
+  /** The custom stages a run gets when no profile is chosen. */
+  default: string[]
+  problems: string[]
+}
+
+/** What this tenant has used against its limits, from GET /api/usage. */
+export interface UsageAllowance {
+  used: number
+  limit: number
+  remaining: number
+  resets_at?: string
+}
+
+export interface Usage {
+  runs_today: UsageAllowance
+  datasets: UsageAllowance
+  dataset_bytes: UsageAllowance
+  /** Real costs the system does not measure — named, not hidden. */
+  not_tracked: string[]
 }

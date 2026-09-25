@@ -72,8 +72,10 @@ test.describe('main user journey', () => {
     await expect(page.getByText('Preference updated: user_name = Ahmad.')).toBeVisible()
 
     await openTab(page, /^Workspace/)
+    // A sentence the assistant cannot act on gets an honest, tone-shaped
+    // answer that says what can be asked — concise here.
     await sendMessage(page, 'Ping')
-    await expect(lastAgentBubble(page)).toHaveText('Received: "Ping". See /help for commands.')
+    await expect(lastAgentBubble(page)).toContainText('Not sure what to do with “Ping”')
 
     // 6. View history.
     await sendMessage(page, '/history')

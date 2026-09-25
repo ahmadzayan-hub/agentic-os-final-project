@@ -7,3 +7,33 @@ uvicorn[standard]>=0.52
 
 # Used only by the API test suite (tests/test_api.py):
 httpx>=0.28
+
+# Hosted-mode PostgreSQL driver (DATABASE_URL); local SQLite needs nothing:
+psycopg2-binary>=2.9
+
+# Hosted-mode token verification; local mode needs no authentication:
+pyjwt[crypto]>=2.8
+
+# Deliberately absent: LLMRouter (github.com/ulab-uiuc/LLMRouter).
+#
+# Per-report model routing is optional (ADR 0017) and the contract is one
+# method wide, so a router is four lines if you want one. LLMRouter's own
+# routers bring torch, transformers and CUDA wheels — 5.3 GB measured —
+# which is not a cost a CLI that otherwise needs only the standard
+# library should impose on everyone. Install it yourself if you want it:
+#
+#     pip install -e /path/to/LLMRouter
+#
+# With it absent, five tests skip and nothing else changes.
+
+# Also deliberately absent: agent frameworks (ADR 0021). The core needs
+# none. The optional runtime examples and the graph-built stage need one
+# each, measured with their dependencies on this machine:
+#
+#     pip install langgraph          # 72 MB, 38 packages
+#     pip install pydantic-ai-slim   # 35 MB, 17 packages
+#     pip install mcp                # 44 MB — only to *test* the MCP
+#                                    # server with the official client;
+#                                    # serving it needs nothing
+#
+# With them absent, their tests skip and nothing else changes.

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useI18n } from '../../i18n'
 import { api, ApiError } from '../../shared/api'
 import { Icon } from '../../shared/components/Icon'
-import type { ChartSpec, RunDetail, RunSummary } from '../../shared/types'
+import { questionLabel, stateLabel, typeLabel } from '../../shared/labels'
+import type { ChartSpec, Pipelines, RunDetail, RunSummary } from '../../shared/types'
 
 const ACTIVE_STATES = ['queued', 'running']
 
@@ -73,15 +75,57 @@ const TASK_ICON: Record<string, string> = {
   pending: '·',
 }
 
-export function RunsView() {
+/** Arrow-key movement inside the analytics-type tablist. Selection
+ *  follows focus, which is the expected behaviour when switching panels
+ *  is cheap — here it only swaps already-loaded text. In a right-to-left
+ *  layout the tabs run the other way, so the arrows do too (WAI-ARIA). */
+function nextTabIndex(key: string, current: number, count: number, rtl: boolean): number | null {
+  const forward = rtl ? 'ArrowLeft' : 'ArrowRight'
+  const backward = rtl ? 'ArrowRight' : 'ArrowLeft'
+  if (key === forward) return (current + 1) % count
+  if (key === backward) return (current - 1 + count) % count
+  if (key === 'Home') return 0
+  if (key === 'End') return count - 1
+  return null
+}
+
+interface RunsViewProps {
+  /** A run to open on arrival — the one the assistant just started. */
+  openRunId?: string | null
+  openNonce?: number
+}
+
+/** The custom stages a profile includes, by title, for the picker's help. */
+function stageTitles(pipelines: Pipelines, profile: string): string[] {
+  const roles = profile ? (pipelines.profiles[profile] ?? []) : pipelines.default
+  return roles.map((role) => {
+    const stage = pipelines.stages.find((s) => s.role === role)
+    return stage ? stage.title.split(' — ')[0] : role
+  })
+}
+
+export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
+  const { t, tx, plural, isRtl } = useI18n()
   const [runs, setRuns] = useState<RunSummary[]>([])
   const [run, setRun] = useState<RunDetail | null>(null)
-  const [goal, setGoal] = useState('Analyze the sample sales dataset and produce a business report')
+  const [goal, setGoal] = useState(() => t('runs.goalDefault'))
   const [useUpload, setUseUpload] = useState(false)
   const [csvDraft, setCsvDraft] = useState('')
-  const [autoRun, setAutoRun] = useState(true)
+  const [fileName, setFileName] = useState<string | null>(null)
+  // Stepping stops for two different reasons: the user paused the run
+  // (durable, server-side, also obeyed by a background worker) or a
+  // request failed (local to this tab, cleared on the next action).
+  const [stoppedByError, setStoppedByError] = useState(false)
+  // Which analytics type's report is on screen. Descriptive is the floor
+  // of the maturity ladder, so it opens first.
+  const [openReport, setOpenReport] = useState('descriptive')
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [throttled, setThrottled] = useState(false)
+  // Custom stages and profiles (ADR 0020). The picker exists only when
+  // an operator configured profiles; a default install shows nothing.
+  const [pipelines, setPipelines] = useState<Pipelines | null>(null)
+  const [profile, setProfile] = useState('')
   const advancing = useRef(false)
 
   const refreshList = useCallback(async () => {
@@ -97,25 +141,72 @@ export function RunsView() {
     void refreshList()
   }, [refreshList])
 
+  useEffect(() => {
+    let cancelled = false
+    api
+      .pipelines()
+      .then((result) => !cancelled && setPipelines(result))
+      .catch(() => {
+        /* an older server without the endpoint: no picker */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!openRunId) return
+    let cancelled = false
+    setBusy(true)
+    api
+      .getRun(openRunId)
+      .then((detail) => {
+        if (cancelled) return
+        setRun(detail)
+        setStoppedByError(false)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setErrorMessage(error instanceof ApiError ? error.message : t('runs.actionFailed'))
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false)
+      })
+    return () => {
+      cancelled = true
+    }
+    // `t` changes only with the locale; the run to open is the key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRunId, openNonce])
+
   // Bounded client-driven stepping: one task per tick while the run is
   // active and auto-run is on. Pausing simply stops advancing — the run
   // state is durable on the server either way.
   useEffect(() => {
-    if (!run || !autoRun || !ACTIVE_STATES.includes(run.state)) return
+    if (!run || run.paused || stoppedByError || !ACTIVE_STATES.includes(run.state)) return
     const timer = setTimeout(async () => {
       if (advancing.current) return
       advancing.current = true
       try {
         setRun(await api.advanceRun(run.id))
+        setErrorMessage(null)
+        setThrottled(false)
       } catch (error) {
-        setErrorMessage(error instanceof ApiError ? error.message : 'Advance failed.')
-        setAutoRun(false)
+        if (error instanceof ApiError && error.status === 429) {
+          // Throttled: keep the run active and let the next tick retry
+          // instead of abandoning a half-finished pipeline.
+          setErrorMessage(t('runs.slowing'))
+          setThrottled(true)
+        } else {
+          setErrorMessage(error instanceof ApiError ? error.message : t('runs.advanceFailed'))
+          setStoppedByError(true)
+        }
       } finally {
         advancing.current = false
       }
-    }, 350)
+    }, throttled ? 1500 : 350)
     return () => clearTimeout(timer)
-  }, [run, autoRun])
+  }, [run, stoppedByError, throttled, t])
 
   async function createRun(event: React.FormEvent) {
     event.preventDefault()
@@ -125,13 +216,14 @@ export function RunsView() {
       const detail = await api.createRun(
         goal.trim(),
         useUpload && csvDraft.trim() ? csvDraft : undefined,
-        useUpload && csvDraft.trim() ? 'uploaded CSV' : undefined,
+        useUpload && csvDraft.trim() ? (fileName ?? t('runs.pastedName')) : undefined,
+        profile || undefined,
       )
       setRun(detail)
-      setAutoRun(true)
+      setStoppedByError(false)
       void refreshList()
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'Could not start the run.')
+      setErrorMessage(error instanceof ApiError ? error.message : t('runs.startFailed'))
     } finally {
       setBusy(false)
     }
@@ -144,27 +236,31 @@ export function RunsView() {
       setRun(await action())
       void refreshList()
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'The action failed.')
+      setErrorMessage(error instanceof ApiError ? error.message : t('runs.actionFailed'))
     } finally {
       setBusy(false)
     }
+  }
+
+  function moveTabFocus(event: React.KeyboardEvent, types: string[]) {
+    const target = nextTabIndex(event.key, types.indexOf(openReport), types.length, isRtl)
+    if (target === null) return
+    event.preventDefault()
+    const type = types[target]
+    setOpenReport(type)
+    document.getElementById(`reporttab-${type}`)?.focus()
   }
 
   const pendingApproval = run?.approvals.find((a) => a.state === 'pending')
 
   if (!run) {
     return (
-      <section className="panel" aria-label="Runs">
+      <section className="panel" aria-label={t('runs.aria')}>
         <div className="panel__inner">
           <div className="panel__header">
             <div>
-              <h2 className="panel__title">Analytics runs</h2>
-              <p className="panel__desc">
-                A goal becomes a governed pipeline of specialist agents — planning, data
-                profiling, cleaning, analysis, visualization, validation, and reporting —
-                with every claim traced to a calculation and publishing gated by your
-                approval.
-              </p>
+              <h2 className="panel__title">{t('runs.title')}</h2>
+              <p className="panel__desc">{t('runs.desc')}</p>
             </div>
           </div>
 
@@ -172,11 +268,12 @@ export function RunsView() {
             <form onSubmit={createRun}>
               <div className="field">
                 <label className="field__label" htmlFor="run-goal">
-                  Goal
+                  {t('runs.goal')}
                 </label>
                 <input
                   id="run-goal"
                   className="field__input"
+                  dir="auto"
                   value={goal}
                   maxLength={500}
                   onChange={(event) => setGoal(event.target.value)}
@@ -185,7 +282,7 @@ export function RunsView() {
               </div>
               <div className="field">
                 <span className="field__label" id="dataset-label">
-                  Dataset
+                  {t('runs.dataset')}
                 </span>
                 <div className="segmented" role="group" aria-labelledby="dataset-label">
                   <button
@@ -194,7 +291,7 @@ export function RunsView() {
                     aria-pressed={!useUpload}
                     onClick={() => setUseUpload(false)}
                   >
-                    Sample sales data
+                    {t('runs.sample')}
                   </button>
                   <button
                     type="button"
@@ -202,30 +299,108 @@ export function RunsView() {
                     aria-pressed={useUpload}
                     onClick={() => setUseUpload(true)}
                   >
-                    Paste CSV
+                    {t('runs.upload')}
                   </button>
                 </div>
               </div>
               {useUpload ? (
+                <>
+                  <div className="field">
+                    <label className="field__label" htmlFor="run-file">
+                      {t('runs.chooseFile')}
+                    </label>
+                    <span className="field__help">{t('runs.fileHelp')}</span>
+                    <input
+                      id="run-file"
+                      className="field__input"
+                      type="file"
+                      accept=".csv,text/csv"
+                      disabled={busy}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0]
+                        if (!file) return
+                        if (file.size > 2_000_000) {
+                          setErrorMessage(
+                            t('runs.tooBig', {
+                              name: file.name,
+                              size: (file.size / 1_000_000).toFixed(1),
+                            }),
+                          )
+                          return
+                        }
+                        const reader = new FileReader()
+                        reader.onload = () => {
+                          setCsvDraft(String(reader.result ?? ''))
+                          setFileName(file.name)
+                          setErrorMessage(null)
+                        }
+                        reader.onerror = () =>
+                          setErrorMessage(t('runs.readFailed', { name: file.name }))
+                        reader.readAsText(file)
+                      }}
+                    />
+                    {fileName ? (
+                      <p className="privacy-note">
+                        <Icon name="check" size={14} />
+                        <span dir="auto">{fileName}</span> ·{' '}
+                        {plural('runs.rows', csvDraft.split('\n').filter(Boolean).length - 1)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="field">
+                    <label className="field__label" htmlFor="run-csv">
+                      {t('runs.paste')}
+                    </label>
+                    {/* CSV is a left-to-right format whatever the interface language. */}
+                    <textarea
+                      id="run-csv"
+                      className="field__input runform__textarea"
+                      dir="ltr"
+                      rows={6}
+                      value={csvDraft}
+                      onChange={(event) => {
+                        setCsvDraft(event.target.value)
+                        setFileName(null)
+                      }}
+                      placeholder={'team,quarter,sales\nA,Q1,100\nB,Q1,90'}
+                      disabled={busy}
+                    />
+                  </div>
+                </>
+              ) : null}
+              {pipelines && Object.keys(pipelines.profiles).length > 0 ? (
                 <div className="field">
-                  <label className="field__label" htmlFor="run-csv">
-                    CSV data (first row is the header)
+                  <label className="field__label" htmlFor="run-profile">
+                    {t('runs.profile')}
                   </label>
-                  <textarea
-                    id="run-csv"
-                    className="field__input runform__textarea"
-                    rows={6}
-                    value={csvDraft}
-                    onChange={(event) => setCsvDraft(event.target.value)}
-                    placeholder={'team,quarter,sales\nA,Q1,100\nB,Q1,90'}
+                  <span className="field__help">
+                    {t('runs.profileHelp')}{' '}
+                    {stageTitles(pipelines, profile).length > 0
+                      ? t('runs.profileStages', { list: stageTitles(pipelines, profile).join(', ') })
+                      : t('runs.profileNone')}
+                  </span>
+                  <select
+                    id="run-profile"
+                    className="field__select"
+                    value={profile}
+                    onChange={(event) => setProfile(event.target.value)}
                     disabled={busy}
-                  />
+                  >
+                    <option value="">{t('runs.profileDefault')}</option>
+                    {Object.keys(pipelines.profiles)
+                      .filter((name) => name !== 'default')
+                      .map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                  </select>
                 </div>
               ) : null}
               <div className="field">
                 <button type="submit" className="btn btn--primary" disabled={busy || !goal.trim()}>
                   {busy ? <span className="spinner" aria-hidden="true" /> : <Icon name="sparkle" size={16} />}
-                  Start run
+                  {t('runs.start')}
                 </button>
               </div>
             </form>
@@ -233,6 +408,7 @@ export function RunsView() {
               className={`statusline ${errorMessage ? 'statusline--error' : ''}`}
               role="status"
               aria-live="polite"
+              dir="auto"
             >
               {errorMessage ?? ''}
             </p>
@@ -240,7 +416,7 @@ export function RunsView() {
 
           {runs.length > 0 ? (
             <div className="card">
-              <h3 className="card__title">Previous runs</h3>
+              <h3 className="card__title">{t('runs.previous')}</h3>
               <ul className="controls__list">
                 {runs.map((item) => (
                   <li key={item.id}>
@@ -251,9 +427,11 @@ export function RunsView() {
                     >
                       <Icon name="clock" size={17} />
                       <span>
-                        <span className="controlrow__label">{item.goal}</span>
+                        <span className="controlrow__label" dir="auto">
+                          {item.goal}
+                        </span>
                         <span className="controlrow__help">
-                          {item.dataset_name} · {item.state.replace(/_/g, ' ')}
+                          <span dir="auto">{item.dataset_name}</span> · {stateLabel(t, item.state)}
                         </span>
                       </span>
                     </button>
@@ -268,16 +446,23 @@ export function RunsView() {
   }
 
   return (
-    <section className="panel" aria-label="Run detail">
+    <section className="panel" aria-label={t('runs.detailAria')}>
       <div className="panel__inner panel__inner--split">
         <div className="panel__column">
           <div className="panel__header">
             <div>
-              <h2 className="panel__title">{run.goal}</h2>
+              <h2 className="panel__title" dir="auto">
+                {run.goal}
+              </h2>
               <p className="panel__desc">
-                {run.dataset_name} · state:{' '}
-                <strong>{run.state.replace(/_/g, ' ')}</strong>
-                {run.error ? ` — ${run.error}` : ''}
+                <span dir="auto">{run.dataset_name}</span> · {t('runs.state')}{' '}
+                <strong>{stateLabel(t, run.state)}</strong>
+                {run.error ? (
+                  <>
+                    {' — '}
+                    <span dir="auto">{run.error}</span>
+                  </>
+                ) : null}
               </p>
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
@@ -286,9 +471,13 @@ export function RunsView() {
                   <button
                     type="button"
                     className="btn btn--ghost"
-                    onClick={() => setAutoRun((v) => !v)}
+                    disabled={busy}
+                    onClick={() => {
+                      setStoppedByError(false)
+                      void act(() => (run.paused ? api.resumeRun(run.id) : api.pauseRun(run.id)))
+                    }}
                   >
-                    {autoRun ? 'Pause' : 'Resume'}
+                    {run.paused ? t('runs.resume') : t('runs.pause')}
                   </button>
                   <button
                     type="button"
@@ -296,47 +485,47 @@ export function RunsView() {
                     onClick={() => void act(() => api.cancelRun(run.id))}
                     disabled={busy}
                   >
-                    Cancel
+                    {t('runs.cancel')}
                   </button>
                 </>
               ) : null}
               <button type="button" className="btn btn--ghost" onClick={() => setRun(null)}>
-                All runs
+                {t('runs.all')}
               </button>
             </div>
           </div>
 
           {pendingApproval ? (
-            <div className="card approvalcard" role="region" aria-label="Approval required">
+            <div className="card approvalcard" role="region" aria-label={t('runs.approval')}>
               <h3 className="card__title">
-                <Icon name="alert" size={16} /> Approval required
+                <Icon name="alert" size={16} /> {t('runs.approval')}
               </h3>
               <dl>
                 <div className="rail__row">
-                  <dt>Action</dt>
-                  <dd style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'right' }}>
+                  <dt>{t('runs.action')}</dt>
+                  <dd dir="auto" style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'end' }}>
                     {pendingApproval.action}
                   </dd>
                 </div>
                 <div className="rail__row">
-                  <dt>Target</dt>
-                  <dd style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'right' }}>
+                  <dt>{t('runs.target')}</dt>
+                  <dd dir="ltr" style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'end' }}>
                     {pendingApproval.target}
                   </dd>
                 </div>
                 <div className="rail__row">
-                  <dt>Risk</dt>
-                  <dd>{pendingApproval.risk}</dd>
+                  <dt>{t('runs.risk')}</dt>
+                  <dd dir="auto">{pendingApproval.risk}</dd>
                 </div>
                 <div className="rail__row">
-                  <dt>Impact</dt>
-                  <dd style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'right' }}>
+                  <dt>{t('runs.impact')}</dt>
+                  <dd dir="auto" style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'end' }}>
                     {pendingApproval.impact}
                   </dd>
                 </div>
                 <div className="rail__row">
-                  <dt>Reversibility</dt>
-                  <dd style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'right' }}>
+                  <dt>{t('runs.reversibility')}</dt>
+                  <dd dir="auto" style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'end' }}>
                     {pendingApproval.reversibility}
                   </dd>
                 </div>
@@ -348,7 +537,7 @@ export function RunsView() {
                   disabled={busy}
                   onClick={() => void act(() => api.decideApproval(run.id, pendingApproval.id, 'reject'))}
                 >
-                  Reject
+                  {t('runs.reject')}
                 </button>
                 <button
                   type="button"
@@ -356,7 +545,7 @@ export function RunsView() {
                   disabled={busy}
                   onClick={() => void act(() => api.decideApproval(run.id, pendingApproval.id, 'approve'))}
                 >
-                  Approve and publish
+                  {t('runs.approve')}
                 </button>
               </div>
             </div>
@@ -364,28 +553,105 @@ export function RunsView() {
 
           {run.charts.length > 0 ? (
             <div className="card">
-              <h3 className="card__title">Charts</h3>
+              <h3 className="card__title">{t('runs.charts')}</h3>
+              {/* A chart's axis runs left to right in either language;
+                  the labels come from the data and are shown as written. */}
               {run.charts.map((chart) => (
-                <figure key={chart.id} className="runchart">
-                  <figcaption className="field__label">{chart.title}</figcaption>
+                <figure key={chart.id} className="runchart" dir="ltr">
+                  <figcaption className="field__label" dir="auto">
+                    {chart.title}
+                  </figcaption>
                   {chart.type === 'bar' ? <BarChart chart={chart} /> : <LineChart chart={chart} />}
                 </figure>
               ))}
             </div>
           ) : null}
 
+          {run.reports.length ? (
+            <div className="card">
+              <h3 className="card__title">{t('runs.reports')}</h3>
+              <div
+                className="reporttabs"
+                role="tablist"
+                aria-label={t('runs.reportSection')}
+                onKeyDown={(event) => moveTabFocus(event, run.reports.map((s) => s.type))}
+              >
+                {run.reports.map((section) => (
+                  <button
+                    key={section.type}
+                    type="button"
+                    role="tab"
+                    id={`reporttab-${section.type}`}
+                    aria-selected={openReport === section.type}
+                    aria-controls={`reportpanel-${section.type}`}
+                    // Roving tabindex: one stop for the whole tablist, then
+                    // the arrow keys move within it (WAI-ARIA tabs pattern).
+                    tabIndex={openReport === section.type ? 0 : -1}
+                    className={`reporttab ${openReport === section.type ? 'reporttab--on' : ''}`}
+                    onClick={() => setOpenReport(section.type)}
+                  >
+                    <span className="reporttab__name">{typeLabel(t, section.type, section.title)}</span>
+                    <span className="reporttab__q">
+                      {questionLabel(t, section.type, section.question)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {run.reports
+                .filter((section) => section.type === openReport)
+                .map((section) => (
+                  <div
+                    key={section.type}
+                    role="tabpanel"
+                    id={`reportpanel-${section.type}`}
+                    aria-labelledby={`reporttab-${section.type}`}
+                  >
+                    {section.headline ? (
+                      <p className="reporthead" dir="auto">
+                        {section.headline}
+                      </p>
+                    ) : null}
+                    {/* The <pre> is what scrolls, so the tab stop belongs
+                        here rather than on the panel around it. Reports
+                        are written in English (see KNOWN_LIMITATIONS), so
+                        the block is marked as such for readers and the
+                        bidi algorithm alike. */}
+                    <pre
+                      className="runreport"
+                      tabIndex={0}
+                      role="region"
+                      lang="en"
+                      dir="ltr"
+                      aria-label={t('runs.reportText', { type: typeLabel(t, section.type, section.title) })}
+                    >
+                      {section.content}
+                    </pre>
+                  </div>
+                ))}
+            </div>
+          ) : null}
+
           {run.report ? (
             <div className="card">
               <h3 className="card__title">
-                Report (v{run.report.version})
-                {run.report.published_path ? ' — published to the vault' : ''}
+                {t('runs.comprehensive', { version: run.report.version })}
+                {run.report.published_path ? t('runs.published') : ''}
               </h3>
               {run.report.published_path ? (
                 <p className="privacy-note">
-                  <Icon name="check" size={14} /> {run.report.published_path}
+                  <Icon name="check" size={14} /> <span dir="ltr">{run.report.published_path}</span>
                 </p>
               ) : null}
-              <pre className="runreport">{run.report.content}</pre>
+              <pre
+                className="runreport runreport--full"
+                tabIndex={0}
+                role="region"
+                lang="en"
+                dir="ltr"
+                aria-label={t('runs.comprehensiveText')}
+              >
+                {run.report.content}
+              </pre>
             </div>
           ) : null}
 
@@ -393,6 +659,7 @@ export function RunsView() {
             className={`statusline ${errorMessage ? 'statusline--error' : ''}`}
             role="status"
             aria-live="polite"
+            dir="auto"
           >
             {errorMessage ?? ''}
           </p>
@@ -400,7 +667,10 @@ export function RunsView() {
 
         <div className="panel__column panel__column--side">
           <div className="card">
-            <h3 className="card__title">Specialist pipeline</h3>
+            <h3 className="card__title">{t('runs.pipeline')}</h3>
+            <p className="controlrow__help">
+              {tx('runs.pipelineDesc', { hermes: <strong>Hermes</strong> })}
+            </p>
             <ul className="runtasks" aria-live="polite">
               {run.tasks.map((task) => (
                 <li key={task.id} className={`runtask runtask--${task.state}`}>
@@ -408,11 +678,15 @@ export function RunsView() {
                     {TASK_ICON[task.state] ?? '·'}
                   </span>
                   <span>
-                    <span className="controlrow__label">{task.title}</span>
+                    <span className="controlrow__label" dir="auto">
+                      {task.title}
+                    </span>
                     {task.summary ? (
-                      <span className="controlrow__help">{task.summary}</span>
+                      <span className="controlrow__help" dir="auto">
+                        {task.summary}
+                      </span>
                     ) : (
-                      <span className="controlrow__help">{task.state.replace(/_/g, ' ')}</span>
+                      <span className="controlrow__help">{stateLabel(t, task.state)}</span>
                     )}
                   </span>
                 </li>

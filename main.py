@@ -27,22 +27,24 @@ def main():
     agent = Agent(config)
     print(agent.get_welcome_message())
 
+    # The prompt labels follow the agent's language, and are re-read each
+    # turn because /set language can change it mid-session.
     while True:
         try:
-            user_input = input("You: ").strip()
+            user_input = input(f"{agent.text('you_label')}: ").strip()
         except (KeyboardInterrupt, EOFError):
-            print("\nAgent: Session closed. Goodbye.")
+            print(f"\n{agent.text('agent_label')}: {agent.text('goodbye')}")
             break
 
         if not user_input:
-            print("Agent: Please enter a command or question.")
+            print(f"{agent.text('agent_label')}: {agent.text('empty_input')}")
             continue
         if user_input.split()[0].lower() == "/exit":
-            print("Agent: Session closed. Goodbye.")
+            print(f"{agent.text('agent_label')}: {agent.text('goodbye')}")
             break
 
         response = agent.process_input(user_input)
-        print(f"Agent: {response}")
+        print(f"{agent.text('agent_label')}: {response}")
 
     return 0
 
