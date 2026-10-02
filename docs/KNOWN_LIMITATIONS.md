@@ -156,12 +156,18 @@ required local files. Both behaviors are covered by tests
     deployments there keep the client-stepped path. One worker advances
     one run at a time; parallelism means running more workers. A
     paused or interrupted run resumes from its durable state either way.
-11. The repository is configured to deploy to Vercel as a full-stack
-    project (static frontend + Python function). **No deployment has been
-    performed or verified** — importing the repo and setting the
-    credentials are owner steps. Without `DATABASE_URL` a deployment
-    falls back to ephemeral per-instance storage. See
-    docs/VERCEL_DEPLOYMENT.md.
+11. The repository is deployed to Vercel as a full-stack project (static
+    frontend + Python function) at `agentic-os-final-project.vercel.app`,
+    and `/api/health`, `/api/pipelines` and the interface were verified
+    there by HTTP on 2026-10-02. What was **not** verified from the
+    implementation environment: that the domain is reachable without a
+    Vercel login (the project has Standard Protection on), a full run and
+    approval in a browser there, and whether `DATABASE_URL` is set —
+    without it a deployment keeps per-instance storage that a cold start
+    wipes. No identity provider is configured, so the deployment is
+    single-owner with no login, like a laptop. See
+    docs/VERCEL_DEPLOYMENT.md for the exact state and the two things to
+    tidy by hand.
 12. Android support is a verified installable PWA; a native Capacitor
     project is documented but not shipped (no Android SDK available to
     build or test one honestly).

@@ -74,22 +74,61 @@ real use. Set `DATABASE_URL` before treating the deployment as usable.
 
 ## Verification status — read this before claiming it works
 
-No deployment has been performed from the implementation environment.
-Two honest reasons:
+**Deployed on 2026-10-02** to the Vercel project `agentic-os-final-project`
+(team `celia2026-3923s-projects`), production domain
+`https://agentic-os-final-project.vercel.app`, from commit `2aeb9fd` of
+`claude/agentic-os-final-project-53j6ql`.
 
-1. **Credentials.** `DATABASE_URL` requires the Supabase database
-   password and the JWT secret, which only the project owner holds.
-   Setting them in the Vercel dashboard is a deliberate human step.
-2. **Tooling limits.** The available deploy tool uploads an inline file
-   tree; the built frontend bundle alone is ~280 KB, beyond what that
-   interface can carry. Git import is the correct path anyway — it gives
-   preview deployments per pull request.
+What the first import got wrong, and the fix: the import dialog
+auto-detected the **FastAPI** preset. Under that preset, as the build log
+warns, an internal rewrite routes the request *using the rewritten
+destination path*, so every `/api/*` request reached the function as
+`/api/index`, FastAPI had no such route, and its SPA fallback answered
+`index.html`. The site rendered; every API call returned HTML.
+`vercel.json` now carries `"framework": null` (the "Other" preset), which
+Vercel's configuration reference documents as overriding the project
+setting, and the next build routed correctly. Keep that line.
 
-So: the configuration is written and locally verified (the ASGI entry
-imports and exposes all 22 API routes; the read-only fallback is
-covered by a test), but **the deployed URL itself is unverified**. After
-importing the project, confirm `/api/health`, sign-in, and one analytics
-run before relying on it.
+Verified against the live production domain, by HTTP:
+
+- `GET /api/health` → JSON (`status: ok`, deterministic narrator, no
+  router, no stages, no runtime).
+- `GET /api/pipelines` → JSON.
+- `GET /` and `GET /runs` → the SPA's `index.html` with the configured
+  security headers.
+
+Not verified, in each case because the implementation environment could
+not reach it rather than because it failed:
+
+- **Whether the production domain is public.** The project has Vercel
+  Authentication set to *Standard Protection*
+  (`all_except_custom_domains`); the checks above went through an
+  authenticated bypass. Open the domain in a private window to confirm;
+  Project → Settings → Deployment Protection changes it.
+- **A browser session, a run and an approval** on the deployment. Only
+  GET requests were exercised.
+- **Environment variables.** The deploying token could not list them, so
+  whether `DATABASE_URL` is set is unknown. The health response does not
+  say. Without it, state is per-instance and lost on cold start, as the
+  section above describes.
+- **Sign-in.** No identity provider is configured, so the deployment runs
+  in local mode: one owner, no login, same as a laptop.
+- **The Python version.** The "Other" build installed dependencies under
+  CPython 3.14 despite `.python-version` saying 3.12; the function
+  served, but the pin is evidently not what selects the runtime under
+  this preset.
+
+Two things in the Vercel project to tidy by hand:
+
+- A second project, `agentic-os-final-project-frontend`, was created by
+  the same import with `frontend` as its root directory. Its builds fail
+  (`cd frontend` inside `frontend`) and it serves nothing. Delete it.
+- A push to the branch produced a **preview** deployment, not a
+  production one: the project's Production Branch is not this branch.
+  The fixed build was promoted by creating a production deployment
+  explicitly. Set Project → Settings → Git → Production Branch to the
+  branch you deploy from, or merge into it, so that pushes update
+  production.
 
 ## Rollback
 

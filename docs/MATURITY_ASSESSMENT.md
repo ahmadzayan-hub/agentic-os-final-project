@@ -43,7 +43,7 @@ with.
 | Scheduling and automation | **Missing** | Runs start from a click or an API call | No "re-run every Monday", no "when this file changes". The lease worker is the right base for it. |
 | Obsidian | **Partial** | Approval-gated write-back with provenance frontmatter | Write-only; nothing reads a vault. |
 | Cost and usage | **Partial** | Per-owner quotas (ADR 0008) | No currency, no token counts — deliberately, because it would be fabricated. |
-| Deployment | **Missing** | `vercel.json` + `api/index.py` ready | No public URL. The import needs the owner's credentials; this environment cannot open tunnels. |
+| Deployment | **Deployed after this assessment (2026-10-02)** | `agentic-os-final-project.vercel.app`; `/api/health` and `/api/pipelines` verified by HTTP; the first import's FastAPI preset broke API routing and `vercel.json` now pins "Other" | Public reachability, a browser run and `DATABASE_URL` unverified from here; no identity provider, so single-owner. |
 
 ## What "a real Agentic OS" needs next, in the order I would build it
 
@@ -91,9 +91,12 @@ with.
    can recur. Small, and it is what makes the output arrive without a
    person clicking.
 
-8. **Deployment** — an owner action: import at vercel.com/new with
-   Framework Preset *Other*, set `DATABASE_URL`, confirm the sign-in
-   round-trip once by hand.
+8. **Deployment** — *done on 2026-10-02 after this assessment was
+   written*, with one lesson: the import dialog's FastAPI preset routes
+   rewrites differently and broke every API call, so `vercel.json` now
+   pins the "Other" preset. What remains is the owner's: `DATABASE_URL`
+   for durable state, an identity provider for more than one user, and
+   confirming the domain is reachable without a Vercel login.
 
 ## Two things not to do
 
