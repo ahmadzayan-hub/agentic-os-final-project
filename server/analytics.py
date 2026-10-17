@@ -22,11 +22,16 @@ import math
 import re
 import statistics
 
+from server import joins as joining
+from server import mapping as colmap
 from server import metrics as glossary
 from server import sequential
 
 MAX_ROWS = 50_000
-MAX_DATASET_BYTES = 2_000_000
+# The most CSV an analysis reads (ADR 0024). Measured: at 50,000 rows
+# and 20 columns (5.3 MB) the slowest stage took 2.9 s. An upload is
+# smaller still (server/datasets.py), but a workbook can expand.
+MAX_DATASET_BYTES = 10_000_000
 
 
 def sample_dataset():
@@ -54,6 +59,9 @@ def sample_dataset():
 # ---------------------------------------------------------------------------
 
 REPORT_LANGUAGES = ("en", "ar")
+# Periods are uneven when the quietest holds under three quarters of the
+# busiest's records (ADR 0026): totals over time then need a per-record view.
+UNEVEN_PERIODS = 0.75
 
 
 def report_language(ctx):
@@ -65,6 +73,12 @@ def _say(ctx, en, ar):
     """The reader's sentence. Both are written out in full at the call
     site, so each can be read, and reviewed, as a sentence."""
     return ar if report_language(ctx) == "ar" else en
+
+
+def _first_upper(name):
+    """A column name at the start of a sentence: "Production_Loss_USD" stays
+    as written, where str.capitalize() would give "Production_loss_usd"."""
+    return name[:1].upper() + name[1:]
 
 
 def _claim(ctx, claim_id, kind, en, ar, evidence):
@@ -202,7 +216,9 @@ def _next_labels(labels, count):
                 month, year = 1, year + 1
             out.append(f"{year:04d}-{month:02d}")
         return out
-    return [f"next period +{i + 1}" for i in range(count)]
+    # Days, quarters and years continue their calendars too (ADR 0025).
+    return (colmap.next_period_labels(last, count)
+            or [f"next period +{i + 1}" for i in range(count)])
 
 
 def _period_label(ctx, label):
@@ -225,12 +241,43 @@ JARGON = (
     "القيمة الاحتمالية", "دلالة إحصائية", "دال إحصائياً", "دالة إحصائياً",
     "فرضية العدم", "فترة الثقة", "فاصل الثقة", "معامل التحديد",
     "الانحراف المعياري", "انحرافات معيارية", "معامل الانحدار",
+    # The names of tests and technical statistics (ADR 0027). Business words
+    # that look statistical ("variance", "residual value", "bootstrapped")
+    # are left out on purpose.
+    "standard error", "standard deviation", "t-statistic", "t statistic", "t-test",
+    "chi-square", "chi-squared", "chi square", "f-statistic", "f-test", "z-score", "z-test",
+    "anova", "heteroscedastic", "homoscedastic", "multicollinearity", "autocorrelation",
+    "kurtosis", "skewness", "coefficient of variation", "degrees of freedom",
+    "likelihood ratio", "logistic regression", "linear regression", "mean squared error",
+    "mean absolute error", "interquartile",
+    "الخطأ المعياري", "مربع كاي", "كاي تربيع", "تحليل التباين", "الالتواء", "التفرطح",
+    "معامل الاختلاف", "درجات الحرية", "اختبار ت", "الانحدار اللوجستي", "الانحدار الخطي",
+    "principal component", "mann-whitney", "wilcoxon", "kruskal", "kolmogorov",
+    "تحليل المكونات الأساسية", "المكونات الرئيسية", "بشكل معنوي", "دلالة معنوية", "فروق معنوية",
+    # Corrections for testing many comparisons at once, and the model
+    # diagnostics an Arabic report names (round 5 of ADR 0027).
+    "bonferroni", "multiple comparisons", "pairwise comparisons", "post hoc", "post-hoc",
+    "false discovery rate", "tukey", "residuals",
+    "تجانس التباين", "عدم تجانس", "البواقي", "الأخطاء المعيارية", "أخطاء المعيار",
+    "المقارنات المتعددة", "المقارنات الزوجية",
 )
+# Abbreviations match only as whole words, so "CI" is caught in "the 95% CI"
+# and never inside "decision" or "special"; "p = 0.03" is a p-value.
+JARGON_WORDS = re.compile(r"(?<![\w-])(ci|s\.e\.|auc|roc|rmse|mape|mae|anova|vif|pca)(?![\w-])|"
+                          r"(?<![\w-])p\s*[=<>≤]\s*0?\.\d|"
+                          # A test named after its authors: "Mann-Whitney test", "اختبار مان-ويتني".
+                          r"\b[A-Z][a-z]+[-–][A-Z][a-z]+ test\b|اختبار\s+[\u0621-\u064A]+[-–][\u0621-\u064A]+",
+                          re.I)
 
 
 def _jargon_in(text):
     lowered = text.lower()
-    return [word for word in JARGON if word in lowered]
+    found = [word for word in JARGON if word in lowered]
+    for match in JARGON_WORDS.finditer(text):
+        token = match.group(0).lower()
+        if not any(token.startswith(word) for word in found):
+            found.append(match.group(0))
+    return found
 
 
 # The four analytics types, in maturity-ladder order. Each stage owns one
@@ -340,6 +387,24 @@ def collector(ctx):
                           f"تتجاوز البيانات الحد المسموح به وهو {MAX_ROWS} صف."))
     columns = [c for c in reader.fieldnames if c]
     digest = hashlib.sha256(text.encode()).hexdigest()[:16]
+    calculations = [{"id": "c_rows", "name": "row_count", "value": len(rows),
+                     "method": "len(csv rows)"}]
+    claims = [_claim(ctx, "cl_ingest", "fact",
+                     f"The dataset contains {len(rows)} rows and {len(columns)} columns.",
+                     f"تحتوي البيانات على {_ar_n(len(rows), 'row')} "
+                     f"و{_ar_n(len(columns), 'column')}.",
+                     ["c_rows"])]
+    mapping = ctx.get("mapping")
+    if mapping:
+        # The owner said what each column is (ADR 0025). The report says
+        # so, because every later choice follows from it.
+        calculations.append({"id": "c_mapped_columns", "name": "mapped_columns",
+                             "value": len(mapping["roles"]),
+                             "method": "columns given a role in the dataset's saved mapping"})
+        claims.append(_claim(ctx, "cl_mapping", "fact",
+                             colmap.describe(mapping, columns, "en"),
+                             colmap.describe(mapping, columns, "ar"),
+                             ["c_mapped_columns"]))
     return _result(
         "succeeded",
         _say(ctx,
@@ -348,24 +413,30 @@ def collector(ctx):
              f"استُلمت البيانات: {_ar_n(len(rows), 'row')} "
              f"و{_ar_n(len(columns), 'column')} (لقطة البيانات sha256:{digest})."),
         output={"rows": rows, "columns": columns, "snapshot": digest,
-                "row_count": len(rows)},
-        calculations=[{"id": "c_rows", "name": "row_count", "value": len(rows),
-                       "method": "len(csv rows)"}],
-        claims=[_claim(ctx, "cl_ingest", "fact",
-                       f"The dataset contains {len(rows)} rows and {len(columns)} columns.",
-                       f"تحتوي البيانات على {_ar_n(len(rows), 'row')} "
-                       f"و{_ar_n(len(columns), 'column')}.",
-                       ["c_rows"])],
+                "row_count": len(rows), "mapped": bool(mapping)},
+        calculations=calculations,
+        claims=claims,
     )
 
 
 def profiler(ctx):
     rows = ctx["collector"]["rows"]
     columns = ctx["collector"]["columns"]
+    mapping = ctx.get("mapping")
+    # With a mapping the measures are the numbers, by the owner's word; a
+    # numeric ID mapped as a dimension is not one (ADR 0025).
+    measures = colmap.measures_of(mapping, columns) if mapping else None
     profile, numeric_columns = {}, []
     for col in columns:
         values = [r.get(col, "") or "" for r in rows]
         missing = sum(1 for v in values if not str(v).strip())
+        if measures is not None:
+            is_numeric = col in measures
+            if is_numeric:
+                numeric_columns.append(col)
+            profile[col] = {"missing": missing, "distinct": len(set(values)),
+                            "numeric": is_numeric}
+            continue
         numbers = [n for n in (_to_number(v) for v in values if str(v).strip()) if n is not None]
         is_numeric = len(numbers) >= max(1, (len(values) - missing) * 0.9)
         if is_numeric and numbers:
@@ -416,6 +487,10 @@ def cleaner(ctx):
     if not numeric_columns:
         return _fail(_say(ctx, "No numeric column is available to analyze.",
                           "لا يوجد عمود رقمي يمكن تحليله."))
+    mapping = ctx.get("mapping")
+    # A mapped measure is read as the owner declared it: currency, (300),
+    # Arabic digits. Unmapped data keeps the old reading (ADR 0025).
+    to_number = colmap.parse_number if mapping else _to_number
     before = len(rows)
     cleaned, seen, dropped_empty, dropped_dupes, coercion_failures = [], set(), 0, 0, 0
     for row in rows:
@@ -429,7 +504,7 @@ def cleaner(ctx):
             continue
         seen.add(key)
         for col in numeric_columns:
-            number = _to_number(stripped.get(col, ""))
+            number = to_number(stripped.get(col, ""))
             if number is None and str(stripped.get(col, "")).strip():
                 coercion_failures += 1
             stripped[col] = number
@@ -441,6 +516,39 @@ def cleaner(ctx):
         {"id": "c_dropped", "name": "rows_dropped", "value": before - after,
          "method": "empty + exact-duplicate removal"},
     ]
+    claims = [_claim(ctx, "cl_rowloss", "fact",
+                     f"{before - after} of {before} rows were removed during cleaning "
+                     f"({dropped_empty} empty, {dropped_dupes} duplicates).",
+                     f"حُذف {before - after} من أصل {_ar_n(before, 'row')} أثناء التنظيف "
+                     f"({dropped_empty} فارغ و{dropped_dupes} مكرر).",
+                     ["c_rows_before", "c_rows_after", "c_dropped"])]
+    dates = {"date_col": None, "date_grain": None, "date_order": None,
+             "dates_unreadable": 0, "dates_missing": 0}
+    date_col = colmap.date_of(mapping, ctx["collector"]["columns"]) if mapping else None
+    if date_col:
+        # Each date becomes a sortable period label at the mapping's grain,
+        # so every later stage orders time by time, not alphabetically. A
+        # value that does not read is left out of the trend and counted.
+        labels, grain, order = colmap.period_labels(
+            [row.get(date_col, "") for row in cleaned],
+            mapping.get("date_order", "auto"), mapping.get("grain", "auto"))
+        for row, label in zip(cleaned, labels):
+            if label is None:
+                dates["dates_unreadable" if row.get(date_col) else "dates_missing"] += 1
+            row[date_col] = label
+        dates.update(date_col=date_col, date_grain=grain, date_order=order)
+        calcs.append({"id": "c_dates_unread", "name": "dates_not_read",
+                      "value": dates["dates_unreadable"],
+                      "method": f"filled {date_col} cells that do not read as a date "
+                                f"at {grain} grain ({order})"})
+        if dates["dates_unreadable"]:
+            claims.append(_claim(
+                ctx, "cl_dates_unread", "limitation",
+                f"{dates['dates_unreadable']} row(s) have a {date_col} that could not be "
+                f"read as a date by {grain}, so they are left out of every trend.",
+                f"في {dates['dates_unreadable']} من الصفوف قيمة {date_col} لم تُقرأ "
+                "تاريخاً، فاستُبعدت من كل اتجاه زمني.",
+                ["c_dates_unread"]))
     return _result(
         "succeeded",
         _say(ctx,
@@ -453,15 +561,213 @@ def cleaner(ctx):
              f"{coercion_failures} قيمة غير رقمية فارغة). يُذكر كل صف محذوف "
              "ولا يُخفى."),
         output={"rows": cleaned, "rows_before": before, "rows_after": after,
-                "dropped": before - after},
+                "dropped": before - after, **dates},
         calculations=calcs,
-        claims=[_claim(ctx, "cl_rowloss", "fact",
-                       f"{before - after} of {before} rows were removed during cleaning "
-                       f"({dropped_empty} empty, {dropped_dupes} duplicates).",
-                       f"حُذف {before - after} من أصل {_ar_n(before, 'row')} أثناء التنظيف "
-                       f"({dropped_empty} فارغ و{dropped_dupes} مكرر).",
-                       ["c_rows_before", "c_rows_after", "c_dropped"])],
+        claims=claims,
     )
+
+
+# ---------------------------------------------------------------------------
+# Several datasets in one run (ADR 0030). Every stage after cleaning reads
+# the analysis table through these three, so a run that joins other
+# datasets is analysed on the merged table and a run that does not is
+# analysed exactly as before.
+# ---------------------------------------------------------------------------
+
+def _rows(ctx):
+    merged = ctx.get("merge")
+    return merged["rows"] if merged else ctx["cleaner"]["rows"]
+
+
+def _columns(ctx):
+    merged = ctx.get("merge")
+    return merged["columns"] if merged else ctx["collector"]["columns"]
+
+
+def _numeric(ctx):
+    merged = ctx.get("merge")
+    return merged["numeric_columns"] if merged else ctx["profiler"]["numeric_columns"]
+
+
+def _merge_tables(ctx):
+    """The merge itself, as the stage and the preview both need it.
+    Raises joins.JoinError with every problem."""
+    clean = ctx["cleaner"]
+    date = ({"column": clean["date_col"], "order": clean.get("date_order"),
+             "grain": clean.get("date_grain")} if clean.get("date_col") else None)
+    joined, screens = [], []
+    for item in ctx.get("joins") or []:
+        table = joining.clean_table(item["content"], item.get("mapping"))
+        joined.append({**item, "table": table})
+        for finding in personal_data_findings(table.columns, table.screened):
+            screens.append({**finding, "dataset": item["name"]})
+    merged = joining.merge(ctx["collector"]["columns"], clean["rows"],
+                           ctx["profiler"]["numeric_columns"], joined, date)
+    problem = joining.breakdown_problem(ctx.get("join_breakdown"), merged["columns"],
+                                        merged["numeric_columns"])
+    if problem:
+        raise joining.JoinError([problem])
+    return merged, screens
+
+
+def merge(ctx):
+    """Data Merge Agent — put the joined datasets beside each row (ADR 0030).
+
+    Runs only when a run declares joins, right after cleaning. It never
+    adds a row: a lookup whose key repeats is refused, a left join keeps
+    every row it was given, and an inner join says what it left out. How
+    many rows found a match is a measured figure, not a footnote.
+    """
+    try:
+        merged, screens = _merge_tables(ctx)
+    except joining.JoinError as error:
+        return _fail(error.message(report_language(ctx)))
+    rows_before = len(ctx["cleaner"]["rows"])
+    calcs, claims, checks, lines = [], [], [], []
+    for index, record in enumerate(merged["joins"]):
+        prefix = f"c_merge_{index}"
+        keys = ", ".join(f"{k['left']} = {k['right']}" for k in record["keys"])
+        calcs += [
+            {"id": f"{prefix}_rows_in", "name": f"rows_before_joining_{record['alias']}",
+             "value": record["rows_in"], "method": "rows of the table before this join"},
+            {"id": f"{prefix}_matched", "name": f"rows_matched_in_{record['alias']}",
+             "value": record["matched"],
+             "method": f"rows whose key ({keys}) is found in {record['name']}"},
+            {"id": f"{prefix}_rows_out", "name": f"rows_after_joining_{record['alias']}",
+             "value": record["rows_out"],
+             "method": ("every row kept (left join)" if record["how"] == "left"
+                        else "matched rows only (inner join)")},
+            {"id": f"{prefix}_coverage", "name": f"key_coverage_{record['alias']}",
+             "value": record["coverage"], "method": "rows matched / rows before this join"},
+        ]
+        name, matched, total = record["name"], record["matched"], record["rows_in"]
+        coverage = record["coverage"]
+        complete = record["unmatched"] == 0
+        claims.append(_claim(
+            ctx, f"cl_merge_{index}", "fact" if complete else "limitation",
+            (f"Every one of the {total} rows found a match in {name} on {keys}."
+             if complete else
+             f"{matched} of {total} rows found a match in {name} on {keys} "
+             f"({coverage:.0%}); the other {record['unmatched']} have empty "
+             f"values for its columns."),
+            (f"وجد كل صف من الصفوف وعددها {total} تطابقاً في {name} على {keys}."
+             if complete else
+             f"وجد {matched} من أصل {total} صفاً تطابقاً في {name} على {keys} "
+             f"({coverage:.0%})، وبقيت أعمدته فارغة في الصفوف الأخرى وعددها "
+             f"{record['unmatched']}."),
+            [f"{prefix}_matched", f"{prefix}_rows_in", f"{prefix}_coverage"]))
+        if record["how"] == "inner" and record["unmatched"]:
+            claims.append(_claim(
+                ctx, f"cl_merge_{index}_inner", "limitation",
+                f"Only matched rows were kept: {record['unmatched']} rows without a "
+                f"match in {name} were left out, so every total covers "
+                f"{record['rows_out']} rows.",
+                f"احتُفظ بالصفوف المتطابقة وحدها: استُبعد {record['unmatched']} صفاً "
+                f"بلا تطابق في {name}، فكل مجموع يغطي {record['rows_out']} صفاً.",
+                [f"{prefix}_rows_out", f"{prefix}_matched"]))
+        expected = record["rows_in"] if record["how"] == "left" else record["matched"]
+        checks += [
+            {"name": f"join_{record['alias']}_keeps_the_row_count",
+             "passed": record["rows_out"] == expected,
+             "detail": _say(ctx,
+                            f"{record['rows_out']} rows out, {expected} expected "
+                            f"({record['how']} join).",
+                            f"خرج {record['rows_out']} صفاً والمتوقع {expected} "
+                            f"(دمج {record['how']}).")},
+            {"name": f"join_{record['alias']}_keys_cover_every_row",
+             "passed": complete,
+             "detail": _say(ctx,
+                            f"{matched} of {total} rows matched"
+                            + (f"; unmatched keys include "
+                               f"{', '.join(record['unmatched_keys'])}"
+                               if record["unmatched_keys"] else "") + ".",
+                            f"تطابق {matched} من أصل {total}"
+                            + (f"؛ ومن المفاتيح غير المتطابقة "
+                               f"{'، '.join(record['unmatched_keys'])}"
+                               if record["unmatched_keys"] else "") + ".")},
+        ]
+        renamed = ", ".join(f"{old} → {new}" for old, new in record["renamed"].items())
+        lines.append(_say(
+            ctx,
+            f"- **{name}** ({record['how']} join on {keys}): {matched} of {total} rows "
+            f"matched; added {len(record['added_columns'])} column(s)"
+            + (f", renamed {renamed}" if renamed else "") + ".",
+            f"- **{name}** (دمج {record['how']} على {keys}): تطابق {matched} من أصل "
+            f"{total}؛ أُضيف {len(record['added_columns'])} من الأعمدة"
+            + (f"، وأُعيدت تسمية {renamed}" if renamed else "") + "."))
+    if screens:
+        calcs.append({"id": "c_merge_pii", "name": "joined_columns_with_personal_data",
+                      "value": len(screens),
+                      "method": "joined columns matching a personal-data name or value pattern"})
+        listed = ", ".join(f"{s['dataset']}: {s['column']}" for s in screens[:5])
+        claims.append(_claim(
+            ctx, "cl_merge_pii", "warning",
+            f"Joined data appears to contain personal data in {len(screens)} column(s) "
+            f"({listed}). Publishing writes the report to the vault — check that it is "
+            "allowed to leave here.",
+            f"يبدو أن البيانات المدمجة تحتوي على بيانات شخصية في {len(screens)} من "
+            f"الأعمدة ({listed}). النشر يكتب التقرير في المخزن، فتحقق من أنه مسموح "
+            "بخروجه من هنا.",
+            ["c_merge_pii"]))
+    rows_after = len(merged["rows"])
+    summary = _say(
+        ctx,
+        f"Merged {len(merged['joins'])} dataset(s) onto {rows_before} rows: "
+        f"{rows_after} rows and {len(merged['columns'])} columns. "
+        + " ".join(f"{r['name']}: {r['matched']} of {r['rows_in']} matched."
+                   for r in merged["joins"]),
+        f"دُمجت {len(merged['joins'])} من مجموعات البيانات على {rows_before} صفاً: "
+        f"{rows_after} صفاً و{len(merged['columns'])} عموداً. "
+        + " ".join(f"{r['name']}: تطابق {r['matched']} من {r['rows_in']}."
+                   for r in merged["joins"]))
+    return _result(
+        "succeeded", summary,
+        output={"rows": merged["rows"], "columns": merged["columns"],
+                "numeric_columns": merged["numeric_columns"],
+                "rows_before": rows_before, "rows_after": rows_after,
+                "joins": merged["joins"], "breakdown": ctx.get("join_breakdown"),
+                "snapshots": [r["snapshot"] for r in merged["joins"]],
+                "personal_data": screens, "notes_markdown": "\n".join(lines)},
+        calculations=calcs, claims=claims, checks=checks)
+
+
+def preview_merge(dataset_text, mapping, joins, breakdown=None, language="en",
+                  rows_shown=5):
+    """What a run with these joins would merge, without making the run.
+
+    It runs the real collection, profiling, cleaning and merge stages, so
+    the preview cannot disagree with the run (ADR 0030). Raises
+    joins.JoinError with every problem, including a main dataset that the
+    pipeline itself would refuse."""
+    ctx = {"dataset_text": dataset_text, "mapping": mapping,
+           "report_language": language, "joins": joins, "join_breakdown": breakdown}
+    for role, stage in (("collector", collector), ("profiler", profiler),
+                        ("cleaner", cleaner)):
+        result = stage(ctx)
+        if result["status"] == "failed":
+            raise joining.JoinError([joining.Problem("dataset", None, result["summary"],
+                                                     result["summary"])])
+        ctx[role] = result["output"]
+    merged, screens = _merge_tables(ctx)
+    columns = merged["columns"]
+
+    def shown(value):
+        if value is None:
+            return ""
+        if isinstance(value, float):
+            return str(int(value)) if value.is_integer() else format(value, ".10g")
+        return str(value)
+
+    numeric = set(merged["numeric_columns"])
+    return {"rows_before": len(ctx["cleaner"]["rows"]), "rows_after": len(merged["rows"]),
+            "columns": columns,
+            "added_columns": [c for r in merged["joins"] for c in r["added_columns"]],
+            "breakdown_choices": [c for c in columns if c not in numeric],
+            "joins": merged["joins"],
+            "personal_data": [{"dataset": s["dataset"], "column": s["column"]}
+                              for s in screens],
+            "preview": [[shown(row.get(c)) for c in columns]
+                        for row in merged["rows"][:rows_shown]]}
 
 
 # Why the run analyses the column it does (server/metrics.resolve), as an
@@ -471,6 +777,7 @@ MEASURE_SOURCES_AR = {
     "glossary metric, not certified": "مؤشر في مسرد المؤشرات غير معتمد",
     "column name": "اسم العمود",
     "first numeric column": "أول عمود رقمي",
+    "the owner's column mapping": "ربط الأعمدة الذي حفظه المالك",
 }
 
 
@@ -483,13 +790,23 @@ def governance(ctx):
     "revenue" column that does not equal price × units is a finding about
     the business, not a rounding detail.
     """
-    numeric_columns = ctx["profiler"]["numeric_columns"]
-    rows = ctx["cleaner"]["rows"]
+    numeric_columns = _numeric(ctx)
+    rows = _rows(ctx)
     book = ctx.get("glossary") or {}
     metrics, problems = book.get("metrics", []), book.get("problems", [])
 
-    measure, metric, source, candidates = glossary.resolve(
-        metrics, ctx["collector"]["columns"], numeric_columns)
+    if ctx.get("mapping"):
+        # The owner chose the measure (ADR 0025). The glossary still says
+        # what that column means, and still names any defined metric that
+        # was mapped but not chosen.
+        measure = ctx["mapping"]["measure"]
+        _, _, _, candidates = glossary.resolve(
+            metrics, _columns(ctx), numeric_columns)
+        metric = next((c["metric"] for c in candidates if c["column"] == measure), None)
+        source = "the owner's column mapping"
+    else:
+        measure, metric, source, candidates = glossary.resolve(
+            metrics, _columns(ctx), numeric_columns)
     calcs = [{"id": "c_gov_defined", "name": "metrics_in_glossary",
               "value": len(metrics),
               "method": "entries accepted from metrics.json"}]
@@ -725,42 +1042,68 @@ def governance(ctx):
 
 
 def preparer(ctx):
-    rows = ctx["cleaner"]["rows"]
-    numeric_columns = ctx["profiler"]["numeric_columns"]
-    columns = ctx["collector"]["columns"]
+    rows = _rows(ctx)
+    numeric_columns = _numeric(ctx)
+    columns = _columns(ctx)
     # Which number this run is about was decided by the governance stage,
     # on the record and with a reason. This stage no longer guesses.
     measure = ctx["governance"]["measure"]
-    date_col = next((c for c in columns if c.lower() in
-                     ("month", "date", "period", "week", "year")), None)
-    group_col = next((c for c in columns
-                      if c not in numeric_columns and c != date_col), None)
-    groups = {}
+    mapping = ctx.get("mapping")
+    if mapping:
+        # The owner's mapping replaces the name heuristics (ADR 0025), and
+        # the cleaner has already turned each date into a period label.
+        date_col = ctx["cleaner"].get("date_col")
+        group_col = mapping.get("dimension")
+    else:
+        date_col = next((c for c in columns if c.lower() in
+                         ("month", "date", "period", "week", "year")), None)
+        group_col = next((c for c in columns
+                          if c not in numeric_columns and c != date_col), None)
+    # A breakdown chosen for a joined run wins: it is usually why the
+    # lookup was joined at all (ADR 0030).
+    breakdown = (ctx.get("merge") or {}).get("breakdown")
+    if breakdown:
+        group_col = breakdown
+    # Each total keeps the number of records behind it, so a reader can
+    # compare per record when groups or periods differ in size (ADR 0026).
+    groups, group_counts = {}, {}
     if group_col:
         for row in rows:
             value = row.get(measure)
             if value is not None:
                 groups[row[group_col]] = groups.get(row[group_col], 0.0) + value
-    trend = {}
+                group_counts[row[group_col]] = group_counts.get(row[group_col], 0) + 1
+    trend, trend_counts = {}, {}
     if date_col:
         for row in rows:
             value = row.get(measure)
-            if value is not None:
+            if value is not None and not (mapping and row[date_col] is None):
                 trend[row[date_col]] = trend.get(row[date_col], 0.0) + value
+                trend_counts[row[date_col]] = trend_counts.get(row[date_col], 0) + 1
         trend = dict(sorted(trend.items()))
+        trend_counts = {k: trend_counts[k] for k in trend}
     total = round(sum(r[measure] for r in rows if r.get(measure) is not None), 2)
+    grain = ctx["cleaner"].get("date_grain") if mapping else None
+    grain_ar = {"day": "اليوم", "month": "الشهر", "quarter": "الربع", "year": "السنة"}
     return _result(
         "succeeded",
         _say(ctx,
              f"Prepared analysis dataset: measure “{measure}”"
              + (f", grouped by “{group_col}”" if group_col else "")
-             + (f", trended by “{date_col}”" if date_col else "") + ".",
+             + (f", trended by “{date_col}”" if date_col else "")
+             + (f" by {grain}" if grain else "")
+             + (" (column mapping)" if mapping else "") + ".",
              f"أُعدّت بيانات التحليل: المقياس «{measure}»"
              + (f"، مجمّعاً حسب «{group_col}»" if group_col else "")
-             + (f"، ومتتبَّعاً عبر «{date_col}»" if date_col else "") + "."),
+             + (f"، ومتتبَّعاً عبر «{date_col}»" if date_col else "")
+             + (f" على مستوى {grain_ar[grain]}" if grain else "")
+             + (" (ربط الأعمدة)" if mapping else "") + "."),
         output={"measure": measure, "group_col": group_col, "date_col": date_col,
+                "date_grain": grain,
                 "groups": {k: round(v, 2) for k, v in groups.items()},
+                "group_counts": group_counts,
                 "trend": {k: round(v, 2) for k, v in trend.items()},
+                "trend_counts": trend_counts,
                 "total": total},
         calculations=[{"id": "c_total", "name": f"total_{measure}", "value": total,
                        "method": f"sum({measure}) over cleaned rows"}],
@@ -777,7 +1120,7 @@ def descriptive(ctx):
     Summarises the snapshot in business language. This is the floor of the
     maturity ladder: everything above it consumes these figures.
     """
-    rows = ctx["cleaner"]["rows"]
+    rows = _rows(ctx)
     prep = ctx["preparer"]
     measure = prep["measure"]
     values = [r[measure] for r in rows if r.get(measure) is not None]
@@ -828,6 +1171,40 @@ def descriptive(ctx):
             f"{'ارتفع' if change >= 0 else 'انخفض'} {measure} بنسبة "
             f"{abs(change):.1%} من الفترة الأولى إلى الأخيرة.",
             ["c_change"]))
+    # A period with fewer records has a smaller total for that reason alone
+    # (ADR 0026). When the busiest period holds more than a third more
+    # records than the quietest, the change is also given per record.
+    counts = prep.get("trend_counts") or {}
+    per_record = None
+    if change is not None and counts and min(counts.values()) < UNEVEN_PERIODS * max(counts.values()):
+        periods = list(prep["trend"])
+        fewest, most = min(counts.values()), max(counts.values())
+        first_rate = series[0] / counts[periods[0]]
+        last_rate = series[-1] / counts[periods[-1]]
+        per_record = round((last_rate - first_rate) / first_rate, 4) if first_rate else None
+        calcs += [{"id": "c_period_records_min", "name": "fewest_records_in_a_period", "value": fewest,
+                   "method": "min(records with a value, per period)"},
+                  {"id": "c_period_records_max", "name": "most_records_in_a_period", "value": most,
+                   "method": "max(records with a value, per period)"}]
+        evidence = ["c_period_records_min", "c_period_records_max"]
+        if per_record is not None:
+            calcs.append({"id": "c_change_per_record", "name": "period_change_per_record", "value": per_record,
+                          "method": "(last period total ÷ its records − first period total ÷ its records)"
+                                    " / (first period total ÷ its records)"})
+            evidence.append("c_change_per_record")
+            moved_en = f"has {'risen' if per_record >= 0 else 'fallen'} {abs(per_record):.1%}"
+            moved_ar = f"{'ارتفع' if per_record >= 0 else 'انخفض'} بنسبة {abs(per_record):.1%}"
+        claims.append(_claim(
+            ctx, "cl_uneven_periods", "limitation",
+            f"Periods hold different numbers of records, from {fewest:,} to {most:,}, so a change "
+            "in the total partly reflects how many records each period holds."
+            + (f" Per record, {measure} {moved_en} from the first period to the last."
+               if per_record is not None else ""),
+            f"تضم الفترات أعداداً مختلفة من السجلات، من {fewest:,} إلى {most:,}، لذا يعكس التغير "
+            "في الإجمالي جزئياً عدد السجلات في كل فترة."
+            + (f" ولكل سجل، {moved_ar} {measure} من الفترة الأولى إلى الأخيرة."
+               if per_record is not None else ""),
+            evidence))
     top = max(prep["groups"], key=prep["groups"].get) if prep["groups"] else None
     share = None
     if top is not None and prep["total"]:
@@ -846,7 +1223,10 @@ def descriptive(ctx):
             (f"{'ارتفع' if change >= 0 else 'انخفض'} {measure} بنسبة "
              f"{abs(change):.0%} خلال الفترة، وبلغ إجماليه {prep['total']:,.0f}."
              if change is not None else f"بلغ إجمالي {measure} {prep['total']:,.0f}.")
-            + (f" و«{top}» هو الأكبر ضمن {prep['group_col']}." if top is not None else ""))
+            + (f" و«{top}» هو الأكبر ضمن {prep['group_col']}." if top is not None else "")
+            + (f" تضم الفترات أعداداً مختلفة من السجلات؛ ولكل سجل "
+               f"{'ارتفع' if per_record >= 0 else 'انخفض'} بنسبة {abs(per_record):.0%}."
+               if per_record is not None else ""))
         body = [
             f"إجمالي {measure} هو **{prep['total']:,.2f}** على مدى "
             f"{_ar_n(len(prep['trend']) or 1, 'period')} و"
@@ -862,11 +1242,14 @@ def descriptive(ctx):
                              "النموذجية.")]
     else:
         headline = (
-            f"{measure.capitalize()} "
+            f"{_first_upper(measure)} "
             + (f"{'is up' if change >= 0 else 'is down'} {abs(change):.0%} over the period, "
                f"at {prep['total']:,.0f} in total."
                if change is not None else f"totals {prep['total']:,.0f}.")
-            + (f" “{top}” is the biggest {prep['group_col']}." if top is not None else ""))
+            + (f" “{top}” is the biggest {prep['group_col']}." if top is not None else "")
+            + (f" Periods hold different numbers of records; per record it is "
+               f"{'up' if per_record >= 0 else 'down'} {abs(per_record):.0%}."
+               if per_record is not None else ""))
         body = [
             f"Total {measure} is **{prep['total']:,.2f}** across "
             f"{len(prep['trend']) or 1} period(s) and {ctx['cleaner']['rows_after']} records.",
@@ -883,7 +1266,7 @@ def descriptive(ctx):
     return _result(
         "succeeded", headline,
         output={"headline": headline,
-                "change": change, "top_group": top, "top_share": share,
+                "change": change, "change_per_record": per_record, "top_group": top, "top_share": share,
                 "unusual": unusual, "mean": round(mean, 2), "median": round(median, 2),
                 "report_markdown": report},
         calculations=calcs, claims=claims,
@@ -898,7 +1281,7 @@ def diagnostic(ctx):
     association: nothing here establishes cause.
     """
     prep = ctx["preparer"]
-    rows = ctx["cleaner"]["rows"]
+    rows = _rows(ctx)
     measure, group_col, date_col = prep["measure"], prep["group_col"], prep["date_col"]
     calcs, claims, contributions = [], [], []
 
@@ -941,9 +1324,11 @@ def diagnostic(ctx):
                 f"{total_change:,.2f}. وهذا يحدد أين وقع التغير، لا ما الذي "
                 "سبّبه.",
                 ["c_totalchange", "c_contrib_0"]))
-        decliners = [c for c in contributions if c["change"] < 0]
-        if decliners:
-            worst = min(decliners, key=lambda c: c["change"])
+        # Against the overall direction means the opposite sign to the total
+        # change: a group that fell while the total fell moved with it.
+        against = [c for c in contributions if c["change"] * total_change < 0]
+        if against:
+            worst = max(against, key=lambda c: abs(c["change"]))
             index = contributions.index(worst)
             claims.append(_claim(
                 ctx, "cl_decline", "finding",
@@ -951,11 +1336,11 @@ def diagnostic(ctx):
                 f"{worst['change']:,.2f} between the first and last period.",
                 f"تحرك «{worst['group']}» عكس الاتجاه العام، إذ تغير بمقدار "
                 f"{worst['change']:,.2f} بين الفترة الأولى والأخيرة.",
-                [f"c_contrib_{index}"] if index < 5 else ["c_totalchange"]))
+                [f"c_contrib_{index}", "c_totalchange"] if index < 5 else ["c_totalchange"]))
 
     # Which other numeric columns move together with the measure?
     associations = []
-    numeric_columns = [c for c in ctx["profiler"]["numeric_columns"] if c != measure]
+    numeric_columns = [c for c in _numeric(ctx) if c != measure]
     for index, column in enumerate(numeric_columns[:4]):
         pairs = [(r[column], r[measure]) for r in rows
                  if r.get(column) is not None and r.get(measure) is not None]
@@ -1041,7 +1426,7 @@ def diagnostic(ctx):
                              "أول ما ينبغي النظر فيه.")
     elif associations:
         headline = _say(ctx,
-                        f"{measure.capitalize()} moves closely with "
+                        f"{_first_upper(measure)} moves closely with "
                         f"{associations[0]['column']}, which is where to look first.",
                         f"يتحرك {measure} بشكل وثيق مع {associations[0]['column']}، "
                         "وهو أول ما ينبغي النظر فيه.")
@@ -1155,12 +1540,17 @@ def experiment(ctx):
     followed by the design that would change the answer.
     """
     prep = ctx["preparer"]
-    rows = ctx["cleaner"]["rows"]
+    rows = _rows(ctx)
     measure = prep["measure"]
     values = [row[measure] for row in rows if row.get(measure) is not None]
+    joined = [c for c in _columns(ctx) if c not in ctx["collector"]["columns"]]
     column, arm_names = _experiment_column(
-        rows, ctx["collector"]["columns"], ctx["profiler"]["numeric_columns"],
-        prep["date_col"])
+        rows,
+        # Mapped: only dimensions can record an experiment's arms (ADR 0025),
+        # and a joined column is the joined dataset's to describe.
+        (colmap.dimensions_of(ctx["mapping"], ctx["collector"]["columns"]) + joined
+         if ctx.get("mapping") else _columns(ctx)),
+        _numeric(ctx), prep["date_col"])
 
     if len(values) < 2:
         calcs = [{"id": "c_exp_rows", "name": "rows_with_a_measure", "value": len(values),
@@ -1709,6 +2099,61 @@ PII_PATTERNS = [
 PII_COLUMN_WORDS = ("email", "e-mail", "phone", "mobile", "ssn", "nin",
                     "passport", "iban", "card", "dob", "birth", "address",
                     "national_id", "emirates_id")
+# A column named for a person's name ("full_name", "first name"), not a
+# thing's ("product_name").
+PERSON_NAME_COLUMN = re.compile(r"^(?:full|first|last|given|family|middle)?[ _-]?name$|^(?:الاسم|اسم)$", re.I)
+# A person's name as a value: two to four capitalised words, or two to four
+# Arabic words. Counted only in a column where nearly every value differs,
+# so place names and categories ("Jebel Ali", "Al Quoz") are not names.
+PERSON_NAME_VALUE = re.compile(r"[A-Z][a-z'’-]+(?: [A-Z][a-z'’-]+){1,3}|[\u0621-\u064A]{2,}(?: [\u0621-\u064A]{2,}){1,3}")
+# A date or a time stamp is not a phone number, however many digits it has.
+DATE_OR_TIME = re.compile(r"\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?")
+
+
+def personal_data_findings(columns, rows):
+    """The columns that look like personal data, by name or by value,
+    with what matched. The Privacy Agent reports these; the agent
+    evaluation (scripts/evaluate_agents.py, ADR 0027) measures them.
+
+    A name alone is not enough when the values say otherwise: "card_type"
+    holding three card brands, or "email_opens" holding counts, is not
+    personal data. A value pattern (an email, a phone number, a long
+    identifier, a person's name) is enough on its own."""
+    findings = []
+    for column in columns:
+        lowered = column.lower()
+        named = [word for word in PII_COLUMN_WORDS if word in lowered]
+        if PERSON_NAME_COLUMN.match(column.strip()):
+            named.append("name")
+        hits, values = {}, []
+        for row in rows[:2000]:          # bounded scan; enough to detect a pattern
+            value = (row.get(column) or "").strip()
+            if not value:
+                continue
+            values.append(value)
+            looks_dated = DATE_OR_TIME.fullmatch(value) is not None
+            for label, pattern in PII_PATTERNS:
+                if label == "phone number" and looks_dated:
+                    continue
+                if pattern.search(value):
+                    hits[label] = hits.get(label, 0) + 1
+        distinct = len(set(values))
+        varied = bool(values) and distinct >= 0.8 * len(values)
+        names = sum(1 for v in values if PERSON_NAME_VALUE.fullmatch(v))
+        if varied and len(values) >= 5 and names >= 0.8 * len(values):
+            hits["person name"] = names
+        if named and not hits:
+            categories = bool(values) and distinct < 0.5 * len(values)
+            counts = bool(values) and all(re.fullmatch(r"-?\d{1,8}(?:\.\d+)?", v) for v in values)
+            if categories or counts:
+                named = []
+        if named or hits:
+            findings.append({
+                "column": column,
+                "by_name": named,
+                "by_value": [{"kind": k, "rows": v} for k, v in sorted(hits.items())],
+            })
+    return findings
 
 
 def contract(ctx):
@@ -1906,24 +2351,7 @@ def privacy(ctx):
     reports what it found and where, and the human decides at the gate.
     """
     rows, columns = ctx["collector"]["rows"], ctx["collector"]["columns"]
-    findings = []
-    for column in columns:
-        lowered = column.lower()
-        named = [word for word in PII_COLUMN_WORDS if word in lowered]
-        hits = {}
-        for row in rows[:2000]:          # bounded scan; enough to detect a pattern
-            value = (row.get(column) or "").strip()
-            if not value:
-                continue
-            for label, pattern in PII_PATTERNS:
-                if pattern.search(value):
-                    hits[label] = hits.get(label, 0) + 1
-        if named or hits:
-            findings.append({
-                "column": column,
-                "by_name": named,
-                "by_value": [{"kind": k, "rows": v} for k, v in sorted(hits.items())],
-            })
+    findings = personal_data_findings(columns, rows)
 
     calcs = [{"id": "c_pii_columns", "name": "columns_with_personal_data",
               "value": len(findings),
@@ -2269,6 +2697,10 @@ def lineage(ctx):
          "method": "evidence ids cited by a claim but produced by no stage"},
     ]
     snapshot = ctx["collector"]["snapshot"]
+    # A joined run reads more than one snapshot, and names each (ADR 0030).
+    joined = (ctx.get("merge") or {}).get("snapshots") or []
+    if joined:
+        snapshot = snapshot + " + " + " + ".join(f"sha256:{s}" for s in joined)
     return _result(
         "succeeded",
         _say(ctx,
@@ -2281,7 +2713,8 @@ def lineage(ctx):
              + (f" ولم يُستشهد بـ {len(unused)} من العمليات الحسابية." if unused
                 else "")),
         output={"produced_by_stage": produced, "dangling": dangling,
-                "unused": unused, "snapshot": snapshot},
+                "unused": unused, "snapshot": ctx["collector"]["snapshot"],
+                "joined_snapshots": joined},
         calculations=calcs,
         claims=[_claim(ctx, "cl_lineage", "fact",
                        f"Every figure in this report traces back to snapshot "
@@ -2337,6 +2770,15 @@ def visuals(ctx):
         # The diagnostic answer as a picture: who moved the number, and
         # which way. This is the chart an executive acts on.
         items = contributions[:8]
+        # The contributions sum to the total change, so their sign is the
+        # overall direction; the bars on the other side of zero moved against it.
+        overall = sum(item["change"] for item in contributions)
+        against_en = ("bars above zero moved against the overall fall." if overall < 0
+                      else "bars below zero moved against the overall rise." if overall > 0
+                      else "the changes cancel out, with no net movement.")
+        against_ar = ("والأعمدة فوق الصفر تحركت عكس الانخفاض العام." if overall < 0
+                      else "والأعمدة تحت الصفر تحركت عكس الارتفاع العام." if overall > 0
+                      else "والتغيرات يلغي بعضها بعضاً دون صافي تحرك.")
         charts.append({"id": "chart_contributions", "type": "bar",
                        "title": _say(ctx,
                                      f"Who moved {measure}: change by {group_col}",
@@ -2347,11 +2789,9 @@ def visuals(ctx):
                        "alt": _say(ctx,
                                    f"Bar chart of the change in {measure} for each "
                                    f"{group_col} between the first and last period, "
-                                   "largest mover first; bars below zero moved "
-                                   "against the overall direction.",
+                                   f"largest mover first; {against_en}",
                                    f"مخطط أعمدة للتغير في {measure} لكل {group_col} "
-                                   "بين الفترة الأولى والأخيرة، من الأكثر تحركاً؛ "
-                                   "والأعمدة تحت الصفر تحركت عكس الاتجاه العام.")})
+                                   f"بين الفترة الأولى والأخيرة، من الأكثر تحركاً؛ {against_ar}")})
     if forecast:
         # History and forecast on one axis, with the boundary named in the
         # alt text so nobody mistakes a projection for a measurement.
@@ -2362,6 +2802,9 @@ def visuals(ctx):
                                      f"{measure}: التاريخ والتوقع"),
                        "labels": list(prep["trend"].keys()) + [f["label"] for f in forecast],
                        "values": list(prep["trend"].values()) + [f["value"] for f in forecast],
+                       # The index of the first projected point, so a chart can
+                       # draw the boundary rather than leave it to the alt text.
+                       "forecast_from": measured,
                        "source": "preparer.trend + predictive.forecast",
                        "alt": _say(ctx,
                                    f"Line chart of {measure} over {measured} measured "
@@ -2840,6 +3283,32 @@ def validator(ctx):
                                   f"dropped = {clean['rows_before']} input rows",
                                   f"{clean['rows_after']} محتفظ به + {clean['dropped']} "
                                   f"محذوف = {clean['rows_before']} صف مُدخل")})
+    merged = ctx.get("merge")
+    if merged:
+        # A join must not add rows, and an inner join may only remove the
+        # rows that found no match (ADR 0030). Recounted from the records,
+        # independently of the merge stage's own check.
+        counted = clean["rows_after"]
+        broken = []
+        for record in merged["joins"]:
+            expected = (record["rows_in"] if record["how"] == "left"
+                        else record["matched"])
+            if record["rows_in"] != counted or record["rows_out"] != expected:
+                broken.append(record["alias"])
+            counted = record["rows_out"]
+        broken += [] if counted == merged["rows_after"] == len(merged["rows"]) else ["total"]
+        checks.append({"name": "joins_keep_the_row_count", "passed": not broken,
+                       "detail": _say(ctx,
+                                      (f"{clean['rows_after']} cleaned rows → "
+                                       f"{merged['rows_after']} merged rows, every join "
+                                       "accounted for."
+                                       if not broken else
+                                       "Row counts do not reconcile at: " + ", ".join(broken)),
+                                      (f"{clean['rows_after']} صفاً بعد التنظيف ← "
+                                       f"{merged['rows_after']} صفاً بعد الدمج، وكل دمج "
+                                       "محسوب."
+                                       if not broken else
+                                       "لا تتطابق أعداد الصفوف عند: " + ", ".join(broken)))})
     all_calc_ids = {c["id"] for stage in evidence_stages(ctx)
                     for c in ctx.get(stage + "_result", {}).get("calculations", [])}
     all_claims = [cl for stage in evidence_stages(ctx)
@@ -3238,6 +3707,8 @@ def reporter(ctx):
               ctx["quality_result"]["summary"],
               ctx["contract_result"]["summary"],
               ctx["profiler_result"]["summary"], ctx["cleaner_result"]["summary"],
+              *([ctx["merge_result"]["summary"], ctx["merge"]["notes_markdown"]]
+                if ctx.get("merge") else []),
               ctx["privacy_result"]["summary"],
               ctx["lineage_result"]["summary"],
               ctx["segments_result"]["summary"],
@@ -3295,7 +3766,7 @@ def reporter(ctx):
               for line in text["limits_lines"]]
     lines += ["", text["footer"].format(run_id=ctx.get("run_id", ""),
                                         measure=prep["measure"],
-                                        rows=ctx["cleaner"]["rows_after"])]
+                                        rows=len(_rows(ctx)))]
     report = "\n".join(lines)
     return _result(
         "succeeded",
@@ -3338,9 +3809,14 @@ PIPELINE = [
     ("reporter", reporter),
 ]
 
+# Stages a run includes only when it asks for them. The merge runs right
+# after cleaning in a run that declares joins (ADR 0030).
+OPTIONAL_STAGES = {"merge": merge}
+OPTIONAL_AFTER = {"merge": "cleaner"}
+
 # Stages whose claims and calculations the validator audits.
 EVIDENCE_STAGES = ("collector", "contract", "profiler", "quality", "privacy",
-                   "cleaner", "governance", "preparer", "segments", "descriptive",
+                   "cleaner", "merge", "governance", "preparer", "segments", "descriptive",
                    "diagnostic",
                    "experiment", "predictive", "anomaly", "prescriptive",
                    "sensitivity", "lineage")
@@ -3372,6 +3848,7 @@ ROLE_TITLES = {
     "quality": "Data Quality Agent",
     "privacy": "Privacy Agent",
     "cleaner": "Data Cleaning Agent",
+    "merge": "Data Merge Agent — which datasets join, and on what?",
     "governance": "Metric Governance Agent — is this measure defined and owned?",
     "preparer": "Data Preparation Agent",
     "segments": "Segment Concentration Agent",
@@ -3399,6 +3876,7 @@ ROLE_TITLES_AR = {
     "quality": "وكيل جودة البيانات",
     "privacy": "وكيل الخصوصية",
     "cleaner": "وكيل تنظيف البيانات",
+    "merge": "وكيل دمج البيانات: أي البيانات تُدمج وعلى أي مفتاح؟",
     "governance": "وكيل حوكمة المؤشرات: هل المقياس معرَّف وله مالك؟",
     "preparer": "وكيل إعداد البيانات",
     "segments": "وكيل تركّز الشرائح",

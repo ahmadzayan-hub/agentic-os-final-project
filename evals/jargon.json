@@ -1,0 +1,713 @@
+{
+ "about": "Whether a sentence written for a business reader carries statistical jargon the report must avoid (server/analytics JARGON, the validator's claims_avoid_statistical_jargon check). Business words that look statistical, such as a budget variance, are not jargon. English and Arabic.",
+ "labels": [
+  true,
+  false
+ ],
+ "dev": [
+  {
+   "text": "The result is statistically significant (p < 0.05).",
+   "label": true
+  },
+  {
+   "text": "The model's R² is 0.74.",
+   "label": true
+  },
+  {
+   "text": "We reject the null hypothesis.",
+   "label": true
+  },
+  {
+   "text": "The estimate has a standard error of 2.1.",
+   "label": true
+  },
+  {
+   "text": "A t-statistic of 3.2 supports the difference.",
+   "label": true
+  },
+  {
+   "text": "The 95% CI runs from 1.2 to 3.4.",
+   "label": true
+  },
+  {
+   "text": "Sales sit two standard deviations above the mean.",
+   "label": true
+  },
+  {
+   "text": "النتيجة ذات دلالة إحصائية.",
+   "label": true
+  },
+  {
+   "text": "الخطأ المعياري للتقدير 2.1.",
+   "label": true
+  },
+  {
+   "text": "Revenue grew 12% in Q3.",
+   "label": false
+  },
+  {
+   "text": "Budget variance was AED 2 million over plan.",
+   "label": false
+  },
+  {
+   "text": "Half of the records are above 32,806.",
+   "label": false
+  },
+  {
+   "text": "The forecast has been off by about 16% on past data.",
+   "label": false
+  },
+  {
+   "text": "We are fairly confident the trend will continue.",
+   "label": false
+  },
+  {
+   "text": "ارتفعت المبيعات 12% في الربع الثالث.",
+   "label": false
+  },
+  {
+   "text": "Because the sauce supplier changed, costs rose.",
+   "label": false
+  },
+  {
+   "text": "A chi-square test shows the shifts differ.",
+   "label": true,
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "The residuals are heteroscedastic.",
+   "label": true,
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "The p-value is 0.03.",
+   "label": true,
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "فترة الثقة بين 1.2 و3.4.",
+   "label": true,
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "The coefficient of variation is 0.4.",
+   "label": true,
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Costs were 4% under budget.",
+   "label": false,
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "The regional mix explains most of the change.",
+   "label": false,
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "انخفضت التكاليف 4% عن الميزانية.",
+   "label": false,
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "The Kruskal-Wallis test on ticket resolution times across the four regions gave p = 0.02, so the differences are unlikely to be chance.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Heteroscedasticity in the residuals means the OLS standard errors in this model are unreliable.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "The 95% CI for mean lead time runs from 6.1 to 9.8 days, so the single estimate hides real spread.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Multicollinearity between the two price variables pushed the VIF above 10, so their individual coefficients are not trustworthy.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "اختبار كاي تربيع أظهر أن الفرق في نسب الرفض بين الفروع ذو دلالة إحصائية عند مستوى 0.05.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "بلغت قيمة R² للنموذج 0.31، أي أن المتغيرات المستخدمة تفسر جزءاً محدوداً من تغير المبيعات.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "استخدمنا تحليل المكونات الأساسية PCA لتقليص المتغيرات الثمانية إلى ثلاثة عوامل مستقلة.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "The Shapiro-Wilk check returned p = 0.01, so the residuals are not normally distributed.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Our ARIMA(1,1,0) forecast has an RMSE of 4.2 units, which widens the confidence band for next quarter.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "أظهر اختبار مان-ويتني أن معدل العيوب في الوردية الليلية يختلف عن النهارية بشكل معنوي.",
+   "label": true,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Budget variance for the Riyadh branch was 180,000 SAR over plan, mostly from overtime.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Revenue grew 14% year on year, led by the spare-parts line.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "The average repair time fell from 5.2 hours to 4.1 hours after we moved to scheduled servicing.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Our share of the tender market rose to 22% after the new contract with the transport authority.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "ارتفعت الإيرادات بنسبة ١٤٪ مقارنة بالعام الماضي، بفضل الطلب على قطع الغيار.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "انخفضت شكاوى العملاء إلى الثلث بعد تعديل جدول التوصيل.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Cash on hand covers about three months of operating costs at the current pace.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "بلغ متوسط الوقت بين الأعطال ٣٠ ساعة هذا الربع، مقابل ٤٠ ساعة في الربع السابق.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Maintenance spend came in 6% under budget, and the savings went to the new workshop.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "تمثل المبيعات عبر الإنترنت ٣٥٪ من إجمالي الإيرادات، وهي أعلى نسبة سجلناها.",
+   "label": false,
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "The Mann-Whitney test showed no significant difference between the two depots (p = 0.31).",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Budget variance for the Lagos depot was 6% over plan, mostly from overtime.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "We fitted a logistic regression with a 95% confidence interval to estimate delay risk per route.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Average waiting time at the Eastgate counter fell from 9 minutes to 6 this quarter.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "أظهر اختبار t أن الفرق في متوسط زمن الانتظار بين الفرعين غير دال إحصائياً عند مستوى p = 0.31.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "بلغت الإيرادات في الفرع الشمالي 2.4 مليون ريال، بزيادة 9% عن العام الماضي.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Multicollinearity between fuel price and distance makes the cost model's coefficients unstable.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Revenue from corporate contracts grew 14% year on year.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "معامل التحديد R² طلع 0.38، يعني النموذج ما يفسر إلا جزء بسيط من تغير الركاب",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "الميزانية صارت أعلى من الخطة بـ 6%، والسبب الأساسي الوقت الإضافي للفنيين",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "The chi-square statistic was 14.2, so we reject independence between fare type and station.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Our share of regional bus tickets sold is now 31%, up from 27%.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "R-squared is 0.41, meaning the model explains less than half of the ridership variation.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "The on-time departure target is 92%, and we hit 89% last month.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "اختبار كاي تربيع بيقول إن مفيش علاقة بين نوع التذكرة والمحطة، والقيمة p كانت 0.4",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "متوسط الركاب اليومي في محطة المنيب زاد من 4 آلاف لحوالي 5 آلاف",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "After a Bonferroni correction, only two of the seven pairwise comparisons stay significant.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Fuel cost per kilometre went up after the contract renewal in May.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "The ARIMA(1,1,1) forecast has an RMSE of 812 units on the holdout sample.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "بلغت حصة شركتنا من نقل البضائع في المنطقة الشرقية 18% هذا الربع.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "استخدمنا الانحدار اللوجستي لتقدير احتمال التأخير لكل مسار، مع فترة ثقة 95%.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Driver absences averaged 4.5 days per person in the first half of the year.",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "وجدنا عدم تجانس التباين في البواقي، لذلك نحتاج إلى تعديل لأخطاء المعيار.",
+   "label": true,
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "هامش صافي الربح ارتفع إلى 11% بعد إعادة التفاوض مع مورد قطع الغيار",
+   "label": false,
+   "source": "blind v3, promoted to dev after round 3"
+  }
+ ],
+ "holdout": [
+  {
+   "text": "The Shapiro-Wilk test rejected normality for the delay data, so we used a Mann-Whitney U test to compare the two depots.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "The regression had an R-squared of 0.41 and the p-value on fuel price was 0.03, which is borderline.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Residuals showed heteroskedasticity, so the standard errors were corrected before we read the coefficients.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "أظهر اختبار كاي تربيع أن العلاقة بين نوع العطل والمنطقة ذات دلالة إحصائية عند مستوى ٠٫٠٥.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "بلغت قيمة R² للنموذج ٠٫٣٨، ولذلك لا يفسّر النموذج سوى جزء محدود من تقلب الطلب.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "تشير نتائج نموذج ARIMA إلى وجود ارتباط ذاتي في بيانات الشحن الأسبوعية.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "The 95% confidence interval for mean wait time is wide, so the ANOVA result is not conclusive.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "We applied a Bonferroni correction across the twelve comparisons before reporting any significance.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "تم استخدام اختبار مان-ويتني غير المعلمي لمقارنة زمن الانتظار بين الفرعين.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Monthly demand has a kurtosis of 6.2, which signals heavy tails and a few extreme months.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "انحراف معياري مرتفع في أسعار الوقود يجعل فترة الثقة ٩٥٪ واسعة جداً.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Multicollinearity between store size and footfall inflates the variance of our coefficients, so treat the betas with caution.",
+   "label": true,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Fuel spend came in 6% under budget this quarter, mainly because two routes were shortened.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Average repair time on the northern line dropped from 4.2 hours to 3.5 hours after the new shift pattern started.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Online sales now make up 31% of total revenue, up from 24% a year ago.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Our target for first-time fix rate is 85%, and we are at 79% this month.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "We kept more spare parts on the shelves than planned for the summer peak, so warehouse costs went up.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "تمثل حصة الفروع الجديدة ١٨٪ من إجمالي المبيعات هذا الربع.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ارتفعت الإيرادات الشهرية بنسبة ١٢٪ مقارنة بالشهر نفسه من العام الماضي.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "متوسط زمن الانتظار في قسم الطوارئ انخفض إلى ٤٧ دقيقة.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "الميزانية المخصصة للصيانة الوقائية تجاوزت المتوقع بنحو ٣٠ ألف درهم.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "نسبة الرحلات التي وصلت في موعدها بلغت ٩٢٪ هذا الشهر مقابل هدف قدره ٩٥٪.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Headcount in the warehouse team grew by eight people, mostly for the night shift.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "تكلفة الكيلومتر الواحد في أسطول الحافلات تراجعت بعد تغيير مورد الإطارات.",
+   "label": false,
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  }
+ ],
+ "holdout_v1": [
+  {
+   "text": "A chi-square test shows the shifts differ.",
+   "label": true
+  },
+  {
+   "text": "The residuals are heteroscedastic.",
+   "label": true
+  },
+  {
+   "text": "The p-value is 0.03.",
+   "label": true
+  },
+  {
+   "text": "فترة الثقة بين 1.2 و3.4.",
+   "label": true
+  },
+  {
+   "text": "The coefficient of variation is 0.4.",
+   "label": true
+  },
+  {
+   "text": "Costs were 4% under budget.",
+   "label": false
+  },
+  {
+   "text": "The regional mix explains most of the change.",
+   "label": false
+  },
+  {
+   "text": "انخفضت التكاليف 4% عن الميزانية.",
+   "label": false
+  }
+ ],
+ "holdout_v2": [
+  {
+   "text": "The Kruskal-Wallis test on ticket resolution times across the four regions gave p = 0.02, so the differences are unlikely to be chance.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Heteroscedasticity in the residuals means the OLS standard errors in this model are unreliable.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "The 95% CI for mean lead time runs from 6.1 to 9.8 days, so the single estimate hides real spread.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Multicollinearity between the two price variables pushed the VIF above 10, so their individual coefficients are not trustworthy.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "اختبار كاي تربيع أظهر أن الفرق في نسب الرفض بين الفروع ذو دلالة إحصائية عند مستوى 0.05.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "بلغت قيمة R² للنموذج 0.31، أي أن المتغيرات المستخدمة تفسر جزءاً محدوداً من تغير المبيعات.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "استخدمنا تحليل المكونات الأساسية PCA لتقليص المتغيرات الثمانية إلى ثلاثة عوامل مستقلة.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "The Shapiro-Wilk check returned p = 0.01, so the residuals are not normally distributed.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Our ARIMA(1,1,0) forecast has an RMSE of 4.2 units, which widens the confidence band for next quarter.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "أظهر اختبار مان-ويتني أن معدل العيوب في الوردية الليلية يختلف عن النهارية بشكل معنوي.",
+   "label": true,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Budget variance for the Riyadh branch was 180,000 SAR over plan, mostly from overtime.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Revenue grew 14% year on year, led by the spare-parts line.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "The average repair time fell from 5.2 hours to 4.1 hours after we moved to scheduled servicing.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Our share of the tender market rose to 22% after the new contract with the transport authority.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ارتفعت الإيرادات بنسبة ١٤٪ مقارنة بالعام الماضي، بفضل الطلب على قطع الغيار.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "انخفضت شكاوى العملاء إلى الثلث بعد تعديل جدول التوصيل.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Cash on hand covers about three months of operating costs at the current pace.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "بلغ متوسط الوقت بين الأعطال ٣٠ ساعة هذا الربع، مقابل ٤٠ ساعة في الربع السابق.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Maintenance spend came in 6% under budget, and the savings went to the new workshop.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "تمثل المبيعات عبر الإنترنت ٣٥٪ من إجمالي الإيرادات، وهي أعلى نسبة سجلناها.",
+   "label": false,
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  }
+ ],
+ "holdout_v3": [
+  {
+   "text": "The Mann-Whitney test showed no significant difference between the two depots (p = 0.31).",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Budget variance for the Lagos depot was 6% over plan, mostly from overtime.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "We fitted a logistic regression with a 95% confidence interval to estimate delay risk per route.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Average waiting time at the Eastgate counter fell from 9 minutes to 6 this quarter.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "أظهر اختبار t أن الفرق في متوسط زمن الانتظار بين الفرعين غير دال إحصائياً عند مستوى p = 0.31.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "بلغت الإيرادات في الفرع الشمالي 2.4 مليون ريال، بزيادة 9% عن العام الماضي.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Multicollinearity between fuel price and distance makes the cost model's coefficients unstable.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Revenue from corporate contracts grew 14% year on year.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "معامل التحديد R² طلع 0.38، يعني النموذج ما يفسر إلا جزء بسيط من تغير الركاب",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "الميزانية صارت أعلى من الخطة بـ 6%، والسبب الأساسي الوقت الإضافي للفنيين",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "The chi-square statistic was 14.2, so we reject independence between fare type and station.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Our share of regional bus tickets sold is now 31%, up from 27%.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "R-squared is 0.41, meaning the model explains less than half of the ridership variation.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "The on-time departure target is 92%, and we hit 89% last month.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "اختبار كاي تربيع بيقول إن مفيش علاقة بين نوع التذكرة والمحطة، والقيمة p كانت 0.4",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "متوسط الركاب اليومي في محطة المنيب زاد من 4 آلاف لحوالي 5 آلاف",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "After a Bonferroni correction, only two of the seven pairwise comparisons stay significant.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Fuel cost per kilometre went up after the contract renewal in May.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "The ARIMA(1,1,1) forecast has an RMSE of 812 units on the holdout sample.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "بلغت حصة شركتنا من نقل البضائع في المنطقة الشرقية 18% هذا الربع.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "استخدمنا الانحدار اللوجستي لتقدير احتمال التأخير لكل مسار، مع فترة ثقة 95%.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Driver absences averaged 4.5 days per person in the first half of the year.",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "وجدنا عدم تجانس التباين في البواقي، لذلك نحتاج إلى تعديل لأخطاء المعيار.",
+   "label": true,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "هامش صافي الربح ارتفع إلى 11% بعد إعادة التفاوض مع مورد قطع الغيار",
+   "label": false,
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  }
+ ]
+}

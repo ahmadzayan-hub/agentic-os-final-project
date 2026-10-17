@@ -1,0 +1,35 @@
+FINDING T01 · major · P12
+Category: unsourced_figure
+Evidence: $1.9 million is not in the register.
+
+FINDING T02 · major · P06
+Category: unsourced_figure
+Evidence: 0.4 is not in the register.
+
+FINDING T03 · major · P13
+Category: unsourced_figure
+Evidence: 0.81 is not in the register.
+
+FINDING T04 · major · P11
+Category: unsourced_figure
+Evidence: 12% is not in the register.
+
+FINDING T05 · major · P05
+Category: unsourced_figure
+Evidence: 31% is not in the register.
+
+FINDING T06 · major · P07
+Category: unsourced_figure
+Evidence: 98.0% is not in the register.
+
+FINDING T07 · major · P09
+Category: arithmetic
+Evidence: “52,300 ÷ 1,240 = 48.2” computes to 42.177419.
+
+FINDING T08 · major · P02
+Category: arithmetic
+Evidence: “[P02] That is one failure every 4,800 km.” computes to 4000.0.
+
+FINDING T09 · major · P09
+Category: arithmetic
+Evidence: “[P09] Delay minutes per failure were 52,300 ÷ 1,240 = 48.2 minutes.” computes to 42.177419.

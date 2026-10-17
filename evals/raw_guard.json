@@ -1,0 +1,91 @@
+{
+ "about": "Whether a text holds raw data rows that must not be sent to a model (scripts/consult.py, looks_like_raw_rows). true = a block of records; false = prose, a short summary table, code or logs.",
+ "labels": [
+  true,
+  false
+ ],
+ "dev": [
+  {
+   "text": "date,region,sales,share\n2025-01-01,Region0,1000,12.5\n2025-02-01,Region1,1037,13.5\n2025-03-01,Region2,1074,14.5\n2025-04-01,Region3,1111,15.5\n2025-05-01,Region0,1148,16.5\n2025-06-01,Region1,1185,17.5\n2025-07-01,Region2,1222,18.5\n2025-08-01,Region3,1259,19.5\n2025-09-01,Region0,1296,20.5\n2025-10-01,Region1,1333,21.5\n2025-11-01,Region2,1370,22.5\n2025-12-01,Region3,1407,23.5",
+   "label": true
+  },
+  {
+   "text": "date\tregion\tsales\tshare\n2025-01-01\tRegion0\t1000\t12.5\n2025-02-01\tRegion1\t1037\t13.5\n2025-03-01\tRegion2\t1074\t14.5\n2025-04-01\tRegion3\t1111\t15.5\n2025-05-01\tRegion0\t1148\t16.5\n2025-06-01\tRegion1\t1185\t17.5\n2025-07-01\tRegion2\t1222\t18.5\n2025-08-01\tRegion3\t1259\t19.5\n2025-09-01\tRegion0\t1296\t20.5\n2025-10-01\tRegion1\t1333\t21.5",
+   "label": true
+  },
+  {
+   "text": "date;region;sales;share\n2025-01-01;Region0;1000;12.5\n2025-02-01;Region1;1037;13.5\n2025-03-01;Region2;1074;14.5\n2025-04-01;Region3;1111;15.5\n2025-05-01;Region0;1148;16.5\n2025-06-01;Region1;1185;17.5\n2025-07-01;Region2;1222;18.5\n2025-08-01;Region3;1259;19.5\n2025-09-01;Region0;1296;20.5",
+   "label": true
+  },
+  {
+   "text": "| Month | Region | Sales |\n|---|---|---|\n| 2025-01 | R0 | 1000 |\n| 2025-02 | R1 | 1001 |\n| 2025-03 | R2 | 1002 |\n| 2025-04 | R3 | 1003 |\n| 2025-05 | R0 | 1004 |\n| 2025-06 | R1 | 1005 |\n| 2025-07 | R2 | 1006 |\n| 2025-08 | R3 | 1007 |\n| 2025-09 | R0 | 1008 |\n| 2025-10 | R1 | 1009 |\n| 2025-11 | R2 | 1010 |\n| 2025-12 | R3 | 1011 |\n| 2025-01 | R0 | 1012 |\n| 2025-02 | R1 | 1013 |\n| 2025-03 | R2 | 1014 |\n| 2025-04 | R3 | 1015 |\n| 2025-05 | R0 | 1016 |\n| 2025-06 | R1 | 1017 |\n| 2025-07 | R2 | 1018 |\n| 2025-08 | R3 | 1019 |\n| 2025-09 | R0 | 1020 |\n| 2025-10 | R1 | 1021 |\n| 2025-11 | R2 | 1022 |\n| 2025-12 | R3 | 1023 |\n| 2025-01 | R0 | 1024 |\n| 2025-02 | R1 | 1025 |\n| 2025-03 | R2 | 1026 |\n| 2025-04 | R3 | 1027 |\n| 2025-05 | R0 | 1028 |\n| 2025-06 | R1 | 1029 |\n| 2025-07 | R2 | 1030 |\n| 2025-08 | R3 | 1031 |\n| 2025-09 | R0 | 1032 |\n| 2025-10 | R1 | 1033 |\n| 2025-11 | R2 | 1034 |",
+   "label": true
+  },
+  {
+   "text": "[\n{\n\"date\": \"2025-01-01\",\n\"sales\": 1000,\n\"region\": \"R0\"\n},\n{\n\"date\": \"2025-02-01\",\n\"sales\": 1001,\n\"region\": \"R1\"\n},\n{\n\"date\": \"2025-03-01\",\n\"sales\": 1002,\n\"region\": \"R2\"\n},\n{\n\"date\": \"2025-04-01\",\n\"sales\": 1003,\n\"region\": \"R0\"\n},\n{\n\"date\": \"2025-05-01\",\n\"sales\": 1004,\n\"region\": \"R1\"\n},\n{\n\"date\": \"2025-06-01\",\n\"sales\": 1005,\n\"region\": \"R2\"\n},\n{\n\"date\": \"2025-07-01\",\n\"sales\": 1006,\n\"region\": \"R0\"\n},\n{\n\"date\": \"2025-08-01\",\n\"sales\": 1007,\n\"region\": \"R1\"\n},\n{\n\"date\": \"2025-09-01\",\n\"sales\": 1008,\n\"region\": \"R2\"\n},\n{\n\"date\": \"2025-10-01\",\n\"sales\": 1009,\n\"region\": \"R0\"\n},\n{\n\"date\": \"2025-11-01\",\n\"sales\": 1010,\n\"region\": \"R1\"\n},\n{\n\"date\": \"2025-12-01\",\n\"sales\": 1011,\n\"region\": \"R2\"\n}\n]",
+   "label": true
+  },
+  {
+   "text": "Month    Region   Sales\n2025-01  North    1000\n2025-02  North    1013\n2025-03  North    1026\n2025-04  North    1039\n2025-05  North    1052\n2025-06  North    1065\n2025-07  North    1078\n2025-08  North    1091\n2025-09  North    1104\n2025-10  North    1117\n2025-11  North    1130\n2025-12  North    1143",
+   "label": true
+  },
+  {
+   "text": "name: Person0, salary: 9000\nname: Person1, salary: 9250\nname: Person2, salary: 9500\nname: Person3, salary: 9750\nname: Person4, salary: 10000\nname: Person5, salary: 10250\nname: Person6, salary: 10500\nname: Person7, salary: 10750\nname: Person8, salary: 11000\nname: Person9, salary: 11250",
+   "label": true
+  },
+  {
+   "text": "| Month | Region | Sales |\n|---|---|---|\n| 2025-01 | R0 | 1000 |\n| 2025-02 | R1 | 1001 |\n| 2025-03 | R2 | 1002 |\n| 2025-04 | R3 | 1003 |\n| 2025-05 | R0 | 1004 |",
+   "label": false
+  },
+  {
+   "text": "Revenue rose 12% to AED 3.4 million in Q3, while costs were flat at 1.1 million.",
+   "label": false
+  },
+  {
+   "text": "def total(rows):\n    return sum(r['sales'] for r in rows)\n\nprint(total(data))",
+   "label": false
+  },
+  {
+   "text": "Top regions: North 1,200; South 950; East 610.",
+   "label": false
+  },
+  {
+   "text": "2025-10-01 10:02:11 INFO run started\n2025-10-01 10:02:12 INFO stage 1 done\n2025-10-01 10:02:15 WARN slow stage",
+   "label": false
+  },
+  {
+   "text": "Please review this paragraph for clarity. The forecast for 2026 is 4.2 million, give or take 10%.",
+   "label": false
+  }
+ ],
+ "holdout": [
+  {
+   "text": "id,amount,branch,date\n0,100,B0,2025-01-15\n1,103,B1,2025-02-15\n2,106,B2,2025-03-15\n3,109,B3,2025-04-15\n4,112,B4,2025-05-15\n5,115,B0,2025-06-15\n6,118,B1,2025-07-15\n7,121,B2,2025-08-15\n8,124,B3,2025-09-15\n9,127,B4,2025-01-15\n10,130,B0,2025-02-15\n11,133,B1,2025-03-15\n12,136,B2,2025-04-15\n13,139,B3,2025-05-15\n14,142,B4,2025-06-15",
+   "label": true
+  },
+  {
+   "text": "| Month | Region | Sales |\n|---|---|---|\n| 2025-01 | R0 | 1000 |\n| 2025-02 | R1 | 1001 |\n| 2025-03 | R2 | 1002 |\n| 2025-04 | R3 | 1003 |\n| 2025-05 | R0 | 1004 |\n| 2025-06 | R1 | 1005 |\n| 2025-07 | R2 | 1006 |\n| 2025-08 | R3 | 1007 |\n| 2025-09 | R0 | 1008 |\n| 2025-10 | R1 | 1009 |\n| 2025-11 | R2 | 1010 |\n| 2025-12 | R3 | 1011 |\n| 2025-01 | R0 | 1012 |\n| 2025-02 | R1 | 1013 |\n| 2025-03 | R2 | 1014 |\n| 2025-04 | R3 | 1015 |\n| 2025-05 | R0 | 1016 |\n| 2025-06 | R1 | 1017 |\n| 2025-07 | R2 | 1018 |\n| 2025-08 | R3 | 1019 |\n| 2025-09 | R0 | 1020 |\n| 2025-10 | R1 | 1021 |\n| 2025-11 | R2 | 1022 |\n| 2025-12 | R3 | 1023 |\n| 2025-01 | R0 | 1024 |\n| 2025-02 | R1 | 1025 |\n| 2025-03 | R2 | 1026 |\n| 2025-04 | R3 | 1027 |\n| 2025-05 | R0 | 1028 |\n| 2025-06 | R1 | 1029 |\n| 2025-07 | R2 | 1030 |\n| 2025-08 | R3 | 1031 |\n| 2025-09 | R0 | 1032 |\n| 2025-10 | R1 | 1033 |\n| 2025-11 | R2 | 1034 |\n| 2025-12 | R3 | 1035 |\n| 2025-01 | R0 | 1036 |\n| 2025-02 | R1 | 1037 |\n| 2025-03 | R2 | 1038 |\n| 2025-04 | R3 | 1039 |",
+   "label": true
+  },
+  {
+   "text": "[{\"customer\": \"C0\", \"spend\": 50}, {\"customer\": \"C1\", \"spend\": 51}, {\"customer\": \"C2\", \"spend\": 52}, {\"customer\": \"C3\", \"spend\": 53}, {\"customer\": \"C4\", \"spend\": 54}, {\"customer\": \"C5\", \"spend\": 55}, {\"customer\": \"C6\", \"spend\": 56}, {\"customer\": \"C7\", \"spend\": 57}, {\"customer\": \"C8\", \"spend\": 58}, {\"customer\": \"C9\", \"spend\": 59}, {\"customer\": \"C10\", \"spend\": 60}, {\"customer\": \"C11\", \"spend\": 61}, {\"customer\": \"C12\", \"spend\": 62}, {\"customer\": \"C13\", \"spend\": 63}, {\"customer\": \"C14\", \"spend\": 64}]",
+   "label": true
+  },
+  {
+   "text": "Item     Qty   Price\nWidget0  1     9.50\nWidget1  2     10.50\nWidget2  3     11.50\nWidget3  4     12.50\nWidget4  5     13.50\nWidget5  6     14.50\nWidget6  7     15.50\nWidget7  8     16.50\nWidget8  9     17.50\nWidget9  10     18.50",
+   "label": true
+  },
+  {
+   "text": "| Month | Region | Sales |\n|---|---|---|\n| 2025-01 | R0 | 1000 |\n| 2025-02 | R1 | 1001 |\n| 2025-03 | R2 | 1002 |\n| 2025-04 | R3 | 1003 |",
+   "label": false
+  },
+  {
+   "text": "The board approved the plan. Spending will be 2.5% lower next year.",
+   "label": false
+  },
+  {
+   "text": "SELECT region, SUM(sales) FROM orders GROUP BY region;",
+   "label": false
+  }
+ ]
+}

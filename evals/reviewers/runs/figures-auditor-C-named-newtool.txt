@@ -1,0 +1,51 @@
+FINDING F01 · major · /home/user/11/evals/reviewers/C/memo.md · P02
+Category: unsourced_figure
+Evidence: "[P02] About one patient in five arrived after their appointment time." This is a figure in words, which figures_check.py does not read (its docstring says so), so the checker did not flag it. No register row covers late arrivals and no sourced figure yields it, so it is unsourced.
+Fix: Add a register row for the late-arrival share, with numerator, denominator and source, and cite it; or remove the claim.
+
+FINDING F02 · blocker · /home/user/11/evals/reviewers/C/memo.md · P03
+Category: arithmetic
+Evidence: figures_check.py reports "MISSING Operating cost per visit (ratio: operating cost / visits): $44.72" (10/11 register values found). A search of memo.md for "44.7" and "per visit" finds no $44.72. The nearby form is "[P03] Operating cost per visit came to $52.10 in 2025, computed as $18,450,000 divided by 412,600 visits." The checker does not accept $52.10 because it is a different value: it accepts only the exact register value or a rounded or abbreviated form of it. Status: the register value is absent; the document presents $52.10 instead.
+Fix: Carry the register value $44.72 in P03 in place of $52.10, or, if $52.10 is the intended figure, correct the register row with its source; then rerun the checker.
+
+FINDING F03 · major · /home/user/11/evals/reviewers/C/memo.md · P03
+Category: arithmetic
+Evidence: figures_check.py --sourcing-only: "[P03] Operating cost per visit came to $52.10 in 2025, computed as $18,450,000 divided by 412,600 visits." The checker computes the memo's own stated calculation to 44.716432, so the printed $52.10 does not follow from its stated inputs.
+Fix: Make the printed value match the value its own calculation gives and the register row holds ($44.72), or correct the stated inputs.
+
+FINDING F04 · major · /home/user/11/evals/reviewers/C/memo.md · P05
+Category: causal_claim
+Evidence: "[P05] The SMS reminder scheme pulled the no-show rate down to 8.4% of booked appointments across the year." The 8.4% is sourced (register row "No-show rate", 8.4%). The attribution to the SMS scheme and the word "down" are not: the register has no SMS-scheme row and no prior-year no-show rate. P12 says these figures "cannot confirm the explanations behind them."
+Fix: Keep "The no-show rate was 8.4% of booked appointments in 2025" and remove the attribution and the change claim, unless a prior-year rate and an SMS comparison are added with sources.
+
+FINDING F05 · major · /home/user/11/evals/reviewers/C/memo.md · P07
+Category: denominator
+Evidence: figures_check.py --sourcing-only: "UNSOURCED memo.md: 9.8%". Quote: "[P07] Averaging the three clinics' no-show rates gives 9.8%, which is the department's no-show rate for 2025." Classification: derived, as the unweighted mean of the three clinic rates: (12.0 + 6.0 + 11.4) / 3 = 29.4 / 3 = 9.8. It is not the department rate. The register gives the department rate as 8.4% (no-shows 29,400 / booked appointments 350,000). The register's clinic denominators are 50,000, 200,000 and 100,000, so an unweighted mean gives Clinic B's 200,000 appointments the same weight as Clinic A's 50,000.
+Fix: Replace 9.8% with the register's department rate of 8.4%. If 9.8% is kept, label it as the unweighted mean of the clinic rates and remove "the department's no-show rate".
+
+FINDING F06 · major · /home/user/11/evals/reviewers/C/memo.md · P08
+Category: overclaim
+Evidence: "[P08] Clinic B's 6.0% no-show rate settles the matter: every clinic can expect that level next year, so staffing should be planned on it." The 6.0% is sourced (register row "No-show rate, Clinic B", 6.0%). The forecast is not: no register row projects next year. P09 of the same memo gives Clinic A 12.0% and Clinic C 11.4%, which contradicts "every clinic can expect" 6.0%.
+Fix: Delete the forecast and the staffing instruction, or base a planning rate on a stated, sourced method and register it.
+
+FINDING F07 · major · /home/user/11/evals/reviewers/C/memo.md · P10
+Category: unsourced_figure
+Evidence: figures_check.py --sourcing-only: "UNSOURCED memo.md: 14%". Quote: "[P10] Nurse vacancies stood at 14% through the year." Classification: unsourced. No register row, no reference and no derivation from sourced figures supports it.
+Fix: Add a register row for nurse vacancies with its source and rerun the checker, or remove the figure.
+
+FINDING F08 · major · /home/user/11/evals/reviewers/C/memo.md · P11
+Category: arithmetic
+Evidence: "[P11] Outpatient visits grew 18.0% over 2024, moving from 368,400 to 412,600." figures_check.py --sourcing-only computes the stated growth to 11.997828. The register gives visit growth as 12.0%, and P04 of the same memo states 12.0%. Nothing in the register supports 18.0%.
+Fix: Replace 18.0% with the register's growth of 12.0%, matching P04.
+
+FINDING F09 · major · /home/user/11/evals/reviewers/C/memo.md · P13
+Category: causal_claim
+Evidence: "[P13] The new evening sessions accounted for the 12.0% rise in visits over 2024." The 12.0% is sourced (register "Visit growth", 12.0%). The attribution is not: the register has no row for evening sessions or for visits by session type. P12 says the figures "cannot confirm the explanations behind them", which this sentence contradicts.
+Fix: Remove the attribution, or add a sourced breakdown of visits by session type with its method and restate the sentence.
+
+FINDING F10 · major · /home/user/11/evals/reviewers/C/memo.md · P14
+Category: overclaim
+Evidence: "[P14] Visits can be expected to keep rising by 12.0% a year, so the department should open a fourth clinic in 2026." The 12.0% is the 2025-over-2024 growth (register row), one year's rate presented as a forecast for every later year. No register row gives forecast growth, clinic capacity or cost, so the recommendation has no sourced basis.
+Fix: Remove the multi-year forecast and the clinic recommendation, or support them with registered projection and capacity figures and a stated method.
+
+Instructions: v2

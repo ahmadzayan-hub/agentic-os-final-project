@@ -1,0 +1,64 @@
+FINDING F01 · blocker · P02
+Category: arithmetic
+Evidence: The register gives revenue of $12,480,000 for 2025 and $11,200,000 for 2024. 12.48 / 11.2 − 1 = 0.1143, so growth is 11.4%, not 13.4%. The memo's own P01 figures contradict P02.
+Fix: Change P02 to "growth of 11.4%" (+$1.28M). Show the formula (R2025 / R2024 − 1).
+
+FINDING F02 · blocker · P09
+Category: arithmetic
+Evidence: The register gives 610 staff and 48 stores. 610 / 48 = 12.71 staff per store, not 15.2. Neither figure matches the stated inputs.
+Fix: Change P09 to "about 12.7 staff per store (610 / 48)". Name the denominator. State whether staff means headcount or full-time equivalents.
+
+FINDING F03 · blocker · P06
+Category: denominator
+Evidence: The 9.1% is "the mean of each store's rate", which is an average of row rates. The register defines the return rate as returns / orders, a ratio of sums, and gives 6.2%. The two figures use different denominators and weight stores differently, because a small store counts as much as a large one. Nothing shows that 9.1% is the chain-wide rate, so "returns are worse than the register suggests" is unsupported. At most, small stores may have higher rates.
+Fix: Report the pooled rate (6.2% = total returns / total orders). If the store-level spread matters, label the 9.1% as an unweighted store mean and show the order-weighted figure beside it. Remove the "worse than the register suggests" conclusion.
+
+FINDING F04 · blocker · P15
+Category: denominator
+Evidence: The $52 is "the mean of the 48 stores' own averages", an average of row ratios. The register defines average basket as revenue / orders = $39.95, which I recomputed as 12,480,000 / 312,400 = 39.95. The claim that the register "understates what customers spend" is wrong, because $39.95 is the order-weighted figure. The $52 is 30% higher, so the gap comes from the unweighted store means, not from customer spending. The memo also uses $39.95 in P04, so the two paragraphs contradict each other.
+Fix: Delete the claim that the register understates spend. Use $39.95 as the single average order value. If store dispersion is of interest, label the $52 an unweighted store mean and show it separately.
+
+FINDING F05 · blocker · P05
+Category: causal_claim
+Evidence: "The loyalty app drove the revenue growth." No loyalty data, comparison group, or contribution figure appears in the memo or the register. The one-year before/after revenue change in P01–P02 cannot isolate the app's effect from price, store count, or online growth. P16 admits only associations were shown, which contradicts this wording.
+Fix: Remove the claim, or restate it as "revenue grew 11.4%; no analysis here attributes the growth to the loyalty app". Add a calculation (for example app-user vs non-user spend with a stated design) before making any attribution.
+
+FINDING F06 · blocker · P10
+Category: causal_claim
+Evidence: "Longer opening hours caused higher weekend revenue." The memo gives no opening-hours data, no weekend revenue figure, and no design. Stores that chose to open longer may differ in size or location. Nothing excludes reverse causation or confounding.
+Fix: Say "stores with longer hours show higher weekend revenue" only after the figure is calculated and shown. Otherwise remove the claim. Use "associated with", and note that a controlled or staggered-rollout test would be needed to show cause.
+
+FINDING F07 · blocker · P07
+Category: causal_claim
+Evidence: A single store's 40% rise after its refit is generalised to "every refit will lift sales by 40%." This is one case with no comparison stores and no control for seasonality, trend, or regression to the mean. It is a before/after change in n = 1, and the forecast carries no uncertainty. The 40% figure is not in the register and has no stated base period.
+Fix: Reword to "Store 17's sales were 40% higher after its refit (base period and comparison stated); this is one store and does not show an effect or predict other refits." Add comparison stores before any recommendation.
+
+FINDING F08 · major · P12
+Category: overclaim
+Evidence: "92% accuracy" is given with no metric definition. Accuracy is a classification metric, and store revenue is continuous, so it is unclear whether this means 1 − MAPE, R², or something else. The memo names no baseline, such as last year's revenue or a naive growth rate. It does not say whether the score is on held-out data. It lists no features, so leakage, such as same-year sales as an input, cannot be ruled out. Revenue for stores is typically stable year to year, so a naive baseline could also score about 90%. The conclusion "it should set next year's targets" has no support.
+Fix: Name the metric (for example MAPE on held-out stores or periods). Show the baseline's score on the same split. List the features, and confirm no outcome-derived inputs. If the model is near baseline, call it weak. Drop the recommendation until then.
+
+FINDING F09 · major · P03
+Category: unsourced_figure
+Evidence: "Online orders grew 27% year on year." The register has no online order count for 2024 or 2025, only the 18.5% online share of orders. No count or base for the growth rate is shown, so it cannot be recomputed. The 27% also sits oddly next to total revenue growth of 11.4%, and no reconciliation is given.
+Fix: Give the 2024 and 2025 online order counts and the formula (online25 / online24 − 1), and add them to the register. Otherwise remove the figure.
+
+FINDING F10 · major · P13
+Category: unsourced_figure
+Evidence: "Shrinkage cost the chain $640,000 in 2025." This figure is not in the register and has no formula, source, or denominator. Shrinkage is usually reported as a share of sales or of stock. As a share of sales, $640,000 / $12.48M is 5.1%, but the memo gives no such figure.
+Fix: Add a shrinkage register row with its definition and source. State it as a rate with a stated denominator, or remove the paragraph.
+
+FINDING F11 · minor · P08
+Category: denominator
+Evidence: The 18.5% matches the register's "online share of orders". The memo says "all orders" but does not say that this is online orders / total orders (about 57,800 of 312,400). It does not say whether the share is by orders or by revenue. Read beside P03, the reader may take it as a revenue share.
+Fix: State the formula and counts: "Online orders / all orders = 18.5% (≈57,800 of 312,400)". Keep P03 and P08 on the same basis.
+
+FINDING F12 · minor · P11
+Category: overclaim
+Evidence: NPS 41 and 2,100 responses match the register. The memo gives no survey response rate, sampling method, or period. Among 312,400 orders, 2,100 responses are about 0.7% of orders if each response is one order, so non-response bias could be large. The memo does not say NPS is a promoters-minus-detractors measure, or show a baseline or prior-year NPS.
+Fix: Add the NPS formula, the survey period and response rate, and a caveat on how representative the sample is. Add a comparison before calling the score good or bad.
+
+FINDING F13 · minor · P16
+Category: overclaim
+Evidence: P16 says these are "associations in one year of data". That conflicts with P05, P07, P10 and P12, which use causal or forecast wording. It also comes only at the end, so the limits are not stated where each claim is made. The title says the benchmark is synthetic, but P01–P15 carry no scope or sampling caveat next to their figures. The memo does not say whether any stores or records were excluded, or whether store identifiers are stable across years (relevant to the 48-store comparisons and to P07).
+Fix: Put the limit beside each claim (one year, synthetic data, store identity and exclusions). Make P05, P07, P10 and P12 consistent with P16, or remove them.

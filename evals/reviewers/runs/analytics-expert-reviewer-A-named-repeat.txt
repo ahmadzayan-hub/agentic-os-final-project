@@ -1,0 +1,51 @@
+FINDING 1 · blocker · P02
+Category: arithmetic
+Evidence: P01 gives revenue of $12.48M for 2025 and $11.2M for 2024, and the register agrees (rows 2 and 3). The growth is 12.48 / 11.2 − 1 = 11.43%, not 13.4%. I recomputed this in Python.
+Fix: Change "13.4%" to "11.4%". The gap is $1.28M, so the register rows support only the 11.4% figure.
+
+FINDING 2 · major · P03
+Category: unsourced_figure
+Evidence: "Online orders grew 27% year on year" has no counterpart in the register. The register has only the 2025 online share (18.5%) and no 2024 online order count or share. The memo gives no formula, no base-year figure and no denominator.
+Fix: Add the 2024 and 2025 online order counts to the register, with the formula (online_2025 / online_2024 − 1). If they are not available, remove the claim.
+
+FINDING 3 · blocker · P05
+Category: causal_claim
+Evidence: "The loyalty app drove the revenue growth." No loyalty-app data, adoption figure, comparison group or test appears in the memo or the register. Even the revenue growth it explains is miscomputed (see P02). P16 says the findings are associations, but that caveat sits at the end of the memo, not next to this claim.
+Fix: Delete the claim. If a loyalty-app figure is added, word it as an association, for example "revenue growth coincided with the loyalty app launch", and state the limit in the same sentence.
+
+FINDING 4 · blocker · P06
+Category: denominator
+Evidence: The 9.1% is "the mean of each store's rate", which is an average of row rates. The register defines returns rate as returns / orders (6.2%, a ratio of sums). A store with few orders gets the same weight as a large one, so the two figures are not comparable. The memo's conclusion that "returns are worse than the register's 6.2% suggests" rests on that difference. The register figure of 6.2% is also unchecked here: it implies about 19,369 returns on 312,400 orders. The memo gives neither the per-store counts nor the weights.
+Fix: Report total returns / total orders (6.2%) as the headline rate. If the store mean is shown at all, label it an unweighted store average and do not use it to say returns are worse. Delete "returns are worse" unless the weighted figure supports it.
+
+FINDING 5 · blocker · P07
+Category: causal_claim
+Evidence: One store's 40% rise "after its refit" is turned into "every refit will lift sales by 40%". This is n = 1, with no comparison stores, no control for trend or seasonality, and no check against regression to the mean. "After" is not "because of", and a single case cannot be generalised into a forecast for every refit. No sales figures for Store 17 are in the register or the memo.
+Fix: Reword to "Store 17's sales were 40% higher after its refit (single store, no comparison group)". Delete the "every refit will lift sales by 40%" forecast. A matched comparison across several refits would be needed to estimate an effect.
+
+FINDING 6 · major · P09
+Category: arithmetic
+Evidence: The register gives staff = 610 and stores = 48, and P09 repeats both. The ratio is 610 / 48 = 12.71, not 15.2. I recomputed this in Python.
+Fix: Change "15.2" to "12.7 staff per store". State that this is total staff / total stores, not a store-level average.
+
+FINDING 7 · blocker · P10
+Category: causal_claim
+Evidence: "Longer opening hours caused higher weekend revenue." The memo has no opening-hours data, no weekend revenue figure, no comparison and no design (such as a randomised trial or a before-and-after test with controls). Stores may have extended hours because they were already busy. P16 concedes that only associations are available, which contradicts "caused".
+Fix: Change to "Stores with longer opening hours show higher weekend revenue (association)". Add the figures and the comparison group. Otherwise delete the claim.
+
+FINDING 8 · major · P12
+Category: overclaim
+Evidence: "92% accuracy" has no model description, no baseline, no held-out data and no named metric. Accuracy is not a standard metric for predicting a continuous revenue figure. A naive baseline, such as repeating last year's revenue or the store mean, could score close to 92%. The feature set is not stated, so leakage of the outcome into the inputs cannot be ruled out. No figure supports the move to "it should set next year's targets".
+Fix: Name the metric (MAPE, MAE or R²) and report it on held-out data, next to a naive baseline. List the inputs and confirm that no outcome column is among them. Remove "should set next year's targets" unless the model beats the baseline by a stated margin. If it is near baseline, call it weak.
+
+FINDING 9 · major · P13
+Category: unsourced_figure
+Evidence: "$640,000" for shrinkage does not appear in the register or anywhere else in the memo. No formula, source, definition or denominator is given. It would be about 5.1% of the $12.48M revenue, but the memo does not say what shrinkage covers or how it was measured.
+Fix: Add a register row for shrinkage with its formula and source, or remove the figure. If it is an estimate, label it as one.
+
+FINDING 10 · blocker · P15
+Category: denominator
+Evidence: The $52 is "the mean of the 48 stores' own averages", an average of row averages. The register defines average basket as revenue / orders = $39.95, and I recomputed 12,480,000 / 312,400 = $39.95. P04 states $39.95 as the memo's own figure, so P15 contradicts P04. An unweighted store mean gives a small store the same weight as a large one. It cannot show that the register figure "understates what customers spend". The $52 would also put revenue at about $16.2M on 312,400 orders, which does not match the $12.48M in P01.
+Fix: Delete the $52 figure and the "understates" claim. Report $39.95 (total revenue / total orders). If a store-level spread is useful, show it as a distribution and label it unweighted.
+
+Instructions: v1

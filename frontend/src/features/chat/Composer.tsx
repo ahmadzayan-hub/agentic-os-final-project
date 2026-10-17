@@ -1,6 +1,7 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { Icon } from '../../shared/components/Icon'
+import { useSessionDraft } from '../../shared/useSessionDraft'
 
 export interface ComposerHandle {
   insert: (text: string) => void
@@ -8,21 +9,23 @@ export interface ComposerHandle {
 }
 
 interface ComposerProps {
-  onSend: (text: string) => void
+  onSend: (text: string) => void | Promise<boolean>
   busy: boolean
   disabled?: boolean
   placeholder?: string
+  draftKey?: string
 }
 
 /** Multiline message input. Enter sends, Shift+Enter adds a line break.
  *  While a request is in flight the send action is disabled, which also
  *  prevents duplicate submissions. */
 export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Composer(
-  { onSend, busy, disabled = false, placeholder },
+  { onSend, busy, disabled = false, placeholder, draftKey = 'composer' },
   ref,
 ) {
   const { t, tx } = useI18n()
-  const [text, setText] = useState('')
+  const [text, setText] = useSessionDraft(draftKey, () => '')
+  const [submitting, setSubmitting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useImperativeHandle(ref, () => ({
@@ -48,12 +51,15 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`
   }
 
-  function submit() {
+  async function submit() {
     const value = text.trim()
-    if (!value || busy || disabled) return
-    onSend(value)
-    setText('')
-    requestAnimationFrame(autosize)
+    if (!value || busy || submitting || disabled) return
+    setSubmitting(true)
+    try {
+      const sent = await onSend(value)
+      if (sent !== false) setText((current) => current.trim() === value ? '' : current)
+    } catch { /* The caller reports the error; retain this draft for recovery. */ }
+    finally { setSubmitting(false); requestAnimationFrame(autosize) }
   }
 
   return (
@@ -62,7 +68,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
         className="composer__inner"
         onSubmit={(event) => {
           event.preventDefault()
-          submit()
+          void submit()
         }}
       >
         <label className="visually-hidden" htmlFor="composer-input">
@@ -86,14 +92,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault()
-              submit()
+              void submit()
             }
           }}
         />
         <button
           type="submit"
           className="composer__send"
-          disabled={busy || disabled || !text.trim()}
+          disabled={busy || submitting || disabled || !text.trim()}
           aria-label={busy ? t('composer.sending') : t('composer.send')}
         >
           {busy ? <span className="spinner" aria-hidden="true" /> : <Icon name="send" size={18} />}
@@ -108,3 +114,4 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
     </div>
   )
 })
+

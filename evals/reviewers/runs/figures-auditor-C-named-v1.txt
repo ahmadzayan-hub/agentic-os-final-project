@@ -1,0 +1,49 @@
+FINDING F01 · major · /home/user/11/evals/reviewers/C/memo.md · P02
+Category: unsourced_figure
+Evidence: Quote: "About one patient in five arrived after their appointment time." Classification: unsourced. No register row gives a late-arrival rate, and a search of register.csv and memo.md for "one patient" and "one in five" finds only this sentence. The figure is written in words, so the digit-based sourcing check did not flag it.
+Fix: Add a late-arrival rate row with its source to the register and cite it in P02, or remove the sentence.
+
+FINDING F02 · blocker · /home/user/11/evals/reviewers/C/memo.md · P03
+Category: arithmetic
+Evidence: figures_check reports MISSING for "Operating cost per visit (ratio: operating cost / visits)" with value $44.72 (register row 9). Search: "44.72" and "44·72" return no match in memo.md. The only "44" in the memo is "44,200" in P04, which is a visit gain and not this ratio. Status: absent. P03 gives a different value for the same ratio, $52.10 (see F03).
+Fix: State the register value $44.72 as operating cost per visit in P03, and remove $52.10.
+
+FINDING F03 · major · /home/user/11/evals/reviewers/C/memo.md · P03
+Category: arithmetic
+Evidence: Quote: "Operating cost per visit came to $52.10 in 2025, computed as $18,450,000 divided by". Classification: unsourced. $52.10 is not in register.csv, whose Expected value for this ratio is $44.72. The stated operands, $18,450,000 and 412,600 visits, both match register rows, but dividing them does not give $52.10, so no sourced calculation supports the figure. figures_check --sourcing-only flags "$52.10" as UNSOURCED. Its arithmetic pass did not flag the mismatch (wrong_arithmetic is empty).
+Fix: Replace $52.10 with the register value $44.72 and keep the stated formula consistent with it (see F02).
+
+FINDING F04 · major · /home/user/11/evals/reviewers/C/memo.md · P05
+Category: causal_claim
+Evidence: Quote: "pulled the no-show rate down to 8.4% of booked appointments across the year". The 8.4% matches the register's no-show rate. The attribution to the SMS scheme and the "down" comparison have no support. The register holds no 2024 no-show rate and no SMS variable, and "SMS" and "reminder" appear only in P05. P12 says the figures are associations that cannot confirm explanations.
+Fix: Report only "The no-show rate was 8.4% of booked appointments in 2025." Remove the SMS attribution and the "down" comparison unless a prior-year rate and an evaluation are registered.
+
+FINDING F05 · major · /home/user/11/evals/reviewers/C/memo.md · P07
+Category: denominator
+Evidence: Quote: "Averaging the three clinics' no-show rates gives 9.8%, which is the department's". figures_check --sourcing-only flags 9.8% as UNSOURCED. The 9.8% is an unweighted mean of the clinic rates: (12.0 + 6.0 + 11.4) / 3. The register labels give the clinic denominators as 50,000, 200,000 and 100,000 booked appointments, which sum to 350,000. The clinic no-shows, 6,000 + 12,000 + 11,400, sum to 29,400. Pooled, the department rate is 29,400 / 350,000, which the register gives as 8.4%. P06 also states 8.4%, so the memo gives two different department rates.
+Fix: Replace the averaging sentence with the register's department no-show rate of 8.4%, pooled over 350,000 booked appointments, and remove 9.8%.
+
+FINDING F06 · major · /home/user/11/evals/reviewers/C/memo.md · P08
+Category: overclaim
+Evidence: Quote: "Clinic B's 6.0% no-show rate settles the matter: every clinic can expect that level next year". The 6.0% matches the register's Clinic B row (12,000 / 200,000). The register has no forecast. P09 in the same memo gives Clinic A at 12.0%, Clinic C at 11.4% and Clinic B at 6.0%, so one clinic's 2025 rate cannot be the expected level for all clinics.
+Fix: Delete the forecast and the staffing instruction. Report the 2025 clinic rates as observed values only. Staffing plans need their own basis.
+
+FINDING F07 · major · /home/user/11/evals/reviewers/C/memo.md · P10
+Category: unsourced_figure
+Evidence: Quote: "Nurse vacancies stood at 14% through the year." Classification: unsourced. "14%" is not in register.csv and appears only in this sentence of memo.md. The sourcing check did not flag it (it flagged four numbers), so this is a manual finding.
+Fix: Add a nurse vacancy row with its source to the register and cite it in P10, or remove the sentence.
+
+FINDING F08 · major · /home/user/11/evals/reviewers/C/memo.md · P11
+Category: arithmetic
+Evidence: Quote: "Outpatient visits grew 18.0% over 2024, moving from 368,400 to 412,600." Classification: unsourced, and contradicted by the memo's own operands. The register's visit growth is 12.0%, defined as (412,600 - 368,400) / 368,400. P04 gives 12.0% for the same change. 18.0% is not in register.csv. figures_check --sourcing-only flags it as UNSOURCED.
+Fix: Replace 18.0% with the register value of 12.0%.
+
+FINDING F09 · major · /home/user/11/evals/reviewers/C/memo.md · P13
+Category: causal_claim
+Evidence: Quote: "The new evening sessions accounted for the 12.0% rise in visits over 2024." The 12.0% is register-sourced. "Evening sessions" appears nowhere in register.csv or elsewhere in memo.md. The sentence attributes the whole 12.0% change to one cause with no evidence. P12 says the figures cannot confirm the explanations behind them.
+Fix: Delete the attribution, or state it as an untested hypothesis that claims no share of the 12.0% rise.
+
+FINDING F10 · major · /home/user/11/evals/reviewers/C/memo.md · P14
+Category: overclaim
+Evidence: Quote: "Visits can be expected to keep rising by 12.0% a year, so the department should open a". The 12.0% is the register's only growth rate, for 2025 over 2024 alone (368,400 to 412,600). No multi-year series or forecast is registered, and P12 says the figures describe one year. The projection and the fourth-clinic recommendation for 2026 have no source.
+Fix: Remove the projection and the fourth-clinic recommendation. Alternatively, present a clearly labelled scenario with its stated basis.

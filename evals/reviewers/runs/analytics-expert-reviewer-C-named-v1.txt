@@ -1,0 +1,44 @@
+FINDING F01 · blocker · P03
+Category: arithmetic
+Evidence: The memo gives $52.10 as $18,450,000 / 412,600. That division is $44.72 (44.716…). Register.csv line 9 also expects "$44.72". $52.10 would need about 354,127 visits, a number that appears nowhere in the memo or register. The inputs are right and the result is wrong.
+Fix: Replace $52.10 with $44.72, the ratio of summed cost to summed visits. Re-check anything downstream that used $52.10.
+
+FINDING F02 · blocker · P11
+Category: arithmetic
+Evidence: (412,600 − 368,400) / 368,400 = 44,200 / 368,400 = 12.0% (11.998%). The memo says 18.0% in P11 and 12.0% in P04, from the same two figures. Register.csv line 4 expects 12.0%. P13 and P14 also use 12.0%.
+Fix: Change 18.0% to 12.0%, or delete P11 as a duplicate of P04.
+
+FINDING F03 · major · P07
+Category: denominator
+Evidence: The memo takes the simple mean of the three clinic rates, (12.0 + 6.0 + 11.4) / 3 = 9.8%, as the department rate. Clinic sizes are very different: 50,000, 200,000 and 100,000 booked appointments. The ratio of sums is 29,400 / 350,000 = 8.4%, which is the memo's own P05 and P06 figure and register.csv line 7. An average of row rates is a defect under `brain/Concepts/Weighted KPIs.md`. It overstates the rate by 1.4 percentage points. It also gives Clinic B (57% of bookings) the same weight as Clinic A (14%), and it contradicts the memo's own 8.4%.
+Fix: Delete the 9.8% claim, or label it as an unweighted mean of clinic rates that is not the department rate. State the department rate as 29,400 / 350,000 = 8.4%.
+
+FINDING F04 · blocker · P05
+Category: causal_claim
+Evidence: "The SMS reminder scheme pulled the no-show rate down to 8.4%" is a causal claim. The register has no SMS data. It has no pre-scheme or comparison rate, no start date and no control group. The memo describes 2025 as a single year of observation. P12 says the memo's figures are associations only, and P05 contradicts that. The 8.4% figure is correct (P06), but "pulled down" implies a before and after that is not shown.
+Fix: Write "The 2025 no-show rate was 8.4% of booked appointments (29,400 / 350,000)." Drop the SMS attribution, or add a pre-scheme rate and a comparison design and call the result an association.
+
+FINDING F05 · blocker · P13
+Category: causal_claim
+Evidence: "The new evening sessions accounted for the 12.0% rise in visits" assigns the 44,200 added visits to one cause. The register has no evening-session count or visit split by session. The memo gives no comparison and no control for other drivers. P12 says the memo shows associations only, and P13 contradicts it.
+Fix: Delete the attribution. Write "visits rose 12.0% over 2024 (44,200)". If evening-session visits are available, report them as a separate sourced count and say the link to the rise is unestablished.
+
+FINDING F06 · major · P08
+Category: overclaim
+Evidence: One year of one clinic's rate, 6.0% (12,000 / 200,000), is said to "settle the matter" and to be what "every clinic can expect next year". The same memo shows Clinic A at 12.0% and Clinic C at 11.4%. Nothing explains why they would converge on 6.0%. There is no forecast, no held-out check and no baseline, and the memo has only one year of data. P12 itself says the figures are associations. A staffing recommendation does not trace to a finding.
+Fix: Delete the claim and the staffing recommendation. Report the per-clinic rates with the department rate of 8.4%. If staffing is to be planned, base it on a stated forecast with a baseline and an error measure.
+
+FINDING F07 · major · P14
+Category: overclaim
+Evidence: A single year-on-year change of 12.0% (two data points, 2024 and 2025) is extended as "keep rising by 12.0% a year", and from that the memo recommends opening a fourth clinic. The memo has no trend model, no baseline and no holdout. It has no capacity, utilisation, cost or demand figure to support a new clinic. The recommendation does not trace to any finding with a figure. P13's cause for the rise is also unsupported (see F05).
+Fix: Remove the extrapolation and the clinic recommendation. Write "visits rose 12.0% from 2024 to 2025". If a recommendation is kept, label it illustrative and base it on capacity per clinic, with the cost per visit of $44.72.
+
+FINDING F08 · major · P02
+Category: unsourced_figure
+Evidence: "About one patient in five arrived after their appointment time" (about 20%) has no formula, numerator or denominator. Is the denominator booked appointments, attended appointments or visits? It has no source and no row in register.csv. The register has no punctuality or arrival-time measure, and nothing elsewhere in the memo derives it. Of 350,000 booked appointments, 29,400 were no-shows, so the possible denominators differ.
+Fix: Add a register row with a formula, for example late arrivals / attended appointments, with both counts and a stated definition of "late". If it cannot be sourced, remove the claim.
+
+FINDING F09 · major · P10
+Category: unsourced_figure
+Evidence: "Nurse vacancies stood at 14% through the year" has no definition and no denominator. Is it vacant posts / established posts, or FTE-based? It has no source, no row in register.csv and no counts. "Through the year" implies a constant level, which a single figure cannot show unless it is a point-in-time or average value. Nothing else in the memo uses or relates to it.
+Fix: Add a register row with the formula, both counts, the date or period basis and the source. If it cannot be sourced, remove the sentence.

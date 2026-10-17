@@ -1,0 +1,53 @@
+FINDING F1 · blocker · P02
+Category: arithmetic
+Evidence: 4,960,000 km ÷ 1,240 failures = 4,000 km per failure (recomputed in Python). The memo says 4,800 km. The register row "Mean km between failures" is 4,000, and P14 also says 4,000, so the memo contradicts itself. 4,800 km would imply 5,952,000 km or 1,033 failures.
+Fix: Change P02 to "one failure every 4,000 km" (4,960,000 ÷ 1,240).
+
+FINDING F2 · blocker · P09
+Category: arithmetic
+Evidence: 52,300 ÷ 1,240 = 42.18 minutes (recomputed in Python), not 48.2. The inputs match the register (delay minutes 52,300, failures 1,240), so the stated quotient is wrong.
+Fix: Write "52,300 ÷ 1,240 = 42.2 minutes per failure".
+
+FINDING F3 · blocker · P07
+Category: denominator
+Evidence: The 98.0% is "the mean of each vehicle's rate", which is an average of row rates. The standard (`brain/Concepts/Weighted KPIs.md`) calls this a defect. Vehicles with fewer scheduled hours get the same weight as vehicles with more. The register defines availability as available hours ÷ scheduled hours and expects 96.4%. The memo then says the register "understates" availability, which reverses the standard. The ratio of sums is the correct figure, and the row average is the artefact. The 98.0% also has no stated source or per-vehicle data.
+Fix: Report 96.4% (available hours ÷ scheduled hours). Delete the claim that the register understates it, or show the per-vehicle hours and say why the two measures differ.
+
+FINDING F4 · blocker · P04
+Category: causal_claim
+Evidence: "Hot weather causes door faults to double in summer" gives no figure, no baseline, no count of door faults by month, and no temperature data. No design is described that could support cause. The register has no door-fault or weather line. P10 says the data does not show which of failures and delay drives the other, which conflicts with this unqualified causal claim.
+Fix: Rewrite as an association, for example "door faults were X in summer against Y in other months, and summer was hotter". Cite the monthly counts and the calculation, and drop "causes" and "double" unless the counts show it.
+
+FINDING F5 · blocker · P06
+Category: causal_claim
+Evidence: A 0.4-point punctuality difference in one month (March) at one depot "proves" the new shift pattern works. There is no before/after window, no comparison depot, no sample size or variance, and no control for seasonality or other changes. The depot-level punctuality, its denominator and the 0.4-point gap are not in the register or traceable to a calculation. One month of difference cannot prove cause.
+Fix: Say "Depot B's punctuality was 0.4 points higher in March (figure and denominator shown); this is one month and does not show the shift pattern is the cause". Remove "proves".
+
+FINDING F6 · blocker · P11
+Category: causal_claim
+Evidence: "The new brake pads reduced failures by 12%" is a causal effect with no base figures, no comparison group or before/after design, no fitment dates, and no adjustment for km, season or fleet mix. The 12% is not in the register and has no calculation behind it. It is also not clear whether the 12% is on raw failures or on failures per km.
+Fix: State it as an association with the counts and exposure (failures per km on fitted and unfitted vehicles, or before and after). Add a "not tested for cause" caveat, or remove it.
+
+FINDING F7 · major · P13
+Category: overclaim
+Evidence: An AUC of 0.81 measures how well the model ranks failures. It does not show that the model "will prevent most failures". Prevention would need an intervention, a measured effect and a cost. The memo gives no baseline model, no held-out split, no precision or recall at a threshold, no base rate and no check for leakage. Leakage matters here because failure-prediction features often include post-failure maintenance records. The memo also does not say how many vehicles and failures the model was trained on.
+Fix: Report the AUC against a baseline (for example the base rate or a simple rule) on a named held-out set, with precision and recall at the chosen threshold. Describe the model as moderate, with a leakage check. Delete "will prevent most failures", or label it a hypothesis.
+
+FINDING F8 · major · P05
+Category: unsourced_figure
+Evidence: "Door faults made up 31% of all failures" has no numerator, no denominator and no entry in the register. 31% of 1,240 would be about 384 faults. The memo does not show that count or the failure-code definition used. The figure cannot be traced to a calculation.
+Fix: Show it as door-fault failures ÷ 1,240 total failures (n shown). Add the metric to the register, or remove the line.
+
+FINDING F9 · major · P12
+Category: unsourced_figure
+Evidence: "Spare-parts stockouts cost $1.9 million" has no calculation, no register line and no method. The memo does not say how a stockout is costed, for example lost availability, expedited freight or overtime. It also does not say whether the $1.9M is inside or additional to the $18.6M maintenance cost in P03. Part of it may be double-counted against that total.
+Fix: Show the build-up of the $1.9M and state whether it is inside the $18.6M. Add it to the register. If it is an estimate, label it as illustrative.
+
+FINDING F10 · minor · P01 to P14 (scope header)
+Category: overclaim
+Evidence: The title says "synthetic benchmark B", but no paragraph says that the figures are synthetic. P04, P06, P11 and P13 read as real operational findings for decisions. No exclusions, sampling or identifier limits are stated, and the data window (2025) is not tied to the monthly claims in P04, P06 and P10.
+Fix: Put a one-line scope note at the first claim (P01). Repeat "synthetic data" beside the causal and model claims, or at least P11 and P13.
+
+Notes: Checked and consistent with the register: P01 (40 vehicles, 4.96M km, 1,240 failures), P03 ($18.6M ÷ 40 = $465,000), P08 (98.1%, matches the register but the register gives no formula or denominator for punctuality), P14 (4,000 km), and P10 (correctly worded as association).
+
+Instructions: v1

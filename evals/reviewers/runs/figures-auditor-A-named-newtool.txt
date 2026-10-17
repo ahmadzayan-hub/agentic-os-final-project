@@ -1,0 +1,66 @@
+FINDING F01 · major · /home/user/11/evals/reviewers/A/memo.md · P02
+Category: arithmetic
+Evidence: "llion in 2024. [P02] That is growth of 13.4% in one year. [P03] Online orders grew". The sentence refers back to P01 ($12.48 million in 2025, $11.2 million in 2024). figures_check --sourcing-only: "[P02] That is growth of 13.4% in one year." computes to 11.428571 (checker: 12.48 / 11.2 − 1, as a percentage). Classification of 13.4%: unsourced, since the derivation it claims does not hold.
+Fix: Replace 13.4% with the growth the P01 figures give (checker: 11.428571%), at the precision the author chooses, or source 13.4% from the dataset.
+
+FINDING F02 · major · /home/user/11/evals/reviewers/A/memo.md · P03
+Category: unsourced_figure
+Evidence: "in one year. [P03] Online orders grew 27% year on year. [P04] The average basket". figures_check --sourcing-only: UNSOURCED memo.md: 27%. Classification: unsourced. The register has the online share of orders (18.5%, P08) but no prior-year online order count, so 27% cannot be derived from it.
+Fix: Source the online-orders growth from the dataset and add it to the register, or remove the figure.
+
+FINDING F03 · major · /home/user/11/evals/reviewers/A/memo.md · P05
+Category: causal_claim
+Evidence: "[P05] The loyalty app drove the revenue growth." No loyalty figure is in the register, and P16 states that the data show associations only.
+Fix: Reword as an association, or support a causal reading with a controlled test.
+
+FINDING F04 · major · /home/user/11/evals/reviewers/A/memo.md · P06
+Category: unsourced_figure
+Evidence: "nue growth. [P06] Return rates average 9.1% across stores (the mean of each store's". figures_check --sourcing-only: UNSOURCED memo.md: 9.1%. Classification: unsourced. The register carries only the pooled returns rate (6.2%), not per-store rates, so no sourced figure yields 9.1%.
+Fix: Source the per-store return rates and the 9.1% from the dataset and add them to the register, or remove the figure.
+
+FINDING F05 · major · /home/user/11/evals/reviewers/A/memo.md · P06
+Category: denominator
+Evidence: "[P06] Return rates average 9.1% across stores (the mean of each store's rate), so returns are worse than the register's 6.2% suggests." The register's 6.2% is labelled "Returns rate (returns / orders)", a pooled rate. The memo's 9.1% is an unweighted mean of store rates. Two different denominators are compared, so "worse than" does not follow.
+Fix: Compare like with like: state the pooled returns / orders for 2025 against 6.2%, or label both figures as per-store means. Drop "worse than" unless the comparison holds.
+
+FINDING F06 · major · /home/user/11/evals/reviewers/A/memo.md · P07
+Category: unsourced_figure
+Evidence: "[P07] Store 17's sales rose 40% after its refit, so every refit will lift sales by 40%." figures_check --sourcing-only: UNSOURCED memo.md: 40%. Classification: unsourced. No register row or store-level figure carries 40%.
+Fix: Source the Store 17 change, with its period and base, from the dataset and add it to the register, or remove the figure.
+
+FINDING F07 · major · /home/user/11/evals/reviewers/A/memo.md · P07
+Category: overclaim
+Evidence: "[P07] Store 17's sales rose 40% after its refit, so every refit will lift sales by 40%." One store's result is generalised to every refit. The memo gives no other refit, no comparison group and no test, yet states the outcome as a forecast.
+Fix: Limit the claim to Store 17 and the period observed, or support a chain-wide refit effect by comparing refitted with non-refitted stores.
+
+FINDING F08 · major · /home/user/11/evals/reviewers/A/memo.md · P09
+Category: arithmetic
+Evidence: "[P09] With 610 staff across 48 stores, each store has 15.2 staff on average." The register gives Staff 610 and Stores 48. figures_check --sourcing-only: "[P09] With 610 staff across 48 stores, each store has 15.2 staff on average." computes to 12.708333 (610 / 48). The memo's 15.2 does not follow from the sourced figures. Classification of 15.2: unsourced, since the stated result is wrong.
+Fix: Replace 15.2 with the value 610 / 48 gives (checker: 12.708333), at the precision the author chooses.
+
+FINDING F09 · major · /home/user/11/evals/reviewers/A/memo.md · P10
+Category: causal_claim
+Evidence: "[P10] Longer opening hours caused higher weekend revenue." No opening-hours or weekend-revenue figure is in the register, and P16 states that these are associations in one year of data.
+Fix: Reword as an association, or add a controlled test before using "caused".
+
+FINDING F10 · major · /home/user/11/evals/reviewers/A/memo.md · P12
+Category: unsourced_figure
+Evidence: "[P12] A model predicts store revenue with 92% accuracy, so it should set next year's". figures_check --sourcing-only: UNSOURCED memo.md: 92%. Classification: unsourced. No register row or dataset reference covers the model. The recommendation to set targets rests on this unsourced accuracy figure alone.
+Fix: Cite the evaluation that produces 92% (data, split and date) and add it to the register, or remove the figure and the target recommendation.
+
+FINDING F11 · major · /home/user/11/evals/reviewers/A/memo.md · P13
+Category: unsourced_figure
+Evidence: "[P13] Shrinkage cost the chain $640,000 in 2025. [P14] Revenue per store was". figures_check --sourcing-only: UNSOURCED memo.md: $640,000. Classification: unsourced. No shrinkage figure is in the register or derivable from the sourced figures.
+Fix: Source the shrinkage cost from the dataset and add it to the register, or remove the figure.
+
+FINDING F12 · major · /home/user/11/evals/reviewers/A/memo.md · P15
+Category: unsourced_figure
+Evidence: "[P15] The average order value is $52, the mean of the 48 stores' own averages, so the". figures_check --sourcing-only: UNSOURCED memo.md: $52. Classification: unsourced. The register has no store-level averages, and its revenue-over-orders figure is $39.95, not $52.
+Fix: Source $52 and the store averages from the dataset, or remove the figure.
+
+FINDING F13 · major · /home/user/11/evals/reviewers/A/memo.md · P15
+Category: denominator
+Evidence: "[P15] The average order value is $52, the mean of the 48 stores' own averages, so the register's $39.95 understates what customers spend." The register's $39.95 is labelled "Average basket (revenue / orders)", a pooled figure. The $52 is an unweighted mean of store averages. The two use different denominators, so "understates" does not follow.
+Fix: Compare revenue / orders with revenue / orders, or drop the claim that the register understates spend.
+
+Instructions: v1

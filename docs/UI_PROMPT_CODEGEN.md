@@ -6,6 +6,7 @@ There are two prompts in this repository, for two different jobs:
 | --- | --- |
 | Mockups and visual exploration (Figma Make, Galileo, Uizard) | `UI_GENERATION_PROMPT.md` |
 | **Working React that connects to the real API** (v0, Lovable, Bolt, Subframe, Magic Patterns, and similar) | **this file** |
+| A coding agent working inside this repository (OpenAI Codex), with the agentic interface patterns of October 2026 | `CODEX_UI_PROMPT.md` |
 
 A code-first tool does not need adjectives; it needs the contract. This
 prompt carries the actual API surface, the actual TypeScript types, the

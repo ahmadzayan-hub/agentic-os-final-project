@@ -16,6 +16,11 @@ whole reason to prefer a lease over one.
 What the worker deliberately does **not** do: decide approvals. It stops
 at the approval gate and waits for a human, exactly like a client-stepped
 run. An autonomous publisher would defeat the point of the gate.
+
+It also refreshes live sources whose refresh is due (ADR 0034), under the
+same kind of lease, so two workers never fetch one source at once. A
+refresh with new content starts a run, which this loop then advances to
+the gate like any other.
 """
 
 import argparse
@@ -26,6 +31,7 @@ import uuid
 from datetime import timedelta
 from pathlib import Path
 
+from server.connectors import Connectors
 from server.model_gateway import ModelGateway
 from server.routing import RoutedGateway, build_router
 from server.stages import load_stages
@@ -52,12 +58,14 @@ def read_config(config_path=None):
 
 class RunWorker:
     def __init__(self, engine, store, worker_id=None,
-                 lease_seconds=DEFAULT_LEASE_SECONDS, clock=_utcnow):
+                 lease_seconds=DEFAULT_LEASE_SECONDS, clock=_utcnow, connectors=None):
         self.engine = engine
         self.store = store
         self.worker_id = worker_id or f"worker-{uuid.uuid4().hex[:8]}"
         self.lease_seconds = lease_seconds
         self.clock = clock
+        # Live sources (ADR 0034); None leaves them to "Refresh now".
+        self.connectors = connectors
 
     def _expiry(self):
         return _stamp(self.clock() + timedelta(seconds=self.lease_seconds))
@@ -97,12 +105,20 @@ class RunWorker:
             self.store.release_lease(run_id, self.worker_id)
         return run_id
 
+    def refresh_due(self):
+        """Refresh one live source whose refresh is due. Returns its id,
+        or None when none was due."""
+        if self.connectors is None:
+            return None
+        return self.connectors.step(self.worker_id)
+
     def run_forever(self, poll_seconds=1.0, stop=None, sleep=time.sleep):
         """Work until `stop` (a threading.Event) is set.
 
         One failing run must never take the worker down — the next run,
         and the same run after a fix, still deserve to make progress. The
-        failure is reported on stderr and the loop continues.
+        failure is reported on stderr and the loop continues. A failing
+        source is the same: its refresh records the failure and waits.
         """
         while stop is None or not stop.is_set():
             try:
@@ -111,7 +127,13 @@ class RunWorker:
                 print(f"{self.worker_id}: run failed: {error!r}",
                       file=sys.stderr, flush=True)
                 worked = None
-            if worked is None:
+            try:
+                refreshed = self.refresh_due()
+            except Exception as error:  # one bad source, not a dead worker
+                print(f"{self.worker_id}: refresh failed: {error!r}",
+                      file=sys.stderr, flush=True)
+                refreshed = None
+            if worked is None and refreshed is None:
                 sleep(poll_seconds)
 
 
@@ -144,7 +166,7 @@ def build_worker(env=None, config_path=None, **kwargs):
     engine = RunEngine(store, config.get("vault_dir") or PROJECT_ROOT / "vault",
                        gateway, stages=stage_registry,
                        profiles=config.get("profiles") or {})
-    return RunWorker(engine, store, **kwargs)
+    return RunWorker(engine, store, connectors=Connectors(engine, env=env), **kwargs)
 
 
 def main(argv=None):
@@ -161,7 +183,9 @@ def main(argv=None):
     worker = build_worker(config_path=args.config, lease_seconds=args.lease)
     if args.once:
         run_id = worker.step()
-        print(json.dumps({"worker": worker.worker_id, "run": run_id}))
+        connector_id = worker.refresh_due()
+        print(json.dumps({"worker": worker.worker_id, "run": run_id,
+                          "connector": connector_id}))
         return 0
     print(json.dumps({"worker": worker.worker_id, "polling_seconds": args.poll}),
           flush=True)

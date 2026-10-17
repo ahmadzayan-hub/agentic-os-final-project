@@ -1,0 +1,44 @@
+FINDING F01 · blocker · P02
+Category: arithmetic
+Evidence: P01 gives 4.96 million km and 1,240 failures, and the register gives 4,960,000 km and 1,240 failures. 4,960,000 ÷ 1,240 = 4,000 km per failure. P02 says 4,800 km, and P14 says 4,000 km. The memo contradicts itself, and the register's "Mean km between failures (km / failures)" check is 4,000. A figure of 4,800 km would need only about 1,033 failures.
+Fix: Change P02 to "one failure every 4,000 km" and make it the same figure as P14. Merge the two statements.
+
+FINDING F02 · blocker · P09
+Category: arithmetic
+Evidence: 52,300 ÷ 1,240 = 42.18, which rounds to 42.2 minutes, not 48.2. Check: 1,240 × 48.2 = 59,768 minutes, which is not the register's delay-minutes total of 52,300.
+Fix: Change the result to "42.2 minutes". State that the denominator is failures, which is a ratio of sums: total delay minutes over total failures.
+
+FINDING F03 · blocker · P07
+Category: denominator
+Evidence: The 98.0% figure is stated as "the mean of each vehicle's rate". That is an average of row rates, which the standard in `brain/Concepts/Weighted KPIs.md` calls a defect. A vehicle with few scheduled hours counts as much as one with many. The register defines availability as available hours ÷ scheduled hours (a ratio of sums) and expects 96.4%. The memo therefore calls the correct figure an understatement and the defective figure the right one, which reverses the standard. The 98.0% has no source in the register, and the memo shows no vehicle-level inputs.
+Fix: Delete the 98.0% claim and the word "understates". Report availability as 96.4% (available hours ÷ scheduled hours, summed over the fleet). If a per-vehicle spread is wanted, label it a row-level average, not the KPI.
+
+FINDING F04 · blocker · P04
+Category: causal_claim
+Evidence: "Hot weather causes door faults to double in summer" is stated as cause. The memo shows no design behind it: no temperature data, no comparison groups, and no control for season, duty cycle or mileage. The "double" figure has no calculation and does not appear in the register. P10 says the data cannot separate drivers in the summer failure data, so P04 conflicts with P10.
+Fix: Reword to association, for example "Door faults were [X]× higher in summer months than in other months (figure from a stated calculation)". Add that no design here supports a weather effect. Drop "double" unless a ratio of sums supports it.
+
+FINDING F05 · major · P05
+Category: unsourced_figure
+Evidence: "Door faults made up 31% of all failures" has no door-fault count. Neither the memo nor the register has a numerator. For 1,240 failures, 31% would be about 384 door faults, and that count is not shown. The 31% cannot be redone from the figures given.
+Fix: Show the calculation as door-fault failures ÷ 1,240 total failures, with the count. Add it to the register. If it cannot be sourced, remove it.
+
+FINDING F06 · blocker · P06
+Category: causal_claim
+Evidence: "0.4 points better in March, which proves its new shift pattern works" draws a proof of cause from one depot in one month. No baseline, comparison depot, before/after window or variability is given. A 0.4-point change in one month is within ordinary monthly variation. Depot B's punctuality and its denominator (on-time trips ÷ trips) are not in the register. The memo also does not show how many records the 0.4 points rest on.
+Fix: Say "Depot B's punctuality was 0.4 points higher in March (on-time ÷ scheduled trips, with the counts); one month with no comparison cannot show whether the shift pattern had any effect." Drop "proves".
+
+FINDING F07 · blocker · P11
+Category: causal_claim
+Evidence: "The new brake pads reduced failures by 12%" is causal and has no support. No before/after counts are given, and there is no comparison group. The memo does not say whether the 12% is a rate per km or a raw count, so it may not account for mileage or season. The 12% is not in the register, and no calculation backs it.
+Fix: Reword to an association with its basis, for example "Failures per million km were X for vehicles with the new pads and Y for those without (counts and km shown)". State that the design does not rule out other causes. If no calculation exists, remove the claim.
+
+FINDING F08 · major · P12
+Category: unsourced_figure
+Evidence: "Spare-parts stockouts cost $1.9 million" appears in neither the register nor any calculation. It is not stated whether it is part of the $18.6 million maintenance cost in P03 or in addition to it. How the stockout cost was estimated is not given. At 10% of the maintenance cost it would be a large item, and the estimate rests on assumptions that are not stated.
+Fix: Add the cost to the register with its method and source, and say whether it is inside or outside the $18.6 million. If it is an estimate, label it as illustrative. If it cannot be sourced, remove it.
+
+FINDING F09 · blocker · P13
+Category: overclaim
+Evidence: "AUC of 0.81, so it will prevent most failures" does not follow. AUC measures how well failures are ranked. It does not measure prevention, and it does not give precision or recall at an action threshold. The memo shows no baseline (such as a base-rate or mileage-only model), no held-out split, and no check for leakage. It also does not say what the model predicts, over what window, or whether the inputs include outcomes such as repair records created after the failure. The 0.81 is not in the register. Preventing failures also needs an intervention, which no analysis here tests.
+Fix: Say "On [held-out period/split], AUC was 0.81 against [baseline] at AUC [Y]; predictive ranking only, with no evidence about prevention." Name the metric, the split and the inputs, and confirm that no outcome-derived features are used. Drop "will prevent most failures".

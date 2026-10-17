@@ -1,0 +1,182 @@
+/* Dashboard pages (ADR 0032). Fetched with the dashboard's chunk, not on
+   the first load. Tokens only, no raw colours. */
+
+.dash-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.dash-pages ul {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.dash-pages__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  font-weight: 500;
+}
+
+.dash-pages__link:hover {
+  color: var(--text);
+}
+
+.dash-pages__link[aria-current='page'] {
+  color: var(--text);
+  border-bottom-color: var(--accent-solid);
+}
+
+.dash-filters__head,
+.dash-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.dash-controls {
+  justify-content: flex-start;
+  margin-block: var(--space-2);
+}
+
+.dash-filters__grid {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  align-items: start;
+}
+
+.dash-range {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 12rem));
+  gap: var(--space-2);
+  align-items: end;
+}
+
+/* Exact figures, so they shrink to fit rather than being abbreviated. */
+.dash-kpis .kpi__value {
+  font-size: clamp(var(--text-l), 4vw, var(--text-xl));
+  overflow-wrap: anywhere;
+}
+
+.dash-filter {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: var(--space-2);
+  min-width: 0;
+}
+
+.dash-filter summary {
+  cursor: pointer;
+  min-height: 28px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-filter__values {
+  border: 0;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.dash-filter__value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 32px;
+}
+
+.dash-coverage {
+  margin: var(--space-2) 0 var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-s);
+}
+
+.dash-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  margin-top: var(--space-3);
+}
+
+.dash-grid > .card {
+  margin: 0;
+}
+
+.dash-figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.dash-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 18rem;
+}
+
+.dash-bars {
+  display: grid;
+  gap: var(--space-1);
+  margin-block: var(--space-2);
+}
+
+.dash-bars__row {
+  display: grid;
+  grid-template-columns: minmax(5rem, 30%) 1fr auto;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--text-s);
+}
+
+.dash-bars__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-bars__track {
+  position: relative;
+  height: 0.9rem;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-s);
+}
+
+.dash-bars__fill {
+  position: absolute;
+  inset-block: 0;
+  background: var(--accent-solid);
+  border-radius: var(--radius-s);
+}
+
+.dash-bars__fill--negative {
+  background: var(--highlight);
+}
+
+.dash-bars__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-drill {
+  min-height: 32px;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+}

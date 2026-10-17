@@ -1,0 +1,71 @@
+FINDING F01 · major · /home/user/11/evals/reviewers/B/memo.md · P02
+Category: arithmetic
+Evidence: "[P02] That is one failure every 4,800 km." (whole paragraph). The sourcing run (`figures_check.py --sourcing-only`) returns this sentence's implied calculation as 4,000.0, not 4,800. The register's "Mean km between failures (km / failures)" is 4,000, and P14 states "Mean distance between failures was 4,000 km." The value 4,800 appears in neither the register nor any other part of the memo, so it is also unsourced. Classification: arithmetic (wrong implied figure) and unsourced.
+Fix: Reconcile P02 with the register and P14, whose value is 4,000 km, or show the source and working for 4,800 km.
+
+FINDING F02 · major · /home/user/11/evals/reviewers/B/memo.md · P04
+Category: causal_claim
+Evidence: "[P04] Hot weather causes door faults to double in summer." (whole paragraph). The memo gives no weather data and no seasonal fault counts, so "causes" is asserted rather than shown. The register has no door-fault or weather values. Classification: causal claim.
+Fix: Reword to the observed association and cite its source, or add the seasonal counts and the comparison that support a causal statement.
+
+FINDING F03 · major · /home/user/11/evals/reviewers/B/memo.md · P04
+Category: unsourced_figure
+Evidence: "[P04] Hot weather causes door faults to double in summer." (whole paragraph). "double" states a 2x ratio in words. The checker reads numerals only, so it did not flag this. No summer or baseline counts appear in the memo or the register. Classification: unsourced.
+Fix: Give the summer and baseline door-fault counts with the working for the ratio, or remove the ratio.
+
+FINDING F04 · major · /home/user/11/evals/reviewers/B/memo.md · P05
+Category: unsourced_figure
+Evidence: "[P05] Door faults made up 31% of all failures." (whole paragraph, shorter than 80 characters). The sourcing run reports "31%" as UNSOURCED. The register has no door-fault count and the memo gives none. Classification: unsourced.
+Fix: Cite the door-fault count and the failure base of 1,240 with the working, or remove 31%.
+
+FINDING F05 · major · /home/user/11/evals/reviewers/B/memo.md · P06
+Category: unsourced_figure
+Evidence: "Depot B's punctuality was 0.4 points better in March, which proves its new shift pattern works." The sourcing run reports "0.4" as UNSOURCED. The register holds only the fleet-level "Punctuality, 98.1%", with no depot or monthly split. Classification: unsourced.
+Fix: Source the depot and March punctuality figures with the working, or remove the 0.4-point figure.
+
+FINDING F06 · major · /home/user/11/evals/reviewers/B/memo.md · P06
+Category: causal_claim
+Evidence: "...which proves its new shift pattern works." One depot's single-month difference is presented as proof of a cause. The memo gives no comparison period and no comparison depot.
+Fix: Replace "proves" with a description of the observed difference, and add a comparison design before claiming the shift pattern works.
+
+FINDING F07 · major · /home/user/11/evals/reviewers/B/memo.md · P07
+Category: unsourced_figure
+Evidence: "Availability averaged 98.0% across the 40 vehicles (the mean of each vehicle's rate)". The sourcing run reports "98.0%" as UNSOURCED. The register has no per-vehicle availability values, and the only availability value is 96.4%. Classification: unsourced.
+Fix: Provide the per-vehicle availability data and the working, or remove 98.0%.
+
+FINDING F08 · major · /home/user/11/evals/reviewers/B/memo.md · P07
+Category: denominator
+Evidence: The register row "Availability (available hours / scheduled hours),96.4%" is a pooled ratio of hours. The 98.0% in P07 is an unweighted mean of per-vehicle rates. The two use different denominators, so "so the register's 96.4% understates it" compares unlike measures.
+Fix: Report both figures on the same basis, or state each basis explicitly and remove "understates".
+
+FINDING F09 · major · /home/user/11/evals/reviewers/B/memo.md · P09
+Category: arithmetic
+Evidence: "[P09] Delay minutes per failure were 52,300 ÷ 1,240 = 48.2 minutes." (whole paragraph). The worked-calculation check returns "52,300 ÷ 1,240 = 48.2" as computing to 42.177419, so it does not hold. Both inputs are register values ("Delay minutes, 52,300" and "Failures, 1,240"). Classification: arithmetic error.
+Fix: Recompute the quotient from the two register inputs. The checker's computed value is 42.177419, and the memo states 48.2. Show the working in the memo.
+
+FINDING F10 · major · /home/user/11/evals/reviewers/B/memo.md · P11
+Category: unsourced_figure
+Evidence: "[P11] The new brake pads reduced failures by 12%." (whole paragraph). The sourcing run reports "12%" as UNSOURCED. The memo and register contain no before-and-after counts and no brake-pad split.
+Fix: Give the before and after failure counts with the working, or remove the 12%.
+
+FINDING F11 · major · /home/user/11/evals/reviewers/B/memo.md · P11
+Category: causal_claim
+Evidence: "The new brake pads reduced failures by 12%." This states causation from a fleet-wide count, with no comparison period, no comparison group and no time sequence in the memo.
+Fix: Reword as an association, or add a controlled before-and-after comparison.
+
+FINDING F12 · major · /home/user/11/evals/reviewers/B/memo.md · P12
+Category: unsourced_figure
+Evidence: "[P12] Spare-parts stockouts cost $1.9 million." (whole paragraph). The sourcing run reports "$1.9 million" as UNSOURCED. It is not in the register, and the memo gives no stockout cost data. Classification: unsourced.
+Fix: Source the $1.9 million with a cost table and the working, or remove it.
+
+FINDING F13 · major · /home/user/11/evals/reviewers/B/memo.md · P13
+Category: unsourced_figure
+Evidence: "A failure-prediction model reached an AUC of 0.81, so it will prevent most failures." The sourcing run reports "0.81" as UNSOURCED. The memo and register contain no model evaluation.
+Fix: Cite the evaluation (data, split and date) that produced 0.81, or remove it.
+
+FINDING F14 · major · /home/user/11/evals/reviewers/B/memo.md · P13
+Category: overclaim
+Evidence: "...so it will prevent most failures." An AUC measures ranking quality of predictions. The memo reports no intervention and no measured reduction in failures, so the conclusion goes beyond the figure it follows.
+Fix: State what was measured (the AUC on a named evaluation) and remove "will prevent most failures" unless a measured intervention result is cited.
+
+Instructions: v1

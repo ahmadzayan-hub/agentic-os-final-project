@@ -6,6 +6,7 @@ import { defineConfig } from '@playwright/test'
 const PREPARE_CONFIG =
   'python3 -c "import json,os,shutil; os.makedirs(\'frontend/e2e/.tmp\',exist_ok=True); ' +
   'shutil.rmtree(\'frontend/e2e/.tmp/vault\', ignore_errors=True); ' +
+  'shutil.rmtree(\'frontend/e2e/.tmp/sources\', ignore_errors=True); os.makedirs(\'frontend/e2e/.tmp/sources\'); ' +
   '[os.remove(p) for p in [\'frontend/e2e/.tmp/agentic.db\'] if os.path.exists(p)]; ' +
   'json.dump({\'agent_name\':\'Agentic OS\',\'version\':\'1.0.0\',' +
   '\'preferences\':{\'tone\':\'friendly\',\'language\':\'English\',\'save_history\':True},' +
@@ -13,8 +14,11 @@ const PREPARE_CONFIG =
   '\'database_file\':\'frontend/e2e/.tmp/agentic.db\',' +
   '\'vault_dir\':\'frontend/e2e/.tmp/vault\',\'maximum_history_items\':50,' +
   '\'stages\':[{\'path\':\'examples.stages.target_attainment.TargetAttainment\',' +
-  '\'options\':{\'target\':3000000}}],' +
-  '\'profiles\':{\'default\':[],\'with-target\':[\'target_attainment\']},' +
+  '\'options\':{\'target\':3000000}},' +
+  '\'server.modelling.RegressionModel\',\'server.modelling.ClassificationModel\',' +
+  '\'server.modelling.ClusteringModel\',\'server.modelling.SeasonalForecast\'],' +
+  '\'profiles\':{\'default\':[],\'with-target\':[\'target_attainment\'],' +
+  '\'models\':[\'regression_model\',\'classification_model\',\'clustering_model\',\'seasonal_model\']},' +
   '\'agent_runtime\':{\'path\':\'tests.test_agent_runtime.ScriptedRuntime\',' +
   '\'options\':{\'calls\':[[\'help\',{}]],\'closing\':\'Over to you.\',\'trigger\':\'sort out\'}}},' +
   'open(\'frontend/e2e/.tmp/config.json\',\'w\')); ' +
@@ -50,7 +54,14 @@ export default defineConfig({
       command: `${PREPARE_CONFIG} && python3 -m uvicorn server.app:app --host 127.0.0.1 --port 8123`,
       cwd: '..',
       url: 'http://127.0.0.1:8123/api/health',
-      env: { AGENTIC_OS_CONFIG: 'frontend/e2e/.tmp/config.json' },
+      // Live sources (ADR 0034) read files from this folder at the
+      // reserved https://fixtures.invalid/ host; never set outside tests.
+      env: {
+        AGENTIC_OS_CONFIG: 'frontend/e2e/.tmp/config.json',
+        AGENTIC_OS_CONNECTOR_FIXTURES: 'frontend/e2e/.tmp/sources',
+        // Tests refresh one source twice in a row; the cooldown is for people.
+        AGENTIC_OS_CONNECTOR_COOLDOWN: '0',
+      },
       reuseExistingServer: false,
       timeout: 30_000,
     },

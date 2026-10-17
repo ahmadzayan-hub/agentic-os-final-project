@@ -1,0 +1,69 @@
+FINDING A-01 · major · /home/user/11/evals/reviewers/A/memo.md · P02
+Category: arithmetic
+Evidence: "That is growth of 13.4% in one year." The memo's revenue figures are $12.48 million (register Revenue 2025: $12,480,000) and $11.2 million (register Revenue 2024: $11,200,000). Growth = (12,480,000 − 11,200,000) / 11,200,000 = 1,280,000 / 11,200,000 = 4/35 = 0.1142857…, which does not equal 13.4%. The checker missed this. Its run without --sourcing-only printed "10/10 register values found", "unsourced": [] and "passed": true, because the sourcing check runs only with --reference or --sourcing-only. With --sourcing-only (/tmp/claude-0/-home-user-11/7ba0117d-fcc6-5462-ba61-7b07494106d9/scratchpad/memo_A_sourcing.json) it lists 13.4% as UNSOURCED.
+Fix: Show the calculation from the two register revenue values and make the stated percentage match it, or remove the percentage.
+
+FINDING A-02 · major · /home/user/11/evals/reviewers/A/memo.md · P03
+Category: unsourced_figure
+Evidence: "Online orders grew 27% year on year." The register has no prior-year or online-order-count value. The only online figure is "Online share of orders 18.5%", which is a share, not growth. Nothing in the memo supports 27%. The checker does not flag it because numbers up to 31 are treated as small counts and skipped (numbers_in in /home/user/11/scripts/figures_check.py), so the unsourced check cannot fire on "27%".
+Fix: Add a register row with the online order counts for both years and their source, then cite it. Otherwise remove the 27%.
+
+FINDING A-03 · major · /home/user/11/evals/reviewers/A/memo.md · P05
+Category: causal_claim
+Evidence: "The loyalty app drove the revenue growth." The memo gives no loyalty figure, and the register has none. P16 states that the data "are associations in one year of data", so P05 contradicts the memo's own caveat.
+Fix: Reword as an association, or cite a controlled test that supports the causal claim.
+
+FINDING A-04 · major · /home/user/11/evals/reviewers/A/memo.md · P06
+Category: denominator
+Evidence: "Return rates average 9.1% across stores (the mean of each store's rate), so returns are worse than the register's 6.2% suggests." The register defines Returns rate as "returns / orders" (6.2%), a pooled rate. The memo's 9.1% is an unweighted mean of per-store rates. The two use different denominators, so the "worse than" comparison does not hold as written.
+Fix: Compare like with like. State both rates on the register's definition, or label the 9.1% as a per-store mean and drop the comparison with 6.2%.
+
+FINDING A-05 · major · /home/user/11/evals/reviewers/A/memo.md · P06
+Category: unsourced_figure
+Evidence: "Return rates average 9.1% across stores (the mean of each store's rate), so returns are worse than the register's 6.2% suggests." The checker flags "9.1%" as UNSOURCED. The register has no 9.1% value and no per-store returns data from which it could be derived.
+Fix: Add a register row for the per-store returns and orders, with the aggregation method and source. Otherwise remove the 9.1%.
+
+FINDING A-06 · major · /home/user/11/evals/reviewers/A/memo.md · P07
+Category: unsourced_figure
+Evidence: "Store 17's sales rose 40% after its refit, so every refit will lift sales by 40%." The register has no sales-change value and no refit data. The checker does not flag "40%" because same_figure("40%", 39.95) is True: the register's $39.95 rounds to 40 at zero decimals. The percentage is therefore accepted against an unrelated figure (checked by calling figures_check.same_figure directly).
+Fix: Source Store 17's before and after sales with the periods and the comparison basis. Otherwise remove the 40%.
+
+FINDING A-07 · major · /home/user/11/evals/reviewers/A/memo.md · P07
+Category: overclaim
+Evidence: One store's post-refit rise is generalised to "every refit will lift sales by 40%". The memo gives no second store, no control group, and no refit data in the register. A single store cannot establish a chain-wide effect, and P16 says the analysis shows only associations.
+Fix: Limit the statement to Store 17, or remove the claim that every refit will lift sales by 40%. Support any generalisation with evidence across refits.
+
+FINDING A-08 · major · /home/user/11/evals/reviewers/A/memo.md · P09
+Category: arithmetic
+Evidence: "With 610 staff across 48 stores, each store has 15.2 staff on average." The register values Staff 610 and Stores 48 are both present. 610 / 48 = 305/24 = 12.708333…, which does not equal the stated 15.2. The checker's arithmetic check does not evaluate this sentence because no worked calculation is written out, and the sourcing check lists "15.2" as UNSOURCED.
+Fix: Make the stated average match 610 / 48, or name the different basis that gives 15.2 and cite its source.
+
+FINDING A-09 · major · /home/user/11/evals/reviewers/A/memo.md · P10
+Category: causal_claim
+Evidence: "Longer opening hours caused higher weekend revenue." Neither the memo nor the register contains an opening-hours or weekend-revenue figure. P16 says the analysis is "associations in one year of data; a controlled test would be needed to show what causes them", which contradicts the causal verb in P10.
+Fix: Replace "caused" with an association statement, or cite a controlled test that supports causation.
+
+FINDING A-10 · major · /home/user/11/evals/reviewers/A/memo.md · P12
+Category: unsourced_figure
+Evidence: "A model predicts store revenue with 92% accuracy, so it should set next year's targets." The checker flags "92%" as UNSOURCED. The register has no model accuracy value, and the memo does not name the metric, the test period or the baseline.
+Fix: Add a register row for the accuracy metric with its test data, period and source. Otherwise remove the 92%.
+
+FINDING A-11 · major · /home/user/11/evals/reviewers/A/memo.md · P12
+Category: overclaim
+Evidence: "A model predicts store revenue with 92% accuracy, so it should set next year's targets." The recommendation rests only on an unsourced accuracy figure (A-10). The memo gives no evaluation (holdout data, error range or baseline) that would show the model is fit for setting targets.
+Fix: Remove the recommendation, or support it with the evaluation details and the source of the accuracy figure.
+
+FINDING A-12 · major · /home/user/11/evals/reviewers/A/memo.md · P13
+Category: unsourced_figure
+Evidence: "Shrinkage cost the chain $640,000 in 2025." The checker flags "$640,000" as UNSOURCED. The register has no shrinkage row, and no other figure in the memo or register produces this value.
+Fix: Add a register row for shrinkage with its definition and source. Otherwise remove the figure.
+
+FINDING A-13 · major · /home/user/11/evals/reviewers/A/memo.md · P15
+Category: unsourced_figure
+Evidence: "The average order value is $52, the mean of the 48 stores' own averages, so the register's $39.95 understates what customers spend." The checker flags "$52" as UNSOURCED. The register has no order-value row, and the figure cannot be derived from the register values.
+Fix: Add a register row for the average order value with its definition and source. Otherwise remove the $52.
+
+FINDING A-14 · major · /home/user/11/evals/reviewers/A/memo.md · P15
+Category: denominator
+Evidence: The register's $39.95 is defined as "Average basket (revenue / orders)", a total-based ratio. The $52 is an unweighted mean of 48 store averages, so each store counts equally whatever its order volume. P04 uses $39.95 as the "average basket" while P15 calls a different figure the "average order value" and says the register "understates" what customers spend. The two figures are on different bases, so the comparison does not hold.
+Fix: Use one definition for this measure in both P04 and P15. Remove "understates" unless both figures are on the same basis.

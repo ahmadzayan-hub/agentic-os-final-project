@@ -1,0 +1,15 @@
+FINDING T01 · major · P03
+Category: unsourced_figure
+Evidence: $52.10 is not in the register.
+
+FINDING T02 · major · P11
+Category: unsourced_figure
+Evidence: 18.0% is not in the register.
+
+FINDING T03 · major · P04
+Category: unsourced_figure
+Evidence: 44,200 is not in the register.
+
+FINDING T04 · major · P07
+Category: unsourced_figure
+Evidence: 9.8% is not in the register.

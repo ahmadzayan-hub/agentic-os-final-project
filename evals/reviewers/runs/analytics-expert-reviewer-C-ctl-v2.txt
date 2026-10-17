@@ -1,0 +1,46 @@
+FINDING F01 · blocker · P02
+Category: unsourced_figure
+Evidence: "About one patient in five arrived after their appointment time" gives a lateness rate of about 20%. The register has no lateness or punctuality figure, and no count of late arrivals can be derived from it. The memo gives no source.
+Fix: Delete the sentence, or add the late-arrival count and the appointments it is measured over to the register and cite them.
+
+FINDING F02 · blocker · P03
+Category: arithmetic
+Evidence: $18,450,000 / 412,600 = $44.72 per visit, which matches the register ("Operating cost per visit", $44.72). The memo's $52.10 does not follow from the division it states. $52.10 × 412,600 is about $21.5M, which is not the stated cost. The memo overstates cost per visit by about $7.38 (about 16%).
+Fix: Change $52.10 to $44.72.
+
+FINDING F03 · blocker · P05
+Category: causal_claim
+Evidence: "The SMS reminder scheme pulled the no-show rate down to 8.4%" says the scheme reduced no-shows. The register has one year of no-show data (29,400 / 350,000 = 8.4%). It has no pre-scheme baseline, no comparison group, no record of which patients received SMS, and no rollout date. P12 itself says the figures are associations that "cannot confirm the explanations behind them". So P05 contradicts the memo's own caveat. The 8.4% figure is correct, but the reduction and the cause are not supported.
+Fix: Write "The no-show rate was 8.4% of booked appointments in 2025." Add the SMS scheme only as context, for example "SMS reminders were in use; this memo cannot show whether they changed the rate."
+
+FINDING F04 · blocker · P07
+Category: denominator
+Evidence: The unweighted mean of the clinic rates is (12.0 + 6.0 + 11.4) / 3 = 9.8%. The department rate is the ratio of sums: 29,400 / 350,000 = 8.4% (6,000 + 12,000 + 11,400 over 50,000 + 200,000 + 100,000). This is the register value, and the memo's own P06 and P15 give it. Clinic B books 200,000 of 350,000 appointments (57%), but the mean gives it the same weight as Clinic A (14%). The mean overstates the rate by 1.4 percentage points. P07 also contradicts P05 and P06, which state 8.4% as the 2025 rate.
+Fix: Replace P07 with "The department's no-show rate is 8.4% (29,400 / 350,000). An unweighted mean of the three clinic rates (9.8%) is not the department rate."
+
+FINDING F05 · major · P08
+Category: overclaim
+Evidence: One clinic's one-year rate is generalised to "every clinic" for next year, and staffing is then tied to it. The memo gives no evidence that rates are stable year to year or that clinics are comparable. Clinic B is the largest clinic (200,000 booked) and has half the rate of A (12.0%) and C (11.4%), so its rate does not transfer. If every clinic ran at 6.0%, the department rate would be 6.0%. The pooled 2025 rate is 8.4%. The register has no prior-year no-show data, no seasonality and no case-mix data. The words "settles the matter" overstate the evidence.
+Fix: Delete the forecast and the staffing recommendation. If a planning figure is wanted, base it on the pooled 8.4% (or per-clinic rates) and label it a 2025 observation, not a forecast.
+
+FINDING F06 · blocker · P10
+Category: unsourced_figure
+Evidence: "Nurse vacancies stood at 14% through the year" appears nowhere in the register. It cannot be computed from the register, and no vacancy count, establishment size or source is given. The phrase "through the year" claims a full-year measure.
+Fix: Delete the sentence, or add the vacancy count, the establishment and the source to the register.
+
+FINDING F07 · blocker · P11
+Category: arithmetic
+Evidence: The growth ratio is (412,600 - 368,400) / 368,400 = 44,200 / 368,400 = 11.998%, or 12.0%. This matches the register ("Visit growth", 12.0%) and P04. P11 gives the same inputs (368,400 to 412,600) but states 18.0%, which is wrong by 6 points. P11 also contradicts P04 and the register.
+Fix: Change 18.0% to 12.0%, or delete P11 as a duplicate of P04.
+
+FINDING F08 · blocker · P13
+Category: causal_claim
+Evidence: "The new evening sessions accounted for the 12.0% rise in visits" assigns the whole rise to one cause. The register has no evening-session data: no session counts, no visits by session, no start date, and no comparison group or counterfactual. The only figures are the yearly totals (368,400 and 412,600). Evening sessions are not mentioned elsewhere in the memo. P12 says the figures cannot confirm explanations. The 12.0% itself is correct.
+Fix: Write "Visits rose 12.0% over 2024." Report evening sessions as a candidate explanation only if visits by session type are supplied, and say it is not tested.
+
+FINDING F09 · major · P14
+Category: overclaim
+Evidence: A single year-on-year change (+12.0%, two data points) is extrapolated as "can be expected to keep rising by 12.0% a year", and a new clinic is recommended on that basis. Two data points show no trend. At 12.0% a year, 412,600 visits becomes about 462,100 in 2026 and about 517,600 in 2027. No capacity figure, utilisation, cost per additional clinic or demand forecast supports the step to a fourth clinic. The memo also attributes the rise to a one-off cause in P13, and a one-off cause would not recur every year.
+Fix: Delete the recommendation, or recast it as "Visits rose 12.0% in 2025; a fourth clinic would need capacity and cost data, which this memo does not have."
+
+Notes: Checked and correct: P01 (412,600), P04 (11.998% rounds to 12.0%, and 44,200 is the right difference), P06 (8.4%), P09 (12.0 - 6.0 = 6.0 percentage points), and P15 (the totals match the register; the clinic counts sum to 29,400 and 350,000). P12 is an appropriate caveat; the problem is that P05 and P13 ignore it. The memo gives visits (412,600) and booked appointments (350,000) side by side without saying how they relate. Visits exceed booked appointments less no-shows (320,600). If walk-ins or non-booked visits explain the gap, say so.

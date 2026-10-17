@@ -1,0 +1,319 @@
+{
+ "about": "Synthetic tables, built with a fixed seed; no real data. roles: what an analyst would map each column to (ADR 0025: one date column is the time axis and a second date is ignored; identifiers, free text and personal columns are ignored). personal: the column directly identifies or contacts a person (name, email, phone, government or passport number, date of birth, home address, IP address). Internal pseudonymous keys such as an employee or member number are not counted as personal here.",
+ "labels": [
+  "measure",
+  "dimension",
+  "date",
+  "ignore"
+ ],
+ "dev": [
+  {
+   "name": "retail orders",
+   "csv": "order_id,order_date,region,product,revenue,units,discount_pct,customer_email\n1001,2025-01-03,South,Laptop,\"$2,663.84\",6,5%,ali.hassan@example.com\n1002,2025-01-20,North,Laptop,\"$1,924.16\",2,5%,sara.khan@example.com\n1003,2025-02-06,East,Laptop,\"$1,205.15\",9,10%,omar.saeed@example.com\n1004,2025-02-23,North,Tablet,\"$2,580.27\",2,15%,laila.noor@example.com\n1005,2025-03-12,West,Phone,\"$1,486.63\",1,0%,john.smith@example.com\n1006,2025-03-29,West,Tablet,$890.79,4,0%,maria.lopez@example.com\n1007,2025-04-15,West,Tablet,$782.83,8,15%,fatima.zahra@example.com\n1008,2025-05-02,West,Dock,\"$1,563.81\",9,10%,yusuf.amin@example.com\n1009,2025-05-19,South,Phone,\"$3,642.97\",7,5%,chen.wei@example.com\n1010,2025-06-05,North,Dock,\"$1,040.23\",6,5%,priya.nair@example.com\n1011,2025-06-22,West,Laptop,\"$2,682.83\",8,15%,hamad.saif@example.com\n1012,2025-07-09,North,Dock,\"$2,916.34\",8,15%,noura.ali@example.com\n",
+   "roles": {
+    "order_id": "ignore",
+    "order_date": "date",
+    "region": "dimension",
+    "product": "dimension",
+    "revenue": "measure",
+    "units": "measure",
+    "discount_pct": "measure",
+    "customer_email": "ignore"
+   },
+   "personal": {
+    "order_id": false,
+    "order_date": false,
+    "region": false,
+    "product": false,
+    "revenue": false,
+    "units": false,
+    "discount_pct": false,
+    "customer_email": true
+   }
+  },
+  {
+   "name": "staff list",
+   "csv": "employee_id,full_name,department,hire_date,salary_aed,grade,mobile,age\nE101,Ali Hassan,Operations,03/03/2019,\"32,000\",G7,+971 50 431 3471,30\nE102,Sara Khan,HR,20/03/2019,\"28,000\",G7,+971 50 504 1791,55\nE103,Omar Saeed,Finance,06/04/2019,\"24,000\",G5,+971 50 174 9779,49\nE104,Laila Noor,IT,23/04/2019,\"20,000\",G8,+971 50 196 6991,33\nE105,John Smith,IT,10/05/2019,\"24,000\",G6,+971 50 696 1950,44\nE106,Maria Lopez,Operations,27/05/2019,\"14,000\",G5,+971 50 619 4517,32\nE107,Fatima Zahra,Finance,13/06/2019,\"28,000\",G6,+971 50 138 2408,54\nE108,Yusuf Amin,Finance,30/06/2019,\"40,000\",G5,+971 50 544 7851,49\nE109,Chen Wei,Finance,17/07/2019,\"30,000\",G7,+971 50 171 4943,25\nE110,Priya Nair,IT,03/08/2019,\"37,000\",G8,+971 50 192 7955,27\nE111,Hamad Saif,HR,20/08/2019,\"27,000\",G6,+971 50 160 3028,58\nE112,Noura Ali,Finance,06/09/2019,\"13,000\",G8,+971 50 328 2013,43\n",
+   "roles": {
+    "employee_id": "ignore",
+    "full_name": "ignore",
+    "department": "dimension",
+    "hire_date": "date",
+    "salary_aed": "measure",
+    "grade": "dimension",
+    "mobile": "ignore",
+    "age": "measure"
+   },
+   "personal": {
+    "employee_id": false,
+    "full_name": true,
+    "department": false,
+    "hire_date": false,
+    "salary_aed": false,
+    "grade": false,
+    "mobile": true,
+    "age": false
+   }
+  },
+  {
+   "name": "maintenance log",
+   "csv": "asset_code,work_order,reported_on,closed_on,downtime_h,cost,status,site_no,notes\nA-101,WO-2600,2026-03-03,2026-03-20,10.5,7501,Closed,1,Late delivery\nB-310,WO-2601,2026-03-20,2026-04-06,10.8,4862,Open,2,Customer asked for invoice copy\nA-205,WO-2602,2026-04-06,2026-04-23,15.2,6520,Closed,2,Damaged box on arrival\nA-101,WO-2603,2026-04-23,2026-05-10,24.0,5885,Open,1,Repeat order\nA-101,WO-2604,2026-05-10,2026-05-27,2.5,569,Open,1,Called twice about tracking\nA-102,WO-2605,2026-05-27,2026-06-13,3.3,7764,Open,3,Gift wrap requested\nB-310,WO-2606,2026-06-13,2026-06-30,8.5,6023,Closed,1,Paid by bank transfer\nA-205,WO-2607,2026-06-30,2026-07-17,21.1,2953,Open,1,Address corrected\nA-205,WO-2608,2026-07-17,2026-08-03,2.4,2118,Open,1,VIP customer\nA-101,WO-2609,2026-08-03,2026-08-20,22.1,8288,Open,1,Asked for a discount\nA-205,WO-2610,2026-08-20,2026-09-06,9.6,1165,Open,3,Returned one item\nB-310,WO-2611,2026-09-06,2026-12-30,17.5,3775,Closed,1,No issues reported\n",
+   "roles": {
+    "asset_code": "dimension",
+    "work_order": "ignore",
+    "reported_on": "date",
+    "closed_on": "ignore",
+    "downtime_h": "measure",
+    "cost": "measure",
+    "status": "dimension",
+    "site_no": "dimension",
+    "notes": "ignore"
+   },
+   "personal": {
+    "asset_code": false,
+    "work_order": false,
+    "reported_on": false,
+    "closed_on": false,
+    "downtime_h": false,
+    "cost": false,
+    "status": false,
+    "site_no": false,
+    "notes": false
+   }
+  },
+  {
+   "name": "monthly budget",
+   "csv": "month,account,budget,actual,variance,cost_centre\nJan 2025,IT,\"46,000\",(300),-1400,4300\nFeb 2025,Training,\"26,000\",\"65,000\",-1355,4100\nMar 2025,Rent,\"41,000\",\"80,000\",-8605,4200\nApr 2025,Rent,\"60,000\",\"45,000\",6891,4200\nMay 2025,Salaries,\"60,000\",\"63,000\",-3025,4300\nJun 2025,Salaries,\"73,000\",(600),-391,4100\nJul 2025,Travel,\"20,000\",\"58,000\",238,4100\nAug 2025,Rent,\"31,000\",\"39,000\",-8866,4200\nSep 2025,Training,\"67,000\",\"29,000\",-4227,4200\nOct 2025,IT,\"61,000\",\"20,000\",4728,4200\nNov 2025,Training,\"80,000\",(300),8517,4300\nDec 2025,Travel,\"45,000\",\"29,000\",3099,4100\n",
+   "roles": {
+    "month": "date",
+    "account": "dimension",
+    "budget": "measure",
+    "actual": "measure",
+    "variance": "measure",
+    "cost_centre": "dimension"
+   },
+   "personal": {
+    "month": false,
+    "account": false,
+    "budget": false,
+    "actual": false,
+    "variance": false,
+    "cost_centre": false
+   }
+  },
+  {
+   "name": "arabic sales",
+   "csv": "التاريخ,المنطقة,المبيعات,العميل,رقم_الطلب\n2025/02/03,الشارقة,٥٩٩٥,أحمد علي,5001\n2025/02/20,أبوظبي,٥٦٣٩,سارة محمد,5002\n2025/03/09,الشارقة,٣٦١٠,خالد عمر,5003\n2025/03/26,الشارقة,٨٨٠٧,مريم حسن,5004\n2025/04/12,أبوظبي,٢٠٢٨,يوسف سعيد,5005\n2025/04/29,أبوظبي,٦٦٥٦,نورة خالد,5006\n2025/05/16,دبي,٨٠٣٨,علي حسين,5007\n2025/06/02,دبي,٥٢٢٢,هند سالم,5008\n2025/06/19,أبوظبي,٨٧٨٤,عمر فاروق,5009\n2025/07/06,الشارقة,٦٠٥٩,ليلى أحمد,5010\n2025/07/23,أبوظبي,٦٣٦٥,حمد راشد,5011\n2025/08/09,أبوظبي,٦٥٣٩,فاطمة يوسف,5012\n",
+   "roles": {
+    "التاريخ": "date",
+    "المنطقة": "dimension",
+    "المبيعات": "measure",
+    "العميل": "ignore",
+    "رقم_الطلب": "ignore"
+   },
+   "personal": {
+    "التاريخ": false,
+    "المنطقة": false,
+    "المبيعات": false,
+    "العميل": true,
+    "رقم_الطلب": false
+   }
+  },
+  {
+   "name": "web analytics",
+   "csv": "date,channel,sessions,bounce_rate,conversions,landing_page\n2025-04-03,Social,1242,69.2%,86,/blog\n2025-04-20,Email,4540,42.0%,37,/blog\n2025-05-07,Email,4014,25.5%,49,/pricing\n2025-05-24,Paid,4060,50.0%,82,/pricing\n2025-06-10,Social,4068,25.1%,51,/pricing\n2025-06-27,Organic,4028,48.3%,65,/pricing\n2025-07-14,Email,1648,46.8%,20,/pricing\n2025-07-31,Social,4744,67.4%,19,/pricing\n2025-08-17,Email,4080,50.7%,113,/home\n2025-09-03,Social,1309,23.5%,67,/pricing\n2025-09-20,Paid,2361,30.4%,64,/blog\n2025-10-07,Organic,1351,38.8%,66,/home\n",
+   "roles": {
+    "date": "date",
+    "channel": "dimension",
+    "sessions": "measure",
+    "bounce_rate": "measure",
+    "conversions": "measure",
+    "landing_page": "dimension"
+   },
+   "personal": {
+    "date": false,
+    "channel": false,
+    "sessions": false,
+    "bounce_rate": false,
+    "conversions": false,
+    "landing_page": false
+   }
+  },
+  {
+   "name": "survey",
+   "csv": "respondent_id,score,segment,submitted_at,comment,nps_bucket\n1,1,SME,2025-03-01 08:05,Great service,Passive\n2,5,SME,2025-03-02 09:10,Too slow,Passive\n3,5,Public,2025-03-03 10:15,Helpful staff,Passive\n4,2,Public,2025-03-04 11:20,Website confusing,Passive\n5,3,SME,2025-03-05 12:25,Fast delivery,Passive\n6,3,SME,2025-03-06 13:30,Price too high,Promoter\n7,3,SME,2025-03-07 14:35,Will recommend,Passive\n8,1,SME,2025-03-08 15:40,Support was rude,Promoter\n9,4,SME,2025-03-09 16:45,Easy to use,Passive\n10,3,Public,2025-03-10 17:50,Missing features,Detractor\n11,4,SME,2025-03-11 18:55,Good value,Detractor\n12,4,Public,2025-03-12 19:60,Average experience,Passive\n",
+   "roles": {
+    "respondent_id": "ignore",
+    "score": "measure",
+    "segment": "dimension",
+    "submitted_at": "date",
+    "comment": "ignore",
+    "nps_bucket": "dimension"
+   },
+   "personal": {
+    "respondent_id": false,
+    "score": false,
+    "segment": false,
+    "submitted_at": false,
+    "comment": false,
+    "nps_bucket": false
+   }
+  },
+  {
+   "name": "logistics",
+   "csv": "shipment_id,origin,destination,weight_kg,ship_date,eta,carrier,cost_usd,year\nSHP-2025-0001,Sharjah,Muscat,461.3,2025-05-03,2025-06-06,FedEx,210,2024\nSHP-2025-0002,Khalifa,Riyadh,123.0,2025-05-20,2025-06-23,Aramex,2263,2025\nSHP-2025-0003,Khalifa,Kuwait,136.9,2025-06-06,2025-07-10,FedEx,1320,2024\nSHP-2025-0004,Khalifa,Doha,341.2,2025-06-23,2025-07-27,Aramex,2733,2025\nSHP-2025-0005,Khalifa,Muscat,275.0,2025-07-10,2025-08-13,FedEx,472,2024\nSHP-2025-0006,Jebel Ali,Muscat,754.5,2025-07-27,2025-08-30,Aramex,2951,2024\nSHP-2025-0007,Sharjah,Kuwait,187.2,2025-08-13,2025-09-16,DHL,1169,2025\nSHP-2025-0008,Sharjah,Kuwait,69.6,2025-08-30,2025-10-03,DHL,2223,2025\nSHP-2025-0009,Sharjah,Muscat,858.3,2025-09-16,2025-10-20,FedEx,1602,2024\nSHP-2025-0010,Sharjah,Kuwait,499.0,2025-10-03,2025-11-06,DHL,784,2024\nSHP-2025-0011,Khalifa,Doha,174.6,2025-10-20,2025-12-01,FedEx,1556,2024\nSHP-2025-0012,Jebel Ali,Kuwait,511.7,2025-11-06,2025-12-04,Aramex,1012,2025\n",
+   "roles": {
+    "shipment_id": "ignore",
+    "origin": "dimension",
+    "destination": "dimension",
+    "weight_kg": "measure",
+    "ship_date": "date",
+    "eta": "ignore",
+    "carrier": "dimension",
+    "cost_usd": "measure",
+    "year": "dimension"
+   },
+   "personal": {
+    "shipment_id": false,
+    "origin": false,
+    "destination": false,
+    "weight_kg": false,
+    "ship_date": false,
+    "eta": false,
+    "carrier": false,
+    "cost_usd": false,
+    "year": false
+   }
+  },
+  {
+   "name": "loyalty members",
+   "csv": "member_no,email_opens,card_type,phone_model,ip_address,date_of_birth,spend\n81483341,33,Visa,iPhone 15,10.0.178.245,1980-01-03,232\n82687908,31,Mastercard,iPhone 15,10.0.186.21,1980-01-20,494\n77470852,22,Amex,iPhone 15,10.0.112.27,1980-02-06,858\n54246886,1,Mastercard,Pixel 9,10.0.116.121,1980-02-23,701\n95421789,1,Amex,Galaxy S24,10.0.100.87,1980-03-11,390\n39936146,17,Mastercard,iPhone 15,10.0.104.124,1980-03-28,138\n92306098,30,Mastercard,Pixel 9,10.0.0.123,1980-04-14,870\n36192056,16,Visa,iPhone 15,10.0.176.205,1980-05-01,789\n42130069,12,Mastercard,Pixel 9,10.0.43.214,1980-05-18,455\n63778945,38,Amex,Pixel 9,10.0.61.233,1980-06-04,524\n40432459,22,Visa,Galaxy S24,10.0.198.201,1980-06-21,461\n36832537,28,Amex,iPhone 15,10.0.102.123,1980-07-08,811\n",
+   "roles": {
+    "member_no": "ignore",
+    "email_opens": "measure",
+    "card_type": "dimension",
+    "phone_model": "dimension",
+    "ip_address": "ignore",
+    "date_of_birth": "ignore",
+    "spend": "measure"
+   },
+   "personal": {
+    "member_no": false,
+    "email_opens": false,
+    "card_type": false,
+    "phone_model": false,
+    "ip_address": true,
+    "date_of_birth": true,
+    "spend": false
+   }
+  }
+ ],
+ "holdout": [
+  {
+   "name": "energy readings",
+   "csv": "meter_id,reading_date,kwh,tariff,customer_phone,temperature_c\nM-01,03-06-2025,857.44,A,+971 50 328 2013,33.4\nM-04,20-06-2025,679.84,A,+971 50 160 3028,21.7\nM-01,07-07-2025,236.00,A,+971 50 192 7955,18.4\nM-04,24-07-2025,201.63,B,+971 50 171 4943,45.2\nM-02,10-08-2025,220.92,A,+971 50 544 7851,36.2\nM-06,27-08-2025,823.88,B,+971 50 138 2408,32.7\nM-01,13-09-2025,745.20,A,+971 50 619 4517,44.1\nM-02,30-09-2025,216.94,A,+971 50 696 1950,30.1\nM-01,17-10-2025,761.21,A,+971 50 196 6991,42.4\nM-05,03-11-2025,884.24,B,+971 50 174 9779,41.1\nM-02,20-11-2025,625.81,B,+971 50 504 1791,23.9\nM-06,07-12-2025,380.33,A,+971 50 431 3471,25.1\n",
+   "roles": {
+    "meter_id": "dimension",
+    "reading_date": "date",
+    "kwh": "measure",
+    "tariff": "dimension",
+    "customer_phone": "ignore",
+    "temperature_c": "measure"
+   },
+   "personal": {
+    "meter_id": false,
+    "reading_date": false,
+    "kwh": false,
+    "tariff": false,
+    "customer_phone": true,
+    "temperature_c": false
+   }
+  },
+  {
+   "name": "school results",
+   "csv": "student_id,student_name,class,exam_date,math_score,science_score,gender\n2001,Noura Ali,8A,2025-09-03,58,98,F\n2002,Hamad Saif,7A,2025-09-20,72,87,M\n2003,Priya Nair,8A,2025-10-07,55,62,M\n2004,Chen Wei,7A,2025-10-24,88,97,M\n2005,Yusuf Amin,7B,2025-11-10,77,69,F\n2006,Fatima Zahra,7B,2025-11-27,60,82,F\n2007,Maria Lopez,8A,2025-12-14,56,77,M\n2008,John Smith,8A,2025-12-31,74,92,F\n2009,Laila Noor,8A,2026-01-17,66,97,F\n2010,Omar Saeed,7A,2026-02-03,93,73,F\n2011,Sara Khan,8A,2026-02-20,48,66,M\n2012,Ali Hassan,8A,2026-03-09,43,92,M\n",
+   "roles": {
+    "student_id": "ignore",
+    "student_name": "ignore",
+    "class": "dimension",
+    "exam_date": "date",
+    "math_score": "measure",
+    "science_score": "measure",
+    "gender": "dimension"
+   },
+   "personal": {
+    "student_id": false,
+    "student_name": true,
+    "class": false,
+    "exam_date": false,
+    "math_score": false,
+    "science_score": false,
+    "gender": false
+   }
+  },
+  {
+   "name": "fleet trips",
+   "csv": "vehicle_plate,depot,trip_date,km,fuel_l,driver_mobile,route_no\nD 75752,Jebel Ali,2025-07-03,108,46.7,+971 50 431 3471,27\nD 27139,Qusais,2025-07-20,92,63.8,+971 50 504 1791,8\nD 79707,Al Quoz,2025-08-06,262,13.0,+971 50 174 9779,8\nD 29901,Jebel Ali,2025-08-23,336,47.0,+971 50 196 6991,27\nD 78617,Qusais,2025-09-09,391,23.6,+971 50 696 1950,8\nD 76918,Al Quoz,2025-09-26,81,25.8,+971 50 619 4517,8\nD 12451,Qusais,2025-10-13,304,62.9,+971 50 138 2408,15\nD 67688,Qusais,2025-10-30,51,43.1,+971 50 544 7851,15\nD 34000,Qusais,2025-11-16,186,47.1,+971 50 171 4943,27\nD 89764,Jebel Ali,2025-12-03,369,62.0,+971 50 192 7955,61\nD 10515,Al Quoz,2025-12-20,285,73.4,+971 50 160 3028,27\nD 29634,Jebel Ali,2026-01-06,291,38.2,+971 50 328 2013,27\n",
+   "roles": {
+    "vehicle_plate": "ignore",
+    "depot": "dimension",
+    "trip_date": "date",
+    "km": "measure",
+    "fuel_l": "measure",
+    "driver_mobile": "ignore",
+    "route_no": "dimension"
+   },
+   "personal": {
+    "vehicle_plate": false,
+    "depot": false,
+    "trip_date": false,
+    "km": false,
+    "fuel_l": false,
+    "driver_mobile": true,
+    "route_no": false
+   }
+  },
+  {
+   "name": "arabic e-commerce",
+   "csv": "تاريخ_الطلب,الفئة,السعر,الكمية,البريد_الإلكتروني,order_ref\n2025-08-03,إلكترونيات,AED 677,5,noura.ali@example.com,R563594X\n2025-08-20,إلكترونيات,AED 567,2,hamad.saif@example.com,R431328X\n2025-09-06,عطور,AED 670,6,priya.nair@example.com,R176070X\n2025-09-23,إلكترونيات,AED 574,5,chen.wei@example.com,R803757X\n2025-10-10,إلكترونيات,AED 254,3,yusuf.amin@example.com,R352328X\n2025-10-27,إلكترونيات,AED 759,5,fatima.zahra@example.com,R549145X\n2025-11-13,إلكترونيات,AED 333,2,maria.lopez@example.com,R176672X\n2025-11-30,إلكترونيات,AED 513,4,john.smith@example.com,R323021X\n2025-12-17,عطور,AED 570,2,laila.noor@example.com,R801992X\n2026-01-03,إلكترونيات,AED 596,4,omar.saeed@example.com,R417487X\n2026-01-20,ملابس,AED 876,1,sara.khan@example.com,R922016X\n2026-02-06,ملابس,AED 539,4,ali.hassan@example.com,R228293X\n",
+   "roles": {
+    "تاريخ_الطلب": "date",
+    "الفئة": "dimension",
+    "السعر": "measure",
+    "الكمية": "measure",
+    "البريد_الإلكتروني": "ignore",
+    "order_ref": "ignore"
+   },
+   "personal": {
+    "تاريخ_الطلب": false,
+    "الفئة": false,
+    "السعر": false,
+    "الكمية": false,
+    "البريد_الإلكتروني": true,
+    "order_ref": false
+   }
+  },
+  {
+   "name": "clinic visits",
+   "csv": "patient_ref,passport_no,home_address,visit_date,clinic,fee,card_last4_used\nP3000,N3591184,\"Villa 21, Street 28, Dubai\",2025-10-03,General,215,yes\nP3001,N7143536,\"Villa 66, Street 26, Dubai\",2025-10-20,Ortho,265,no\nP3002,N3398789,\"Villa 44, Street 27, Dubai\",2025-11-06,Ortho,384,no\nP3003,N5246444,\"Villa 26, Street 23, Dubai\",2025-11-23,General,257,yes\nP3004,N3302750,\"Villa 41, Street 6, Dubai\",2025-12-10,Cardio,236,yes\nP3005,N8847305,\"Villa 93, Street 24, Dubai\",2025-12-27,Cardio,421,yes\nP3006,N4684072,\"Villa 3, Street 22, Dubai\",2026-01-13,Ortho,428,no\nP3007,N2579162,\"Villa 71, Street 30, Dubai\",2026-01-30,General,190,yes\nP3008,N7681641,\"Villa 57, Street 2, Dubai\",2026-02-16,Ortho,335,no\nP3009,N9174879,\"Villa 50, Street 22, Dubai\",2026-03-05,Ortho,426,no\nP3010,N3731249,\"Villa 67, Street 40, Dubai\",2026-03-22,Cardio,282,yes\nP3011,N4753267,\"Villa 38, Street 33, Dubai\",2026-04-08,General,582,yes\n",
+   "roles": {
+    "patient_ref": "ignore",
+    "passport_no": "ignore",
+    "home_address": "ignore",
+    "visit_date": "date",
+    "clinic": "dimension",
+    "fee": "measure",
+    "card_last4_used": "dimension"
+   },
+   "personal": {
+    "patient_ref": false,
+    "passport_no": true,
+    "home_address": true,
+    "visit_date": false,
+    "clinic": false,
+    "fee": false,
+    "card_last4_used": false
+   }
+  }
+ ]
+}

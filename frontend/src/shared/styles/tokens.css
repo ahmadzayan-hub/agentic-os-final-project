@@ -1,30 +1,38 @@
-/* Agentic OS design tokens — from the master design-system canvas.
-   Dark is the primary aesthetic; light is a first-class variant.
+/* Agentic OS design tokens — design system v2 (ADR 0023), generated with
+   the ui-ux-pro-max skill and adapted in design-system/agentic-os/MASTER.md.
+   Light and dark are equal variants.
    All text/background pairings verified >= 4.5:1 (WCAG 2.2 AA).
 
    Theme resolution: an explicit choice stamps data-theme="light|dark";
    with no choice ("system") the prefers-color-scheme media query decides. */
 
 :root {
-  /* Light neutrals (Pearl family) */
-  --bg: #f7f8fc;
+  /* Light neutrals (slate). --border is decorative only; anything a person
+     operates (inputs, segmented controls) uses --border-strong, >= 3:1. */
+  --bg: #f8fafc;
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-sunken: #e9ecf5;
-  --border: #dde2ee;
-  --border-strong: #c3cadd;
-  --text: #14161f;
-  --text-muted: #4c5468;
-  --text-faint: #5c647a;
+  --surface-sunken: #e9eef6;
+  --border: #dce3ee;
+  --border-strong: #7c8ba1;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-faint: #5b6779;
 
-  /* Accent (Indigo family): --accent for text/icons/outlines,
-     --accent-solid for filled controls */
-  --accent: #5646e0;
-  --accent-solid: #5b4bf0;
-  --accent-solid-hover: #4a39e2;
-  --accent-soft: #eceafe;
+  /* Accent (navy/blue, from the ui-ux-pro-max analytics palette):
+     --accent for text/icons/outlines/focus, --accent-solid for filled
+     controls. */
+  --accent: #1e40af;
+  --accent-solid: #1e40af;
+  --accent-solid-hover: #1e3a8a;
+  --accent-soft: #dbeafe;
   --on-accent: #ffffff;
-  --accent-glow: rgb(91 75 240 / 0.28);
+  --accent-glow: rgb(30 64 175 / 0.22);
+
+  /* Highlight (amber): what needs a person — an approval waiting, a
+     provisional figure, a decrease. Never the primary action. */
+  --highlight: #b45309;
+  --highlight-soft: #fef3c7;
 
   /* Semantic */
   --success: #0f7a55;
@@ -41,6 +49,13 @@
   --shadow-2: 0 4px 12px rgb(20 22 31 / 0.08);
   --shadow-3: 0 16px 40px rgb(20 22 31 / 0.18);
 
+  /* The same in both themes, so the dark blocks below leave them alone.
+     The scrim dims the page behind the drawer, dialogs and the command
+     palette. The switch thumb sits on --border-strong when off and on
+     --accent-solid when on, 3:1 or better against both, in both themes. */
+  --scrim: rgb(5 8 18 / 0.62);
+  --switch-thumb: #ffffff;
+
   /* Shape */
   --radius-s: 8px;
   --radius-m: 12px;
@@ -55,10 +70,13 @@
   --space-6: 32px;
 
   /* Typography */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas,
-    monospace;
+  /* Fira Sans for text and headings, Fira Code for figures and code. Both
+     are bundled (Latin subsets, @fontsource) — never fetched from a third
+     party — and fall back to the system stacks while they load. */
+  --font-sans: 'Fira Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Fira Code', ui-monospace, 'SF Mono', 'Cascadia Code', Menlo,
+    Consolas, monospace;
   --text-xs: 0.75rem;
   --text-s: 0.8125rem;
   --text-m: 0.9375rem;
@@ -101,22 +119,25 @@
 }
 
 [data-theme='dark'] {
-  --bg: #0b1020;
-  --surface: #111827;
-  --surface-raised: #18213a;
-  --surface-sunken: #070b16;
-  --border: #232c42;
-  --border-strong: #35415f;
-  --text: #f0f2fa;
-  --text-muted: #a7b0c7;
-  --text-faint: #929cb4;
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-raised: #17223a;
+  --surface-sunken: #070c18;
+  --border: #24304a;
+  --border-strong: #5b6b8c;
+  --text: #f1f5f9;
+  --text-muted: #a9b6cc;
+  --text-faint: #94a3b8;
 
-  --accent: #9a92ff;
-  --accent-solid: #5b4bf0;
-  --accent-solid-hover: #6d5dfc;
-  --accent-soft: #221e4d;
+  --accent: #8db0ff;
+  --accent-solid: #2563eb;
+  --accent-solid-hover: #1d4ed8;
+  --accent-soft: #16244a;
   --on-accent: #ffffff;
-  --accent-glow: rgb(109 93 252 / 0.35);
+  --accent-glow: rgb(37 99 235 / 0.3);
+
+  --highlight: #fbbf24;
+  --highlight-soft: #2e2208;
 
   --success: #34d399;
   --success-soft: #0d2b1f;
@@ -136,22 +157,25 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']):not([data-theme='dark']) {
-    --bg: #0b1020;
-    --surface: #111827;
-    --surface-raised: #18213a;
-    --surface-sunken: #070b16;
-    --border: #232c42;
-    --border-strong: #35415f;
-    --text: #f0f2fa;
-    --text-muted: #a7b0c7;
-    --text-faint: #929cb4;
+    --bg: #0b1220;
+    --surface: #111a2e;
+    --surface-raised: #17223a;
+    --surface-sunken: #070c18;
+    --border: #24304a;
+    --border-strong: #5b6b8c;
+    --text: #f1f5f9;
+    --text-muted: #a9b6cc;
+    --text-faint: #94a3b8;
 
-    --accent: #9a92ff;
-    --accent-solid: #5b4bf0;
-    --accent-solid-hover: #6d5dfc;
-    --accent-soft: #221e4d;
+    --accent: #8db0ff;
+    --accent-solid: #2563eb;
+    --accent-solid-hover: #1d4ed8;
+    --accent-soft: #16244a;
     --on-accent: #ffffff;
-    --accent-glow: rgb(109 93 252 / 0.35);
+    --accent-glow: rgb(37 99 235 / 0.3);
+
+    --highlight: #fbbf24;
+    --highlight-soft: #2e2208;
 
     --success: #34d399;
     --success-soft: #0d2b1f;

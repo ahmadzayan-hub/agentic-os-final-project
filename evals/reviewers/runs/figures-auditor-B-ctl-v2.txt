@@ -1,0 +1,69 @@
+FINDING F01 · major · evals/reviewers/B/memo.md · P02
+Category: arithmetic
+Evidence: Checker flag (arithmetic, implied): "[P02] That is one failure every 4,800 km." The register gives Operating km 4,960,000 and Failures 1,240, so 4,960,000 ÷ 1,240 = 4,000 km. The register's "Mean km between failures" is also 4,000, and P14 states 4,000 km. The 4,800 figure does not follow (4,960,000 ÷ 4,800 would require 1,033 failures, not 1,240). The memo contradicts itself between P02 and P14.
+Fix: Author to restate this rate from the register values as 4,000 km, matching P14, or show the calculation that yields 4,800.
+
+FINDING F02 · major · evals/reviewers/B/memo.md · P04
+Category: unsourced_figure
+Evidence: "Hot weather causes door faults to double in summer." The figure is "double", a 2x multiplier written in words, which the checker cannot see. The register and memo contain no door-fault counts and no seasonal split, so nothing supports it. Classified unsourced.
+Fix: Add a sourced season-by-season door-fault count from the register or a referenced dataset, or remove the multiplier.
+
+FINDING F03 · major · evals/reviewers/B/memo.md · P04
+Category: causal_claim
+Evidence: "Hot weather causes door faults to double in summer." The sentence asserts that temperature causes the increase. The memo contains no temperature variable and no analysis that isolates it.
+Fix: Reword as an association only, or add evidence that controls for other seasonal factors.
+
+FINDING F04 · major · evals/reviewers/B/memo.md · P05
+Category: unsourced_figure
+Evidence: "Door faults made up 31% of all failures." The checker lists 31% as UNSOURCED. The register has Failures 1,240 but no door-fault count, so 31% cannot be derived (it would imply 384 door faults, which appears nowhere). Classified unsourced.
+Fix: Add the door-fault count from the failure log with its source, or remove the 31% figure.
+
+FINDING F05 · major · evals/reviewers/B/memo.md · P06
+Category: unsourced_figure
+Evidence: "Depot B's punctuality was 0.4 points better in March, which proves its new shift pattern works." The checker lists 0.4 as UNSOURCED. The register has only the fleet punctuality of 98.1%, with no depot or monthly breakdown. Classified unsourced.
+Fix: Cite the depot-level March punctuality figures and their source, or remove the number.
+
+FINDING F06 · major · evals/reviewers/B/memo.md · P06
+Category: causal_claim
+Evidence: "...which proves its new shift pattern works." A one-month, one-depot difference of 0.4 points cannot prove that the shift pattern caused the change. No comparison group, baseline or time series is given.
+Fix: Replace "proves ... works" with a description of the observed difference, and state that the cause is not established.
+
+FINDING F07 · major · evals/reviewers/B/memo.md · P07
+Category: unsourced_figure
+Evidence: "Availability averaged 98.0% across the 40 vehicles (the mean of each vehicle's rate), so the register's 96.4% understates it." The checker lists 98.0% as UNSOURCED. The register has only the pooled fleet availability of 96.4% (available hours ÷ scheduled hours). Per-vehicle rates are not in the register, so the 98.0% mean cannot be derived. Classified unsourced.
+Fix: Add the per-vehicle availability table and its source, or remove the 98.0% figure.
+
+FINDING F08 · major · evals/reviewers/B/memo.md · P07
+Category: denominator
+Evidence: "...(the mean of each vehicle's rate), so the register's 96.4% understates it." The register's 96.4% is pooled available hours over scheduled hours. The memo's 98.0% is an unweighted mean of 40 per-vehicle ratios. These are different denominators, so the comparison does not show that the register understates availability.
+Fix: State one availability definition, compare like with like, and remove "understates" unless the pooled figure is recomputed on the memo's basis and sourced.
+
+FINDING F09 · major · evals/reviewers/B/memo.md · P09
+Category: arithmetic
+Evidence: Checker flag (ARITHMETIC): "Delay minutes per failure were 52,300 ÷ 1,240 = 48.2 minutes." Both inputs are register values (Delay minutes 52,300; Failures 1,240). 52,300 ÷ 1,240 = 42.177…, which is 42.2 when rounded to one decimal, not 48.2. The stated result does not hold.
+Fix: Author to recalculate from the register values and restate the figure.
+
+FINDING F10 · major · evals/reviewers/B/memo.md · P11
+Category: unsourced_figure
+Evidence: "The new brake pads reduced failures by 12%." The checker lists 12% as UNSOURCED. The register has no brake-pad or before/after failure data. Classified unsourced.
+Fix: Add before-and-after failure counts for the pad change with a source, or remove the 12% figure.
+
+FINDING F11 · major · evals/reviewers/B/memo.md · P11
+Category: causal_claim
+Evidence: "The new brake pads reduced failures by 12%." The sentence attributes a fall in failures to a component change. No baseline, control or timing is given, and P10 itself says the data cannot show which factor drives which.
+Fix: Describe the change as an association, or supply a before-and-after comparison that accounts for other factors.
+
+FINDING F12 · major · evals/reviewers/B/memo.md · P12
+Category: unsourced_figure
+Evidence: "Spare-parts stockouts cost $1.9 million." The checker lists $1.9 million as UNSOURCED. The register has no spare-parts or stockout cost row. Classified unsourced.
+Fix: Add the stockout cost with its source, or remove the figure.
+
+FINDING F13 · major · evals/reviewers/B/memo.md · P13
+Category: unsourced_figure
+Evidence: "A failure-prediction model reached an AUC of 0.81, so it will prevent most failures." The checker lists 0.81 as UNSOURCED. The register contains no model metric and no reference supports the AUC. Classified unsourced.
+Fix: Cite the model evaluation (dataset, split, date) with its source, or remove the AUC.
+
+FINDING F14 · major · evals/reviewers/B/memo.md · P13
+Category: overclaim
+Evidence: "...so it will prevent most failures." An AUC of 0.81 measures how well the model ranks failures from non-failures. It says nothing about how many failures could be prevented. No prevention or intervention data is given, so "will prevent most failures" goes beyond the evidence.
+Fix: Limit the claim to what AUC measures, and state the prevention claim only with an intervention evaluation.

@@ -34,10 +34,14 @@ test('plain language in the chat saves, analyses, explains, and confirms before 
   await sendMessage(page, 'no')
   await expect(lastAgentBubble(page)).toHaveText('Nothing was changed.')
   await openTab(page, /^Memory/)
-  await expect(page.getByText('the Q4 review is on Monday')).toBeVisible()
+  await expect(page.locator('.memory__item').filter({ hasText: 'the Q4 review is on Monday' })).toBeVisible()
 
   await openTab(page, /^Workspace/)
   await sendMessage(page, 'Forget everything')
+  // Wait for the question: the composer holds a message sent while the
+  // previous one is still in flight, so an early "yes" would never go.
+  await expect(lastAgentBubble(page)).toContainText('Reply “yes” to confirm')
   await sendMessage(page, 'yes')
   await expect(lastAgentBubble(page)).toHaveText('All saved information has been removed.')
 })
+

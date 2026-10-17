@@ -10,11 +10,13 @@ interface DialogProps {
   children: ReactNode
   wide?: boolean
   labelledById?: string
+  /** Long evidence surfaces start at their heading, before a scrollable table. */
+  initialFocus?: 'panel'
 }
 
 /** Accessible modal dialog: focus is trapped inside, restored on close,
  *  and Escape or a scrim click dismisses it. */
-export function Dialog({ title, onClose, children, wide, labelledById }: DialogProps) {
+export function Dialog({ title, onClose, children, wide, labelledById, initialFocus }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = labelledById ?? 'dialog-title'
 
@@ -24,7 +26,10 @@ export function Dialog({ title, onClose, children, wide, labelledById }: DialogP
     if (!panel) return
 
     const focusables = panel.querySelectorAll<HTMLElement>(FOCUSABLE)
-    ;(focusables[0] ?? panel).focus()
+    if (initialFocus === 'panel') {
+      panel.focus({ preventScroll: true })
+      panel.scrollTop = 0
+    } else { (focusables[0] ?? panel).focus() }
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -52,7 +57,7 @@ export function Dialog({ title, onClose, children, wide, labelledById }: DialogP
       document.removeEventListener('keydown', onKeyDown)
       previouslyFocused?.focus()
     }
-  }, [onClose])
+  }, [onClose, initialFocus])
 
   return (
     <div
@@ -77,3 +82,4 @@ export function Dialog({ title, onClose, children, wide, labelledById }: DialogP
     </div>
   )
 }
+

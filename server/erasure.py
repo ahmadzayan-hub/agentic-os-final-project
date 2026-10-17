@@ -16,12 +16,12 @@ import json
 from pathlib import Path
 
 # Children before parents, so foreign keys hold at every step.
-DELETE_ORDER = ("tasks", "approvals", "artifacts", "vault_notes", "runs",
-                "datasets", "sessions", "memory_kv")
+DELETE_ORDER = ("tasks", "approvals", "artifacts", "vault_notes", "connectors",
+                "runs", "datasets", "sessions", "memory_kv")
 
 # Tables that carry an owner directly. Everything else in DELETE_ORDER
 # belongs to an owner through the run it hangs off.
-OWNED_DIRECTLY = ("runs", "datasets", "sessions", "memory_kv")
+OWNED_DIRECTLY = ("runs", "datasets", "sessions", "memory_kv", "connectors")
 
 
 def owned_run_ids(store, owner):

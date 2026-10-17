@@ -1,29 +1,54 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useSessionDraft } from '../../shared/useSessionDraft'
 import { useI18n } from '../../i18n'
-import { api, ApiError } from '../../shared/api'
+import { api, ApiError, MAX_UPLOAD_BYTES } from '../../shared/api'
+import { barGeometry } from '../../shared/charts'
 import { Icon } from '../../shared/components/Icon'
-import { questionLabel, stateLabel, typeLabel } from '../../shared/labels'
-import type { ChartSpec, Pipelines, RunDetail, RunSummary } from '../../shared/types'
+import { languageLabel, formatLabel, questionLabel, stateLabel, typeLabel } from '../../shared/labels'
+import type {
+  ChartSpec,
+  DatasetSummary,
+  JoinSpec,
+  Pipelines,
+  RunDetail,
+  RunSummary,
+  RunTask,
+  UploadResult,
+} from '../../shared/types'
+
+import { ApprovalCard } from './ApprovalCard'
+import { EvidencePanel } from './EvidencePanel'
+import { JoinBuilder } from './JoinBuilder'
+import { ModelCards } from './ModelCards'
+import { PlanPreview, RunTimeline } from './RunTimeline'
+import { runStore, useRun } from './runStore'
+import { UploadPreview } from '../datasets/UploadPreview'
 
 const ACTIVE_STATES = ['queued', 'running']
 
+const SOURCE_LABELS = {
+  sample: 'runs.sample',
+  stored: 'runs.stored',
+  upload: 'runs.upload',
+} as const
+
 function BarChart({ chart }: { chart: ChartSpec }) {
-  const max = Math.max(...chart.values, 1)
   const barWidth = 100 / chart.values.length
+  const { zero, bars } = barGeometry(chart.values)
   return (
     <svg viewBox="0 0 100 58" role="img" aria-label={chart.alt} className="runchart__svg">
-      {chart.values.map((value, index) => (
+      {bars.map((bar, index) => (
         <rect
           key={chart.labels[index]}
           x={index * barWidth + barWidth * 0.15}
-          y={50 - (value / max) * 46}
+          y={bar.y}
           width={barWidth * 0.7}
-          height={(value / max) * 46}
+          height={bar.height}
           rx="1"
-          fill="var(--accent-solid)"
+          fill={bar.negative ? 'var(--highlight)' : 'var(--accent-solid)'}
         />
       ))}
-      <line x1="0" y1="50" x2="100" y2="50" stroke="var(--border-strong)" strokeWidth="0.5" />
+      <line x1="0" y1={zero} x2="100" y2={zero} stroke="var(--border-strong)" strokeWidth="0.5" />
       {chart.labels.map((label, index) => (
         <text
           key={label}
@@ -41,19 +66,48 @@ function BarChart({ chart }: { chart: ChartSpec }) {
 }
 
 function LineChart({ chart }: { chart: ChartSpec }) {
+  const { t } = useI18n()
   const max = Math.max(...chart.values, 1)
   const min = Math.min(...chart.values, 0)
   const span = max - min || 1
-  const points = chart.values
-    .map((value, index) => {
-      const x = (index / Math.max(chart.values.length - 1, 1)) * 96 + 2
-      const y = 48 - ((value - min) / span) * 42
-      return `${x},${y}`
-    })
-    .join(' ')
+  const xy = chart.values.map((value, index) => ({
+    x: (index / Math.max(chart.values.length - 1, 1)) * 96 + 2,
+    y: 48 - ((value - min) / span) * 42,
+  }))
+  const join = (list: { x: number; y: number }[]) => list.map((p) => `${p.x},${p.y}`).join(' ')
+  // A projection is drawn dashed from the last measured point onwards, with
+  // the boundary marked and named, so nobody reads it as a measurement.
+  const from = chart.forecast_from
+  const split = from !== undefined && from > 0 && from < xy.length
+  const history = split ? xy.slice(0, from) : xy
+  const projection = split ? xy.slice(from - 1) : []
+  const boundaryX = split ? xy[from - 1].x : 0
   return (
     <svg viewBox="0 0 100 58" role="img" aria-label={chart.alt} className="runchart__svg">
-      <polyline points={points} fill="none" stroke="var(--accent-solid)" strokeWidth="1.4" />
+      <polyline points={join(history)} fill="none" stroke="var(--accent-solid)" strokeWidth="1.4" />
+      {split ? (
+        <>
+          <polyline
+            points={join(projection)}
+            fill="none"
+            stroke="var(--accent-solid)"
+            strokeWidth="1.4"
+            strokeDasharray="2.4 1.6"
+          />
+          <line
+            x1={boundaryX}
+            y1="4"
+            x2={boundaryX}
+            y2="50"
+            stroke="var(--text-faint)"
+            strokeWidth="0.4"
+            strokeDasharray="1 1"
+          />
+          <text x={boundaryX + 1} y="7" fontSize="3.2" fill="var(--text-faint)">
+            {t('runs.forecast')}
+          </text>
+        </>
+      ) : null}
       <line x1="0" y1="50" x2="100" y2="50" stroke="var(--border-strong)" strokeWidth="0.5" />
       <text x="2" y="56" fontSize="3.4" fill="var(--text-faint)">
         {chart.labels[0]}
@@ -63,16 +117,6 @@ function LineChart({ chart }: { chart: ChartSpec }) {
       </text>
     </svg>
   )
-}
-
-const TASK_ICON: Record<string, string> = {
-  succeeded: '✓',
-  failed: '✕',
-  skipped: '—',
-  cancelled: '—',
-  running: '…',
-  awaiting_approval: '!',
-  pending: '·',
 }
 
 /** Arrow-key movement inside the analytics-type tablist. Selection
@@ -89,10 +133,20 @@ function nextTabIndex(key: string, current: number, count: number, rtl: boolean)
   return null
 }
 
+/** What another view asked the form to start with: the upload fields
+ *  open, or a dataset already stored on the server. The view is mounted
+ *  afresh on each visit, so the preset seeds its first render. */
+export type RunPreset = { kind: 'upload' } | { kind: 'stored'; id: string; name: string }
+
 interface RunsViewProps {
+  draftScope?: string
   /** A run to open on arrival — the one the assistant just started. */
   openRunId?: string | null
   openNonce?: number
+  preset?: RunPreset | null
+  onRunSelected?: (id: string | null) => void
+  /** Open this run's dashboard (ADR 0032). */
+  onOpenDashboard?: (id: string) => void
 }
 
 /** The custom stages a profile includes, by title, for the picker's help. */
@@ -104,29 +158,62 @@ function stageTitles(pipelines: Pipelines, profile: string): string[] {
   })
 }
 
-export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
-  const { t, tx, plural, isRtl, locale } = useI18n()
+export function RunsView({ openRunId = null, openNonce = 0, preset = null, onRunSelected, onOpenDashboard, draftScope = 'session' }: RunsViewProps) {
+  const { t, plural, isRtl, locale, formatNumber, formatDate, formatTime } = useI18n()
+  const visible = useRef(true)
+  useLayoutEffect(() => { visible.current = true; return () => { visible.current = false } }, [])
   const [runs, setRuns] = useState<RunSummary[]>([])
-  const [run, setRun] = useState<RunDetail | null>(null)
-  const [goal, setGoal] = useState(() => t('runs.goalDefault'))
-  const [useUpload, setUseUpload] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(openRunId)
+  const snapshot = useRun(selectedId, true)
+  const run = snapshot.detail
+  const setRun = useCallback((detail: RunDetail | null) => {
+    if (!visible.current) return
+    if (detail) runStore.receive(detail)
+    setSelectedId(detail?.id ?? null)
+    onRunSelected?.(detail?.id ?? null)
+  }, [onRunSelected])
+  const [evidenceTask, setEvidenceTask] = useState<RunTask | null>(null)
+  const fullReportRef = useRef<HTMLPreElement | null>(null)
+  const closeEvidence = useCallback(() => setEvidenceTask(null), [])
+  const starting = useRef(false)
+  // Where the data comes from (ADR 0024). A stored dataset and an
+  // uploaded file are both analysed by reference: the run sends an id.
+  const [source, setSource] = useState<'sample' | 'stored' | 'upload'>(() =>
+    preset?.kind === 'stored' ? 'stored' : preset?.kind === 'upload' ? 'upload' : 'sample',
+  )
+  const [datasets, setDatasets] = useState<DatasetSummary[] | null>(null)
+  const [storedId, setStoredId] = useState(() => (preset?.kind === 'stored' ? preset.id : ''))
+  const suggestedGoal = preset?.kind === 'stored' ? t('runs.goalStored', { name: preset.name }) : t('runs.goalDefault')
+  const questionContext = preset?.kind === 'stored' ? preset.id : preset?.kind ?? 'sample'
+  const [goal, setGoal] = useSessionDraft(`${draftScope}:analysis-question:${questionContext}`, () => suggestedGoal)
+  // The goal the form last wrote itself. A goal the person typed is
+  // never replaced when they pick another dataset.
+  const autoGoal = useRef(suggestedGoal)
+  const [uploaded, setUploaded] = useState<UploadResult | null>(null)
+  const [uploading, setUploading] = useState<string | null>(null)
   const [csvDraft, setCsvDraft] = useState('')
-  const [fileName, setFileName] = useState<string | null>(null)
   // Stepping stops for two different reasons: the user paused the run
   // (durable, server-side, also obeyed by a background worker) or a
   // request failed (local to this tab, cleared on the next action).
-  const [stoppedByError, setStoppedByError] = useState(false)
   // Which analytics type's report is on screen. Descriptive is the floor
   // of the maturity ladder, so it opens first.
   const [openReport, setOpenReport] = useState('descriptive')
-  const [busy, setBusy] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [throttled, setThrottled] = useState(false)
+  const [localBusy, setBusy] = useState(false)
+  const busy = localBusy || snapshot.pending
+  const [localError, setErrorMessage] = useState<string | null>(null)
+  const errorMessage = localError ?? snapshot.error?.message ?? null
   // Custom stages and profiles (ADR 0020). The picker exists only when
   // an operator configured profiles; a default install shows nothing.
   const [pipelines, setPipelines] = useState<Pipelines | null>(null)
   const [profile, setProfile] = useState('')
-  const advancing = useRef(false)
+  // Other stored datasets joined onto the main one (ADR 0030).
+  const [downloading, setDownloading] = useState(false)
+  const [joins, setJoins] = useState<JoinSpec[]>([])
+  const [breakdown, setBreakdown] = useState('')
+  const changeJoins = useCallback((next: JoinSpec[], nextBreakdown: string) => {
+    setJoins(next)
+    setBreakdown(nextBreakdown)
+  }, [])
 
   const refreshList = useCallback(async () => {
     try {
@@ -144,6 +231,53 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
   useEffect(() => {
     let cancelled = false
     api
+      .listDatasets()
+      .then((result) => !cancelled && setDatasets(result.datasets))
+      .catch(() => !cancelled && setDatasets([]))
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  function suggestGoal(name: string | null) {
+    if (goal !== autoGoal.current) return
+    const next = name ? t('runs.goalStored', { name }) : t('runs.goalDefault')
+    autoGoal.current = next
+    setGoal(next)
+  }
+
+  async function uploadFile(file: File) {
+    setErrorMessage(null)
+    setUploaded(null)
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setErrorMessage(
+        t('runs.tooBig', {
+          name: file.name,
+          size: formatNumber(file.size / 1_000_000, { maximumFractionDigits: 1 }),
+          limit: formatNumber(MAX_UPLOAD_BYTES / 1_000_000),
+        }),
+      )
+      return
+    }
+    setUploading(file.name)
+    try {
+      const result = await api.uploadDataset(file, locale)
+      setUploaded(result)
+      setCsvDraft('')
+      suggestGoal(result.dataset.name)
+      setDatasets((list) =>
+        list && !list.some((d) => d.id === result.dataset.id) ? [result.dataset, ...list] : list,
+      )
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : t('runs.uploadFailed'))
+    } finally {
+      setUploading(null)
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    api
       .pipelines()
       .then((result) => !cancelled && setPipelines(result))
       .catch(() => {
@@ -155,80 +289,66 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
   }, [])
 
   useEffect(() => {
-    if (!openRunId) return
-    let cancelled = false
-    setBusy(true)
-    api
-      .getRun(openRunId)
-      .then((detail) => {
-        if (cancelled) return
-        setRun(detail)
-        setStoppedByError(false)
-      })
-      .catch((error) => {
-        if (cancelled) return
-        setErrorMessage(error instanceof ApiError ? error.message : t('runs.actionFailed'))
-      })
-      .finally(() => {
-        if (!cancelled) setBusy(false)
-      })
-    return () => {
-      cancelled = true
+    if (openRunId) {
+      setSelectedId(openRunId)
+      setErrorMessage(null)
     }
-    // `t` changes only with the locale; the run to open is the key.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openRunId, openNonce])
 
-  // Bounded client-driven stepping: one task per tick while the run is
-  // active and auto-run is on. Pausing simply stops advancing — the run
-  // state is durable on the server either way.
-  useEffect(() => {
-    if (!run || run.paused || stoppedByError || !ACTIVE_STATES.includes(run.state)) return
-    const timer = setTimeout(async () => {
-      if (advancing.current) return
-      advancing.current = true
-      try {
-        setRun(await api.advanceRun(run.id))
-        setErrorMessage(null)
-        setThrottled(false)
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 429) {
-          // Throttled: keep the run active and let the next tick retry
-          // instead of abandoning a half-finished pipeline.
-          setErrorMessage(t('runs.slowing'))
-          setThrottled(true)
-        } else {
-          setErrorMessage(error instanceof ApiError ? error.message : t('runs.advanceFailed'))
-          setStoppedByError(true)
-        }
-      } finally {
-        advancing.current = false
-      }
-    }, throttled ? 1500 : 350)
-    return () => clearTimeout(timer)
-  }, [run, stoppedByError, throttled, t])
+  useEffect(() => { setOpenReport('descriptive'); setEvidenceTask(null) }, [selectedId])
 
   async function createRun(event: React.FormEvent) {
     event.preventDefault()
+    if (starting.current) return
+    starting.current = true
     setBusy(true)
     setErrorMessage(null)
     try {
+      const datasetId = primaryId ?? undefined
+      const pasted = source === 'upload' && !uploaded && csvDraft.trim()
       const detail = await api.createRun(
         goal.trim(),
-        useUpload && csvDraft.trim() ? csvDraft : undefined,
-        useUpload && csvDraft.trim() ? (fileName ?? t('runs.pastedName')) : undefined,
+        pasted ? csvDraft : undefined,
+        pasted ? t('runs.pastedName') : undefined,
         profile || undefined,
         // The report is written in the reader's language, and stays in it:
         // switching the interface later does not rewrite an approved artifact.
         locale,
+        datasetId,
+        datasetId && joins.length ? { joins, breakdown } : undefined,
       )
       setRun(detail)
-      setStoppedByError(false)
       void refreshList()
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : t('runs.startFailed'))
     } finally {
+      starting.current = false
       setBusy(false)
+    }
+  }
+
+  // The dataset a run starts from, when it is a stored one: joins need it.
+  const primaryId =
+    source === 'stored' ? storedId || null : source === 'upload' ? uploaded?.dataset.id ?? null : null
+
+  /** Save the run's cleaned (and merged) table as CSV (ADR 0031). */
+  async function downloadTable(id: string) {
+    setDownloading(true)
+    setErrorMessage(null)
+    try {
+      const { blob, name } = await api.downloadTable(id, locale)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = name
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : t('runs.downloadFailed'))
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -236,7 +356,8 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
     setBusy(true)
     setErrorMessage(null)
     try {
-      setRun(await action())
+      const detail = selectedId ? await runStore.mutate(selectedId, action) : await action()
+      if (detail) setRun(detail)
       void refreshList()
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : t('runs.actionFailed'))
@@ -254,7 +375,32 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
     document.getElementById(`reporttab-${type}`)?.focus()
   }
 
-  const pendingApproval = run?.approvals.find((a) => a.state === 'pending')
+
+  /** One line per stored dataset: what it is called, how big, what it was. */
+  function datasetLine(d: DatasetSummary) {
+    const parts = [d.name]
+    if (d.row_count != null) parts.push(plural('runs.rows', d.row_count))
+    if (d.source_format) parts.push(formatLabel(t, d.source_format))
+    // A mapped dataset runs by its saved mapping (ADR 0025), so say so.
+    if (d.mapped) parts.push(t('mapping.mapped'))
+    parts.push(formatDate(d.created_at))
+    return parts.join(' · ')
+  }
+
+  // Until the list arrives, a preset from the Datasets view is the one
+  // choice, so the picker never flashes empty.
+  const storedChoices = datasets
+    ? datasets.map((d) => ({ id: d.id, label: datasetLine(d) }))
+    : preset?.kind === 'stored'
+      ? [{ id: preset.id, label: preset.name }]
+      : []
+
+  if (selectedId && !run) {
+    return <section className="panel" aria-label={t('runs.detailAria')}><div className="panel__inner">
+      {errorMessage ? <p role="alert" className="statusline statusline--error" dir="auto">{errorMessage}</p> : <div role="status" aria-label={t('cockpit.loading')} className="card"><div className="skeleton skeleton--title" /><div className="skeleton skeleton--line" /></div>}
+      <div className="dialog__actions"><button type="button" className="btn btn--ghost" onClick={() => void runStore.retry(selectedId)}>{t('common.tryAgain')}</button><button type="button" className="btn btn--ghost" onClick={() => setRun(null)}>{t('runs.all')}</button></div>
+    </div></section>
+  }
 
   if (!run) {
     return (
@@ -288,25 +434,59 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                   {t('runs.dataset')}
                 </span>
                 <div className="segmented" role="group" aria-labelledby="dataset-label">
-                  <button
-                    type="button"
-                    className="segmented__option"
-                    aria-pressed={!useUpload}
-                    onClick={() => setUseUpload(false)}
-                  >
-                    {t('runs.sample')}
-                  </button>
-                  <button
-                    type="button"
-                    className="segmented__option"
-                    aria-pressed={useUpload}
-                    onClick={() => setUseUpload(true)}
-                  >
-                    {t('runs.upload')}
-                  </button>
+                  {(['sample', 'stored', 'upload'] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className="segmented__option"
+                      aria-pressed={source === option}
+                      onClick={() => {
+                        setSource(option)
+                        if (option === 'sample') suggestGoal(null)
+                        if (option === 'stored') {
+                          const chosen = datasets?.find((d) => d.id === storedId)
+                          if (chosen) suggestGoal(chosen.name)
+                        }
+                      }}
+                    >
+                      {t(SOURCE_LABELS[option])}
+                    </button>
+                  ))}
                 </div>
               </div>
-              {useUpload ? (
+              {source === 'stored' ? (
+                <div className="field">
+                  <label className="field__label" htmlFor="run-stored">
+                    {t('runs.storedLabel')}
+                  </label>
+                  {datasets && datasets.length === 0 && !storedId ? (
+                    <p className="field__help">{t('runs.storedNone')}</p>
+                  ) : (
+                    <>
+                      <select
+                        id="run-stored"
+                        className="field__select"
+                        value={storedId}
+                        disabled={busy}
+                        onChange={(event) => {
+                          setStoredId(event.target.value)
+                          const chosen = datasets?.find((d) => d.id === event.target.value)
+                          suggestGoal(chosen ? chosen.name : null)
+                        }}
+                      >
+                        {storedId ? null : <option value="">{t('runs.storedPick')}</option>}
+                        {storedChoices.map((choice) => (
+                          <option key={choice.id} value={choice.id}>
+                            {choice.label}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="field__help">{t('runs.storedHelp')}</span>
+                    </>
+                  )}
+                </div>
+              ) : null}
+              {source === 'upload' ? (
                 <>
                   <div className="field">
                     <label className="field__label" htmlFor="run-file">
@@ -317,37 +497,37 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                       id="run-file"
                       className="field__input"
                       type="file"
-                      accept=".csv,text/csv"
-                      disabled={busy}
+                      accept=".csv,.tsv,.txt,.xlsx,.json,.jsonl,.ndjson"
+                      disabled={busy || uploading !== null}
                       onChange={(event) => {
                         const file = event.target.files?.[0]
-                        if (!file) return
-                        if (file.size > 2_000_000) {
-                          setErrorMessage(
-                            t('runs.tooBig', {
-                              name: file.name,
-                              size: (file.size / 1_000_000).toFixed(1),
-                            }),
-                          )
-                          return
-                        }
-                        const reader = new FileReader()
-                        reader.onload = () => {
-                          setCsvDraft(String(reader.result ?? ''))
-                          setFileName(file.name)
-                          setErrorMessage(null)
-                        }
-                        reader.onerror = () =>
-                          setErrorMessage(t('runs.readFailed', { name: file.name }))
-                        reader.readAsText(file)
+                        if (file) void uploadFile(file)
                       }}
                     />
-                    {fileName ? (
-                      <p className="privacy-note">
-                        <Icon name="check" size={14} />
-                        <span dir="auto">{fileName}</span> ·{' '}
-                        {plural('runs.rows', csvDraft.split('\n').filter(Boolean).length - 1)}
-                      </p>
+                    <p className="privacy-note" role="status" aria-live="polite">
+                      {uploading ? (
+                        <>
+                          <span className="spinner" aria-hidden="true" />
+                          {t('runs.uploading', { name: uploading })}
+                        </>
+                      ) : uploaded ? (
+                        <>
+                          <Icon name="check" size={14} />
+                          <span dir="auto">{uploaded.dataset.name}</span> ·{' '}
+                          {plural('runs.rows', uploaded.dataset.row_count ?? uploaded.preview.length)} ·{' '}
+                          {formatLabel(t, uploaded.dataset.source_format)}
+                          {uploaded.created ? null : <> · {t('runs.alreadyStored')}</>}
+                        </>
+                      ) : null}
+                    </p>
+                    {uploaded && uploaded.warnings.length > 0 ? (
+                      <ul className="warnings">
+                        {uploaded.warnings.map((warning) => (
+                          <li key={warning} dir="auto">
+                            {warning}
+                          </li>
+                        ))}
+                      </ul>
                     ) : null}
                   </div>
                   <div className="field">
@@ -363,7 +543,8 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                       value={csvDraft}
                       onChange={(event) => {
                         setCsvDraft(event.target.value)
-                        setFileName(null)
+                        // Pasted text replaces a file chosen before it.
+                        setUploaded(null)
                       }}
                       placeholder={'team,quarter,sales\nA,Q1,100\nB,Q1,90'}
                       disabled={busy}
@@ -400,6 +581,18 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                   </select>
                 </div>
               ) : null}
+              {uploaded ? <UploadPreview result={uploaded} /> : null}
+              {source !== 'sample' ? (
+                <JoinBuilder
+                  primaryId={primaryId}
+                  datasets={datasets}
+                  disabled={busy}
+                  joins={joins}
+                  breakdown={breakdown}
+                  onChange={changeJoins}
+                />
+              ) : null}
+              <PlanPreview pipelines={pipelines} profile={profile} joined={joins.length > 0} />
               <div className="field">
                 <button type="submit" className="btn btn--primary" disabled={busy || !goal.trim()}>
                   {busy ? <span className="spinner" aria-hidden="true" /> : <Icon name="sparkle" size={16} />}
@@ -450,19 +643,24 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
 
   const reportLang = run.report_language === 'ar' ? 'ar' : 'en'
   const reportDir = reportLang === 'ar' ? 'rtl' : 'ltr'
+  // The table the run analyses exists once cleaning, and any merge, is done.
+  const tableTask = run.tasks.find((task) => task.role === 'merge') ?? run.tasks.find((task) => task.role === 'cleaner')
+  const tableReady = tableTask?.state === 'succeeded'
 
   return (
-    <section className="panel" aria-label={t('runs.detailAria')}>
+    <section className="panel cockpit" aria-label={t('runs.detailAria')}>
       <div className="panel__inner panel__inner--split">
         <div className="panel__column">
-          <div className="panel__header">
+          <div className="panel__header cockpit__header">
             <div>
+              <p className="eyebrow">{t('cockpit.workspace')}</p>
               <h2 className="panel__title" dir="auto">
                 {run.goal}
               </h2>
+              {run.reports[0]?.headline ? <p className="cockpit__finding" dir={run.report_language === 'ar' ? 'rtl' : 'ltr'} lang={run.report_language}>{run.reports[0].headline}</p> : null}
               <p className="panel__desc">
-                <span dir="auto">{run.dataset_name}</span> · {t('runs.state')}{' '}
-                <strong>{stateLabel(t, run.state)}</strong>
+                <span dir="auto">{run.dataset_name}</span> · {languageLabel(t, reportLang)} · {t('runs.state')}{' '}
+                <strong>{stateLabel(t, run.paused && ACTIVE_STATES.includes(run.state) ? 'paused' : run.state)}</strong>
                 {run.error ? (
                   <>
                     {' — '}
@@ -470,8 +668,10 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                   </>
                 ) : null}
               </p>
+              <p className="card__meta"><time dateTime={snapshot.receivedAt ?? run.updated_at}>{t('cockpit.lastObserved', { time: `${formatDate(snapshot.receivedAt ?? run.updated_at)} ${formatTime(snapshot.receivedAt ?? run.updated_at)}` })}</time></p>
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+              {run.report?.published_path ? <button type="button" className="btn btn--primary" onClick={() => { fullReportRef.current?.focus(); fullReportRef.current?.scrollIntoView({ block: 'center' }) }}>{t('cockpit.readPublished')}</button> : null}
               {ACTIVE_STATES.includes(run.state) ? (
                 <>
                   <button
@@ -479,7 +679,6 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                     className="btn btn--ghost"
                     disabled={busy}
                     onClick={() => {
-                      setStoppedByError(false)
                       void act(() => (run.paused ? api.resumeRun(run.id) : api.pauseRun(run.id)))
                     }}
                   >
@@ -495,69 +694,43 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                   </button>
                 </>
               ) : null}
+              {tableReady && onOpenDashboard ? (
+                <button type="button" className="btn btn--ghost" onClick={() => onOpenDashboard(run.id)}>
+                  <Icon name="dashboard" size={16} />
+                  {t('runs.openDashboard')}
+                </button>
+              ) : null}
+              {tableReady ? (
+                <button type="button" className="btn btn--ghost" disabled={downloading} onClick={() => void downloadTable(run.id)}>
+                  {downloading ? <span className="spinner" aria-hidden="true" /> : <Icon name="download" size={16} />}
+                  {t('runs.download')}
+                </button>
+              ) : null}
               <button type="button" className="btn btn--ghost" onClick={() => setRun(null)}>
                 {t('runs.all')}
               </button>
             </div>
           </div>
 
-          {pendingApproval ? (
-            <div className="card approvalcard" role="region" aria-label={t('runs.approval')}>
-              <h3 className="card__title">
-                <Icon name="alert" size={16} /> {t('runs.approval')}
-              </h3>
-              <dl>
-                <div className="rail__row">
-                  <dt>{t('runs.action')}</dt>
-                  <dd dir="auto" style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'end' }}>
-                    {pendingApproval.action}
-                  </dd>
-                </div>
-                <div className="rail__row">
-                  <dt>{t('runs.target')}</dt>
-                  <dd dir="ltr" style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'end' }}>
-                    {pendingApproval.target}
-                  </dd>
-                </div>
-                <div className="rail__row">
-                  <dt>{t('runs.risk')}</dt>
-                  <dd dir="auto">
-                    {pendingApproval.risk === 'high' ? t('runs.riskHigh') : pendingApproval.risk}
-                  </dd>
-                </div>
-                <div className="rail__row">
-                  <dt>{t('runs.impact')}</dt>
-                  <dd dir="auto" style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'end' }}>
-                    {pendingApproval.impact}
-                  </dd>
-                </div>
-                <div className="rail__row">
-                  <dt>{t('runs.reversibility')}</dt>
-                  <dd dir="auto" style={{ maxWidth: '70%', whiteSpace: 'normal', textAlign: 'end' }}>
-                    {pendingApproval.reversibility}
-                  </dd>
-                </div>
-              </dl>
-              <div className="dialog__actions">
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  disabled={busy}
-                  onClick={() => void act(() => api.decideApproval(run.id, pendingApproval.id, 'reject'))}
-                >
-                  {t('runs.reject')}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--primary"
-                  disabled={busy}
-                  onClick={() => void act(() => api.decideApproval(run.id, pendingApproval.id, 'approve'))}
-                >
-                  {t('runs.approve')}
-                </button>
-              </div>
-            </div>
-          ) : null}
+          <p className="cockpit__continuity"><Icon name="shield" size={14} />{t('cockpit.keepOpen')}</p>
+          <p className="visually-hidden" role="status" aria-live="polite">{(() => {
+            const event = [...snapshot.events].reverse().find((item) => item.kind === 'stage.changed')
+            const task = run.tasks.find((item) => item.id === event?.subject)
+            return task ? `${task.title}: ${stateLabel(t, task.state)}` : stateLabel(t, run.state)
+          })()}</p>
+          <ApprovalCard detail={run} onDecision={(detail) => { setRun(detail); void refreshList() }} />
+          {run.reports.length ? <section className="finding-grid" aria-label={t('overview.findings')}>
+            {run.reports.filter((section) => ['descriptive', 'diagnostic', 'predictive', 'prescriptive'].includes(section.type)).map((section) => {
+              const task = run.tasks.find((item) => item.role === section.type)
+              return <article className="finding-card" key={section.type}>
+                <p className="eyebrow">{typeLabel(t, section.type, section.title)}</p>
+                <h3>{questionLabel(t, section.type, section.question)}</h3>
+                <p className="finding-card__headline" lang={reportLang} dir={reportDir}>{section.headline}</p>
+                {task ? <button type="button" className="evidence-link" aria-label={t('cockpit.whyFor', { type: typeLabel(t, section.type, section.title) })} onClick={() => setEvidenceTask(task)}>{t('cockpit.why')}<Icon name="search" size={14} /></button> : null}
+              </article>
+            })}
+          </section> : null}
+          {run.tasks.find((task) => task.role === 'validator')?.quality_checks.length ? <div className="assurance-strip"><Icon name="shield" size={16} /><span>{t('cockpit.checks')}: {run.tasks.find((task) => task.role === 'validator')!.quality_checks.every((check) => check.passed) ? t('cockpit.passed') : t('cockpit.notPassed')}</span><span>{run.report?.published_path ? t('cockpit.published') : t('cockpit.unpublished')}</span></div> : null}
 
           {run.charts.length > 0 ? (
             <div className="card">
@@ -570,10 +743,38 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                     {chart.title}
                   </figcaption>
                   {chart.type === 'bar' ? <BarChart chart={chart} /> : <LineChart chart={chart} />}
+                  {/* The same numbers as a table: nobody has to read a
+                      value off a bar, and a screen reader gets every one. */}
+                  <details className="runchart__data" dir={isRtl ? 'rtl' : 'ltr'}>
+                    <summary>{t('runs.chartData')}</summary>
+                    <table className="datatable">
+                      <thead>
+                        <tr>
+                          <th scope="col">{t('runs.chartLabel')}</th>
+                          <th scope="col">{t('runs.chartValue')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {chart.labels.map((label, index) => (
+                          <tr key={label}>
+                            <th scope="row" dir="auto">
+                              {label}
+                              {chart.forecast_from !== undefined && index >= chart.forecast_from
+                                ? ` (${t('runs.forecast')})`
+                                : ''}
+                            </th>
+                            <td>{formatNumber(chart.values[index])}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </details>
                 </figure>
               ))}
             </div>
           ) : null}
+
+          <ModelCards models={run.models ?? []} language={reportLang} />
 
           {run.reports.length ? (
             <div className="card">
@@ -651,6 +852,7 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
                 </p>
               ) : null}
               <pre
+                ref={fullReportRef}
                 className="runreport runreport--full"
                 tabIndex={0}
                 role="region"
@@ -673,36 +875,10 @@ export function RunsView({ openRunId = null, openNonce = 0 }: RunsViewProps) {
           </p>
         </div>
 
-        <div className="panel__column panel__column--side">
-          <div className="card">
-            <h3 className="card__title">{t('runs.pipeline')}</h3>
-            <p className="controlrow__help">
-              {tx('runs.pipelineDesc', { hermes: <strong>Hermes</strong> })}
-            </p>
-            <ul className="runtasks" aria-live="polite">
-              {run.tasks.map((task) => (
-                <li key={task.id} className={`runtask runtask--${task.state}`}>
-                  <span className="runtask__mark" aria-hidden="true">
-                    {TASK_ICON[task.state] ?? '·'}
-                  </span>
-                  <span>
-                    <span className="controlrow__label" dir="auto">
-                      {task.title}
-                    </span>
-                    {task.summary ? (
-                      <span className="controlrow__help" dir="auto">
-                        {task.summary}
-                      </span>
-                    ) : (
-                      <span className="controlrow__help">{stateLabel(t, task.state)}</span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <div className="panel__column panel__column--side"><RunTimeline run={run} pipelines={pipelines} onEvidence={setEvidenceTask} /></div>
       </div>
+      {snapshot.interrupted ? <div className="cockpit__recovery"><p role="alert" dir="auto">{errorMessage}</p><button type="button" className="btn btn--ghost" onClick={() => { setErrorMessage(null); void runStore.retry(run.id) }}>{t('common.tryAgain')}</button></div> : null}
+      {evidenceTask ? <EvidencePanel run={run} task={evidenceTask} onClose={closeEvidence} /> : null}
     </section>
   )
 }

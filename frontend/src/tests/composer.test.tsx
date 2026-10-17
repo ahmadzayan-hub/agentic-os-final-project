@@ -4,6 +4,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { Composer } from '../features/chat/Composer'
 
 describe('Composer', () => {
+  it('retains a failed draft and restores it after remount', async () => {
+    const user = userEvent.setup()
+    const first = render(<Composer draftKey="failure-test" onSend={async () => false} busy={false} />)
+    await user.type(screen.getByLabelText('Message'), 'Recover my question{Enter}')
+    expect(screen.getByLabelText('Message')).toHaveValue('Recover my question')
+    first.unmount()
+    render(<Composer draftKey="failure-test" onSend={vi.fn()} busy={false} />)
+    expect(screen.getByLabelText('Message')).toHaveValue('Recover my question')
+  })
   it('sends trimmed text on Enter and clears the input', async () => {
     const onSend = vi.fn()
     const user = userEvent.setup()
@@ -57,3 +66,4 @@ describe('Composer', () => {
     expect(screen.getByPlaceholderText('This session has ended')).toBeInTheDocument()
   })
 })
+

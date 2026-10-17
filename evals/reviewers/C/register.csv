@@ -1,0 +1,12 @@
+Check,Expected
+"Outpatient visits, 2025 (count)","412,600"
+"Outpatient visits, 2024 (count)","368,400"
+"Visit growth, 2025 over 2024 (growth ratio: (412,600 - 368,400) / 368,400)",12.0%
+"Appointments booked, 2025 (count)","350,000"
+"No-shows, 2025 (count)","29,400"
+No-show rate (no-shows / booked appointments),8.4%
+"Operating cost, 2025","$18,450,000"
+"Operating cost per visit (ratio: operating cost / visits)","$44.72"
+"No-show rate, Clinic A (no-shows / booked appointments: 6,000 / 50,000)",12.0%
+"No-show rate, Clinic B (no-shows / booked appointments: 12,000 / 200,000)",6.0%
+"No-show rate, Clinic C (no-shows / booked appointments: 11,400 / 100,000)",11.4%

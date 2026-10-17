@@ -1,0 +1,46 @@
+FINDING B01 · blocker · P02
+Category: arithmetic
+Evidence: The register gives 4,960,000 km ÷ 1,240 failures = 4,000 km per failure. The memo says 4,800 km. P14 and the register row "Mean km between failures" both say 4,000, so the memo contradicts itself.
+Fix: Change "4,800 km" to "4,000 km" (4,960,000 ÷ 1,240).
+
+FINDING B02 · blocker · P04
+Category: causal_claim
+Evidence: "Hot weather causes door faults to double in summer" gives a cause and a size of effect ("double"). The register has no weather, temperature or door-fault data, and no controlled comparison is shown. Summer also brings other changes, such as higher passenger load and more operating hours. P10 correctly says the summer data does not show which variable drives which.
+Fix: State it as an association with its figures, for example "Door faults were higher in summer months (give counts and per-km rates)". Drop "causes" and "double" unless a rate is shown.
+
+FINDING B03 · major · P05
+Category: unsourced_figure
+Evidence: The register has no door-fault count and no failure-type breakdown. "31% of all failures" cannot be computed from it. On a base of 1,240 failures, 31% would be about 384 faults, and that number appears nowhere either.
+Fix: Add the door-fault count and its source to the register (door faults ÷ 1,240), or remove the sentence.
+
+FINDING B04 · blocker · P06
+Category: causal_claim
+Evidence: "0.4 points better in March, which proves its new shift pattern works." This is a single month at one depot. It has no baseline period, no comparison depot and no seasonal control. The punctuality figures for Depot B are not in the register (it holds only the fleet-wide 98.1%). A 0.4-point gap is not shown to exceed normal month-to-month variation, and "proves" cannot follow from that.
+Fix: Report it as "Depot B's March punctuality was 0.4 points higher (give both rates and their bases)". Add "this does not show the shift pattern is the cause", or remove the claim.
+
+FINDING B05 · blocker · P07
+Category: denominator
+Evidence: The memo averages each vehicle's own availability rate (98.0%) and says the register's 96.4% "understates it". The register defines availability as available hours ÷ scheduled hours, a ratio of sums, and 96.4% follows that definition. A mean of per-vehicle rates gives a vehicle with few scheduled hours the same weight as one with many. The register figure is the correct one, so the memo has the direction of the error backwards.
+Fix: Report availability as 96.4% (total available hours ÷ total scheduled hours). Remove the 98.0% and the "understates" claim.
+
+FINDING B06 · blocker · P09
+Category: arithmetic
+Evidence: 52,300 ÷ 1,240 = 42.18 minutes per failure, not 48.2. Working back from 48.2, 48.2 × 1,240 = 59,768, which does not match the register's 52,300 delay minutes.
+Fix: Change "48.2 minutes" to "42.2 minutes" (52,300 ÷ 1,240).
+
+FINDING B07 · blocker · P11
+Category: causal_claim
+Evidence: "The new brake pads reduced failures by 12%." The register has no brake-pad data, no before and after counts, and no fitted and unfitted vehicles to compare. The 12% is not computable from the register, and no comparison group or adjustment for km, season or fleet changes is given. "Reduced" attributes the change to the pads.
+Fix: Give the before and after failure rates per km with their sources and state the design. Without a controlled comparison, say "failures were 12% lower after the pads were fitted; this is not shown to be an effect of the pads". Otherwise remove it.
+
+FINDING B08 · major · P12
+Category: unsourced_figure
+Evidence: "Spare-parts stockouts cost $1.9 million" appears nowhere in the register, and no formula or source is given. It is not part of the $18.6M maintenance cost as far as the register shows, and nothing says whether it is a measured or estimated cost.
+Fix: Add the figure to the register with its source and definition (what is counted and over what period). If it is an estimate, label it as illustrative, or remove it.
+
+FINDING B09 · blocker · P13
+Category: overclaim
+Evidence: "AUC of 0.81, so it will prevent most failures." AUC measures how well the model ranks cases. It does not show that any failures are prevented, which would need maintenance actions that work and a measured result. The memo also gives no held-out evaluation, no baseline (such as a prior-period failure rate or a simple rule), no metric beyond AUC, and no precision or recall at a usable threshold. It does not say whether the features exclude outcomes known only after the failure.
+Fix: Report the AUC as ranking performance only, on held-out data, against a named baseline, and say how the features were checked for leakage. Replace "will prevent most failures" with "has not been tested for failures prevented".
+
+Notes: P01, P03, P08 and P14 agree with the register (4.96M km, 1,240 failures, $18.6M ÷ 40 = $465,000, 98.1%, 4,000 km). P08 and P14 would read better with their denominators stated. P10 is correctly worded as an association.

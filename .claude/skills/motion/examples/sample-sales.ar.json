@@ -1,0 +1,43 @@
+{
+  "language": "ar",
+  "theme": "dark",
+  "footer": "المصدر: بيانات المبيعات النموذجية المرفقة (server/analytics.sample_dataset)، 72 صفاً، 2025",
+  "brand": "Agentic OS",
+  "scenes": [
+    {
+      "type": "title",
+      "duration": 3,
+      "kicker": "المبيعات النموذجية · 2025",
+      "title": "عام من المبيعات في أربعة مشاهد",
+      "subtitle": "كل رقم هنا محسوب من البيانات النموذجية."
+    },
+    {
+      "type": "kpis",
+      "duration": 5,
+      "heading": "العام في لمحة",
+      "items": [
+        { "label": "الإيرادات", "value": 3583440, "format": "currency", "currency": "USD", "source": "sum(revenue), 72 rows" },
+        { "label": "الوحدات المبيعة", "value": 33525, "source": "sum(units), 72 rows" },
+        { "label": "الأشهر", "value": 12, "source": "distinct month, 2025-01 to 2025-12" }
+      ]
+    },
+    {
+      "type": "bars",
+      "duration": 5,
+      "heading": "الإيرادات حسب الفئة",
+      "items": [
+        { "label": "البرمجيات", "value": 1734840, "format": "currency", "currency": "USD", "highlight": true, "source": "sum(revenue) where category = Software" },
+        { "label": "الأجهزة", "value": 1194480, "format": "currency", "currency": "USD", "source": "sum(revenue) where category = Hardware" },
+        { "label": "الخدمات", "value": 654120, "format": "currency", "currency": "USD", "source": "sum(revenue) where category = Services" }
+      ],
+      "note": "تحقق البرمجيات 48% من إيرادات العام."
+    },
+    {
+      "type": "statement",
+      "duration": 4,
+      "figure": { "value": 45, "suffix": "%", "source": "(365,400 − 252,000) / 252,000: December against January revenue" },
+      "text": "نمت الإيرادات الشهرية من يناير إلى ديسمبر.",
+      "note": "252,000 في يناير، و365,400 في ديسمبر."
+    }
+  ]
+}

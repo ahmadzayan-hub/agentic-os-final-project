@@ -17,6 +17,8 @@ test('analytics run: goal to approved, published, evidence-backed report', async
 
   // Every specialist succeeded and the evidence is visible. Twenty-one
   // stages; the twenty-second task is the publish gate, still waiting.
+  const disclosure = page.locator('.run-timeline__disclosure')
+  if ((await disclosure.getAttribute('open')) === null) await disclosure.locator(':scope > summary').click()
   await expect(page.locator('.runtask--succeeded')).toHaveCount(21)
   await expect(
     page.locator('.runtasks').getByText('All validation checks passed', { exact: false }),
@@ -27,6 +29,18 @@ test('analytics run: goal to approved, published, evidence-backed report', async
   // Started from the English interface, so written and marked in English.
   await expect(page.locator('.runreport--full')).toHaveAttribute('lang', 'en')
   await expect(page.locator('.runreport--full')).toHaveAttribute('dir', 'ltr')
+
+  // Interface labels change, while the stored English report and its
+  // adjacent evidence/decision text retain their language-of-parts tags.
+  await page.getByRole('button', { name: 'Change language' }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ar')
+  await expect(page.locator('.runreport--full')).toHaveAttribute('lang', 'en')
+  await expect(page.locator('.decision__facts dd').first()).toHaveAttribute('lang', 'en')
+  await page.getByRole('button', { name: /^ما الدليل على ذلك؟/ }).first().click()
+  await expect(page.locator('.evidence__summary')).toHaveAttribute('lang', 'en')
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'تغيير اللغة' }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
 
   // Approve: the report is published to the Obsidian-compatible vault.
   await approval.getByRole('button', { name: 'Approve and publish' }).click()
@@ -56,14 +70,15 @@ test('a CSV file can be uploaded and is analyzed', async ({ page }) => {
   await page.goto('/')
   await openTab(page, /^Runs/)
 
-  await page.getByRole('button', { name: 'Upload or paste CSV' }).click()
-  await page.getByLabel('Choose a CSV file').setInputFiles({
+  await page.getByRole('button', { name: 'Upload a file or paste CSV', exact: true }).click()
+  await page.getByLabel('Choose a file').setInputFiles({
     name: 'quarterly-sales.csv',
     mimeType: 'text/csv',
     buffer: Buffer.from('team,quarter,sales\nA,Q1,120\nA,Q2,180\nB,Q1,60\nB,Q2,40\n'),
   })
-  // The file is read in the browser and its shape confirmed before sending.
-  await expect(page.getByText('quarterly-sales.csv · 4 data rows')).toBeVisible()
+  // The server reads the file and says what it found before any run
+  // starts (ADR 0024).
+  await expect(page.getByText('quarterly-sales.csv · 4 data rows · CSV')).toBeVisible()
 
   await page.getByLabel('Goal').fill('Analyze the uploaded quarterly sales')
   await page.getByRole('button', { name: 'Start run' }).click()
@@ -75,3 +90,4 @@ test('a CSV file can be uploaded and is analyzed', async ({ page }) => {
   await expect(page.locator('.runreport--full')).toContainText('total_sales | 400.0')
   await expect(page.locator('.runreport--full')).toContainText('quarterly-sales.csv')
 })
+

@@ -1,0 +1,69 @@
+FINDING F01 · major · evals/reviewers/A/memo.md · P02
+Category: arithmetic
+Evidence: "That is growth of 13.4% in one year." refers to the P01 figures. Register: 12,480,000 / 11,200,000 - 1 = 0.114286, so 11.43% (checker: wrong, computed 11.428571). The written 13.4% does not hold.
+Fix: Restate the growth as the value the stated calculation gives (11.4%), or remove the sentence. Do not keep 13.4%.
+
+FINDING F02 · major · evals/reviewers/A/memo.md · P03
+Category: unsourced_figure
+Evidence: "Online orders grew 27% year on year." (checker: UNSOURCED 27%). The register has only the 2025 online share of orders (18.5%), which is a share, not a growth rate. No 2024 online order count appears, so 27% cannot be derived.
+Fix: Add the 2024 and 2025 online order counts to the register with the calculation, or remove the 27%.
+
+FINDING F03 · major · evals/reviewers/A/memo.md · P05
+Category: causal_claim
+Evidence: "The loyalty app drove the revenue growth." The register and memo contain no loyalty-app figures. P16 says the data are associations and a controlled test would be needed, so this sentence contradicts the memo's own caveat.
+Fix: Reword as an association (for example, "revenue growth coincided with loyalty-app activity"), or add loyalty data and a test that supports the causal claim.
+
+FINDING F04 · major · evals/reviewers/A/memo.md · P06
+Category: unsourced_figure
+Evidence: "Return rates average 9.1% across stores (the mean of each store's rate), so returns are worse than the register's 6.2% suggests." (checker: UNSOURCED 9.1%). The register has only the chain-level returns rate (6.2%). No store-level returns data exist in the register or memo, so 9.1% cannot be derived.
+Fix: Add the store-level returns and order counts to the register and show the calculation, or remove the 9.1% and the comparison.
+
+FINDING F05 · major · evals/reviewers/A/memo.md · P06
+Category: denominator
+Evidence: The register's 6.2% is chain returns divided by chain orders (a pooled rate). The 9.1% is an unweighted mean of store rates, which gives each store equal weight whatever its order count. The two figures use different denominators, so "returns are worse than the register's 6.2% suggests" compares unlike measures.
+Fix: State both rates on the same basis (returns divided by orders, pooled across stores), or drop the "worse" conclusion.
+
+FINDING F06 · major · evals/reviewers/A/memo.md · P07
+Category: unsourced_figure
+Evidence: "Store 17's sales rose 40% after its refit, so every refit will lift sales by 40%." (checker: UNSOURCED 40%). The register has no store-level sales. The 40% cannot be derived from the chain figures.
+Fix: Add the store 17 before-and-after sales to the register with the calculation, or remove the 40%.
+
+FINDING F07 · major · evals/reviewers/A/memo.md · P07
+Category: overclaim
+Evidence: "every refit will lift sales by 40%" generalises one store's before-and-after change to all refits, with no control group and no other stores' data. P16 says the data are associations only, so the rule contradicts the memo's own caveat.
+Fix: Limit the claim to what was observed ("Store 17's sales rose 40% after its refit; this is one store and not a controlled comparison"), or delete the generalisation.
+
+FINDING F08 · major · evals/reviewers/A/memo.md · P09
+Category: arithmetic
+Evidence: "With 610 staff across 48 stores, each store has 15.2 staff on average." Register: 610 / 48 = 12.708333, so 12.7 (checker: wrong, computed 12.708333). The written 15.2 does not follow from the register figures under any rounding.
+Fix: Replace 15.2 with 12.7, or remove the figure.
+
+FINDING F09 · major · evals/reviewers/A/memo.md · P10
+Category: causal_claim
+Evidence: "Longer opening hours caused higher weekend revenue." The register and memo contain no opening-hours or weekend-revenue figures. The claim is causal and contradicts P16, which says the data show associations only.
+Fix: Reword as an association without a causal verb, or add opening-hours and weekend-revenue data and a controlled test.
+
+FINDING F10 · major · evals/reviewers/A/memo.md · P12
+Category: unsourced_figure
+Evidence: "A model predicts store revenue with 92% accuracy, so it should set next year's targets." (checker: UNSOURCED 92%). The register and memo contain no model, validation set or accuracy metric, so 92% cannot be derived.
+Fix: Name the model, the accuracy metric (for example, MAPE), the test data and the period, and add them to the register. Otherwise remove the 92%.
+
+FINDING F11 · major · evals/reviewers/A/memo.md · P12
+Category: overclaim
+Evidence: "so it should set next year's targets." A forecast accuracy figure does not by itself justify a target-setting decision. "Accuracy" is also undefined for a numeric revenue forecast, because no error metric is named.
+Fix: State the error metric and its test result, and present the model as one input to target-setting for review, not as the basis for the targets.
+
+FINDING F12 · major · evals/reviewers/A/memo.md · P13
+Category: unsourced_figure
+Evidence: "Shrinkage cost the chain $640,000 in 2025." (checker: UNSOURCED $640,000). The register has no shrinkage figure, and no shrinkage rate or cost base is given, so $640,000 cannot be derived from the revenue figures.
+Fix: Add the shrinkage cost to the register with its source, or remove the figure.
+
+FINDING F13 · major · evals/reviewers/A/memo.md · P15
+Category: unsourced_figure
+Evidence: "The average order value is $52, the mean of the 48 stores' own averages" (checker: UNSOURCED $52). The register has no $52 figure and the 48 individual store averages are not given, so the value cannot be derived.
+Fix: Add the store averages and the $52 calculation to the register, or remove the figure.
+
+FINDING F14 · major · evals/reviewers/A/memo.md · P15
+Category: denominator
+Evidence: The register's $39.95 is revenue divided by orders (12,480,000 / 312,400 = 39.9488, which rounds to $39.95, so that figure holds). The $52 is an unweighted mean of 48 store averages, which gives each store equal weight regardless of its order count. The two are different measures, and "so the register's $39.95 understates what customers spend" compares unlike denominators. P04 also presents $39.95 as the average basket with no reconciliation to $52.
+Fix: Use revenue divided by orders throughout, or define the store-average measure separately and say which one is meant. Drop "understates".

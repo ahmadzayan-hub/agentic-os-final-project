@@ -7,5 +7,20 @@
         "save_history": true
     },
     "memory_file": "data/memory.json",
-    "maximum_history_items": 50
+    "maximum_history_items": 50,
+    "stages": [
+        "server.modelling.RegressionModel",
+        "server.modelling.ClassificationModel",
+        "server.modelling.ClusteringModel",
+        "server.modelling.SeasonalForecast"
+    ],
+    "profiles": {
+        "default": [],
+        "models": [
+            "regression_model",
+            "classification_model",
+            "clustering_model",
+            "seasonal_model"
+        ]
+    }
 }

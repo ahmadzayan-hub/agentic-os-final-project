@@ -41,7 +41,7 @@ interface Store {
   /** A run the assistant just started from the chat; the shell opens it. */
   openRun: { id: string; nonce: number } | null
   start: () => Promise<void>
-  send: (text: string) => Promise<void>
+  send: (text: string) => Promise<boolean>
   retryFailed: () => Promise<void>
   dismissFailed: () => void
   clearHistory: () => Promise<OperationOutcome>
@@ -305,7 +305,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const send = useCallback(
     async (text: string) => {
-      if (!session || sending) return
+      if (!session || sending) return false
       setSending(true)
       setFailedText(null)
       beginWork()
@@ -328,12 +328,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (startedRun && typeof runId === 'string') {
           setOpenRun({ id: runId, nonce: Date.now() })
         }
+        return true
       } catch (error) {
         const message = error instanceof ApiError ? error.message : translate('outcome.requestFailed')
         setFailedText(text)
         setLastError(true)
         if (error instanceof ApiError && error.offline) setOffline(true)
         pushEvent('event.request.failed', 'error', message)
+        return false
       } finally {
         setSending(false)
         endWork()
@@ -537,3 +539,4 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }
+

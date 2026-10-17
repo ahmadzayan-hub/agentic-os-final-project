@@ -1,0 +1,44 @@
+FINDING F01 · major · memo.md P02
+Category: unsourced_figure
+Evidence: "About one patient in five arrived after their appointment time." Classification: unsourced. "One in five" is a 20% proportion written in words. The checker reads digits only, so it did not flag it. No register row or reference carries a late-arrival figure.
+Fix: Add a register row for late arrivals with its source and denominator, or remove the sentence.
+
+FINDING F02 · blocker · memo.md P03
+Category: arithmetic
+Evidence: The register row "Operating cost per visit (ratio: operating cost / visits)" expects $44.72, and the checker reports it MISSING. No $44.72 appears in the memo. P03 states $52.10 and gives the computation "$18,450,000 divided by 412,600 visits", which the checker evaluates to 44.716432, not $52.10.
+Fix: Use the register's $44.72 in P03, or correct the register if a different figure is intended, then re-run the checker.
+
+FINDING F03 · major · memo.md P05
+Category: causal_claim
+Evidence: "The SMS reminder scheme pulled the no-show rate down to 8.4% of booked appointments across the year." The 8.4% is sourced (register row "No-show rate"). The attribution to SMS reminders and the implied fall from an earlier rate have no source. The register has no 2024 no-show rate and no SMS data. P12 says the figures "cannot confirm the explanations behind them."
+Fix: Say the no-show rate was 8.4% in 2025 and drop "pulled ... down", unless a 2024 baseline and an evaluation of the scheme are added to the register.
+
+FINDING F04 · major · memo.md P07
+Category: denominator
+Evidence: "Averaging the three clinics' no-show rates gives 9.8%, which is the department's no-show rate for 2025." Classification: derived, from the unweighted mean (12.0% + 11.4% + 6.0%) / 3 = 9.8%. The checker reports it UNSOURCED. This averages clinic rates whose booked volumes differ, so it is not the pooled department rate. The register gives the department rate as 8.4% (no-shows 29,400 over booked 350,000), as P06 also states.
+Fix: Replace 9.8% with the register's 8.4% and delete the averaging sentence.
+
+FINDING F05 · major · memo.md P08
+Category: overclaim
+Evidence: "Clinic B's 6.0% no-show rate settles the matter: every clinic can expect that level next year, so staffing should be planned on it." The 6.0% is the sourced Clinic B register value. The forecast for every clinic and for next year has no support in the register or memo. P09 shows clinic rates ranging from 6.0% to 12.0%, and P12 limits the figures to one year.
+Fix: Delete the forecast and the staffing instruction, or report Clinic B's 2025 rate alongside the full clinic range and treat any projection as a separate, sourced model.
+
+FINDING F06 · major · memo.md P10
+Category: unsourced_figure
+Evidence: "Nurse vacancies stood at 14% through the year." Classification: unsourced. "14%" is in no register row and no reference, and the checker reports it UNSOURCED. The register contains no staffing data.
+Fix: Add a register row for nurse vacancies with its source and denominator, or remove the sentence.
+
+FINDING F07 · major · memo.md P11
+Category: arithmetic
+Evidence: "Outpatient visits grew 18.0% over 2024, moving from 368,400 to 412,600." The register row "Visit growth, 2025 over 2024" expects 12.0%, and P04 states 12.0%. The checker evaluates these endpoints to 11.997828, so 18.0% does not follow from them, and the memo contradicts itself.
+Fix: Replace 18.0% with the register's 12.0% to match P04.
+
+FINDING F08 · major · memo.md P13
+Category: causal_claim
+Evidence: "The new evening sessions accounted for the 12.0% rise in visits over 2024." The 12.0% is sourced (register row). The attribution to evening sessions has no register row, no reference and no session data anywhere in the memo. P12 says the figures "cannot confirm the explanations behind them."
+Fix: Remove the attribution, or state the rise as an association and add a source for session volumes before linking the two.
+
+FINDING F09 · major · memo.md P14
+Category: overclaim
+Evidence: "Visits can be expected to keep rising by 12.0% a year, so the department should open a fourth clinic in 2026." The 12.0% is one observed year (register row; P12 says the figures are "observed in one year"). Treating it as a constant annual rate and recommending a fourth clinic has no forecast, capacity or cost source.
+Fix: Delete the projection and the clinic recommendation, or add a sourced forecast with its method and uncertainty and present the clinic decision as a separate case.

@@ -4,11 +4,20 @@ import { lastAgentBubble, openTab, sendMessage, skipOnboarding } from './helpers
 // Captures the final interface for the documentation. Runs last in file
 // order but is independent of the other specs. Themes are stamped
 // directly because the header toggle is hidden on narrow viewports.
+// Reduced motion makes a theme change land at once, so no capture
+// catches a colour halfway through its transition.
+test.use({ contextOptions: { reducedMotion: 'reduce' } })
+
 test('capture interface screenshots', async ({ page }, testInfo) => {
   await skipOnboarding(page)
   await page.goto('/')
   const shot = (name: string) =>
     page.screenshot({ path: `../docs/screenshots/${testInfo.project.name}-${name}.png` })
+  // A view is ready to capture once its skeletons have been replaced.
+  const settled = () =>
+    page.waitForFunction(
+      () => document.querySelector('main .panel__title') && !document.querySelector('main .skeleton'),
+    )
   const theme = (value: string) =>
     page.evaluate((themeValue) => {
       document.documentElement.dataset.theme = themeValue
@@ -61,5 +70,27 @@ test('capture interface screenshots', async ({ page }, testInfo) => {
     await shot('chat-arabic-dark')
     await theme('light')
     await shot('chat-arabic-light')
+
+    // The Overview and Datasets views (ADR 0023), in Arabic and English.
+    // The latest findings come from the Arabic run, and stay Arabic in
+    // the English interface: a report keeps its language.
+    await page.getByRole('button', { name: /^نظرة عامة/ }).first().click()
+    await settled()
+    await shot('overview-arabic-light')
+    await page.getByRole('button', { name: 'تغيير اللغة' }).click()
+    await page.getByRole('status').filter({ hasText: 'Ready' }).waitFor()
+    await theme('dark')
+    await settled()
+    await shot('overview-dark')
+    await theme('light')
+    await shot('overview-light')
+    await openTab(page, /^Datasets/)
+    await settled()
+    await theme('dark')
+    await shot('datasets-dark')
+  } else {
+    await openTab(page, /^Overview/)
+    await settled()
+    await shot('overview-dark')
   }
 })

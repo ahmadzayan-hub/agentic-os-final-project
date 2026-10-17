@@ -1,0 +1,43 @@
+{
+ "about": "Which reachable provider a router's model name means (server/routing.provider_for), with every provider reachable. A tag after a colon is an Ollama model; -versatile, -instant, -it and provider/ prefixes are hosted names served by Groq; claude-* is Anthropic; the app maps the gpt family to Groq, its OpenAI-compatible host; none means the name is not recognised and no guess should be made.",
+ "labels": ["ollama", "anthropic", "groq", "deterministic", "none"],
+ "dev": [
+  {"text": "qwen3:8b", "label": "ollama"},
+  {"text": "llama3.1:8b", "label": "ollama"},
+  {"text": "mistral:7b-instruct", "label": "ollama"},
+  {"text": "phi4:14b", "label": "ollama"},
+  {"text": "deepseek-r1:8b", "label": "ollama"},
+  {"text": "gemma3:4b", "label": "ollama"},
+  {"text": "gpt-oss:20b", "label": "ollama"},
+  {"text": "qwen2.5-coder:7b", "label": "ollama"},
+  {"text": "claude-sonnet-4-5", "label": "anthropic"},
+  {"text": "claude-3-5-haiku-20241022", "label": "anthropic"},
+  {"text": "anthropic/claude-3.7-sonnet", "label": "anthropic"},
+  {"text": "opus", "label": "anthropic"},
+  {"text": "gpt-4o-mini", "label": "groq"},
+  {"text": "llama-3.3-70b-versatile", "label": "groq"},
+  {"text": "mixtral-8x7b-32768", "label": "groq"},
+  {"text": "openai/gpt-oss-120b", "label": "groq"},
+  {"text": "meta-llama/llama-4-scout-17b-16e-instruct", "label": "groq"},
+  {"text": "groq/compound", "label": "groq"},
+  {"text": "template", "label": "deterministic"},
+  {"text": "deterministic", "label": "deterministic"},
+  {"text": "my-custom-model", "label": "none"},
+  {"text": "bert-base-uncased", "label": "none"},
+  {"text": "", "label": "none"}
+ ],
+ "holdout": [
+  {"text": "granite3.3:8b", "label": "ollama"},
+  {"text": "smollm2:1.7b", "label": "ollama"},
+  {"text": "llava:13b", "label": "ollama"},
+  {"text": "qwen3-coder:30b", "label": "ollama"},
+  {"text": "claude-opus-4-1", "label": "anthropic"},
+  {"text": "claude-haiku-4-5", "label": "anthropic"},
+  {"text": "llama-3.1-8b-instant", "label": "groq"},
+  {"text": "gemma2-9b-it", "label": "groq"},
+  {"text": "gpt-4.1", "label": "groq"},
+  {"text": "openai/gpt-oss-20b", "label": "groq"},
+  {"text": "none", "label": "deterministic"},
+  {"text": "random-forest-v2", "label": "none"}
+ ]
+}

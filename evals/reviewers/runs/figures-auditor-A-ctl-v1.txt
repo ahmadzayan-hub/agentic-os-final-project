@@ -1,0 +1,64 @@
+FINDING F01 · major · evals/reviewers/A/memo.md · P02
+Category: arithmetic
+Evidence: "...That is growth of 13.4% in one year." Register Revenue 2025 ($12,480,000) and Revenue 2024 ($11,200,000) are both sourced. (12,480,000 − 11,200,000) ÷ 11,200,000 = 1,280,000 ÷ 11,200,000 = 0.114285…, which is not 13.4%. figures_check.py reports wrong_arithmetic: [] for this memo, so the checker did not flag it.
+Fix: Recalculate the growth from the two sourced revenue figures and replace 13.4% with the recalculated value, or cite the source if 13.4% uses a different base.
+
+FINDING F02 · major · evals/reviewers/A/memo.md · P03
+Category: unsourced_figure
+Evidence: "in one year. [P03] Online orders grew 27% year on year. [P04] The average basket". The register holds only Online share of orders 18.5%, a current-year share with no prior-year online order count, so 27% cannot be derived from it. Neither the register nor the memo sources it. The checker's unsourced list is empty, so it was not flagged.
+Fix: Cite the source for the 27% (prior-year and current-year online order counts), add those figures to the register, or remove the figure.
+
+FINDING F03 · major · evals/reviewers/A/memo.md · P05
+Category: causal_claim
+Evidence: "[P05] The loyalty app drove the revenue growth." No loyalty-app figure appears in the register or the memo. P16 of the same memo says the figures are associations that would need a controlled test, so P05 contradicts it.
+Fix: Reword as an association, or cite a controlled test that supports the causal claim.
+
+FINDING F04 · major · evals/reviewers/A/memo.md · P06
+Category: denominator
+Evidence: "[P06] Return rates average 9.1% across stores (the mean of each store's rate), so returns are worse than the register's 6.2% suggests." The register's 6.2% is returns ÷ orders, pooled. The 9.1% is an unweighted mean of store rates. The two use different denominators, so the comparison cannot show that returns are worse.
+Fix: Restate the store figure on the register's definition (pooled returns ÷ orders) and compare like with like, or drop the "worse than" comparison.
+
+FINDING F05 · major · evals/reviewers/A/memo.md · P06
+Category: unsourced_figure
+Evidence: "nue growth. [P06] Return rates average 9.1% across stores (the mean of each store's". The register holds only the chain-level returns rate (6.2%), with no store-level returns or per-store rates, so 9.1% cannot be traced. The checker did not flag it.
+Fix: Cite the store-level returns data behind 9.1% and add it to the register, or remove the figure.
+
+FINDING F06 · major · evals/reviewers/A/memo.md · P07
+Category: overclaim
+Evidence: "[P07] Store 17's sales rose 40% after its refit, so every refit will lift sales by 40%." The memo draws a general rule from one store and one refit, with no comparison group. P16 says the data are associations from one year.
+Fix: Limit the claim to what Store 17 showed, or support a general claim with several refits and a comparison group. Remove the forecast that every refit will lift sales by 40%.
+
+FINDING F07 · major · evals/reviewers/A/memo.md · P07
+Category: unsourced_figure
+Evidence: " suggests. [P07] Store 17's sales rose 40% after its refit, so every refit will li". The register has no Store 17 or refit sales data, and the memo gives no source, so the 40% cannot be traced. The checker did not flag it.
+Fix: Cite the before-and-after sales figures for Store 17 and add them to the register, or remove the 40%.
+
+FINDING F08 · major · evals/reviewers/A/memo.md · P09
+Category: arithmetic
+Evidence: "[P09] With 610 staff across 48 stores, each store has 15.2 staff on average." Register Staff (610) and Stores (48) are both sourced. 610 ÷ 48 = 12.708333…, not 15.2. figures_check.py reports wrong_arithmetic: [] for this memo, so the checker did not flag it.
+Fix: Recalculate from the register's staff and store counts and replace 15.2 with the recalculated value, or cite the source if the average uses a different base.
+
+FINDING F09 · major · evals/reviewers/A/memo.md · P10
+Category: causal_claim
+Evidence: "[P10] Longer opening hours caused higher weekend revenue." Neither opening hours nor weekend revenue appears in the register or the memo. P16 calls such links associations that need a controlled test.
+Fix: Reword as an association, or cite a controlled test. If the claim stays, add sources for the opening-hours and weekend-revenue figures.
+
+FINDING F10 · major · evals/reviewers/A/memo.md · P12
+Category: unsourced_figure
+Evidence: "...A model predicts store revenue with 92% accuracy, so it should set next year's". No model, accuracy metric or evaluation set appears in the register or the memo, so 92% cannot be traced. The recommendation to set targets rests on this figure. The checker did not flag it.
+Fix: Cite the evaluation (metric, test data and date) and add it to the register, or remove the figure and the target-setting recommendation.
+
+FINDING F11 · major · evals/reviewers/A/memo.md · P13
+Category: unsourced_figure
+Evidence: "argets. [P13] Shrinkage cost the chain $640,000 in 2025. [P14] Revenue per store was a". The register has no shrinkage figure and the memo gives no source. The checker did not flag it.
+Fix: Cite the shrinkage source and add it to the register, or remove the figure.
+
+FINDING F12 · major · evals/reviewers/A/memo.md · P15
+Category: unsourced_figure
+Evidence: ",000. [P15] The average order value is $52, the mean of the 48 stores' own averages". The register has no store-level averages, so $52 cannot be traced to a sourced figure. The checker did not flag it.
+Fix: Cite the store-level averages and add them to the register, or remove the $52.
+
+FINDING F13 · major · evals/reviewers/A/memo.md · P15
+Category: denominator
+Evidence: "[P15] ... so the register's $39.95 understates what customers spend." The register's $39.95 is labelled revenue ÷ orders, and 12,480,000 ÷ 312,400 = 39.94878…, which is the pooled figure. The $52 is an unweighted mean of store averages. The two use different denominators, so the conclusion that the register understates spend does not follow.
+Fix: Compare pooled with pooled (revenue ÷ orders on both sides), or state that the two are different definitions and drop "understates". The $52 source is covered in F12.

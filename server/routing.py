@@ -79,6 +79,15 @@ def provider_for(model_name, available):
         return None
     lowered = str(model_name).strip().lower()
     reachable = {entry["provider"] for entry in available}
+    # Naming conventions say more than a family name (ADR 0027). A tag after
+    # a colon ("qwen3:8b", "gpt-oss:20b") is how Ollama names a local model;
+    # a "provider/" prefix or a "-versatile" tier is a hosted name, and the
+    # hosted endpoint this application reaches is Groq's.
+    if ":" in lowered and "/" not in lowered and "ollama" in reachable:
+        return "ollama"
+    if (("/" in lowered and not lowered.startswith(("anthropic/", "claude")))
+            or lowered.endswith("-versatile")) and "groq" in reachable:
+        return "groq"
     best = None
     for alias, provider in PROVIDER_ALIASES.items():
         if alias in lowered and provider in reachable:

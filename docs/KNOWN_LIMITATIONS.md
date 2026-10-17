@@ -35,9 +35,10 @@ placeholder controls — absent capabilities have no UI.
      observations are eight observations.
    - **Predictive** fits a straight-line trend to the historical periods
      and extends it, with accuracy measured by backtesting against
-     held-out periods. There is no seasonality model, no machine
-     learning, and no probabilistic interval — the stated range comes
-     from measured backtest error. Fewer than 4 periods produces no
+     held-out periods. There is no probabilistic interval — the stated
+     range comes from measured backtest error. A seasonal model, a
+     regression, a classifier and a clustering are available as optional
+     stages on the `models` profile (ADR 0033; see item 28). Fewer than 4 periods produces no
      forecast; fewer than 6 produces a forecast explicitly marked as
      having unmeasured accuracy.
    - **Prescriptive** ranks options the dataset itself supplies, scoring
@@ -86,6 +87,23 @@ placeholder controls — absent capabilities have no UI.
    lessons accumulate as vault run logs for human review. Permanent 100%
    accuracy cannot honestly be promised by any AI system; deterministic
    calculations are exact for the operations implemented.
+6. Every classifying agent is measured on labelled **synthetic** cases
+   (ADR 0027), and the numbers are only as good as those cases. On the
+   newest blind holdout (v4, 17 October) the rules reach 72% macro recall
+   for chat intent, 92% recall for jargon and 69% for causal wording
+   (precision 92%). Hand-written rules generalise only so far: intent
+   scored 80% on the previous blind set and 68% on this one before any
+   change, and a round of fixes from the earlier set lifted causal wording
+   by nothing here. A sentence the causal check passes may still claim a
+   cause, and a chat sentence outside the vocabulary is answered as chat. The seeded reviewer memos were nearly too easy for the
+   reviewer subagents: both scored at or near 100% with either prompt.
+   So the prompt changes are justified on the dev memo, not proven on the
+   held-out ones, and the subagents' run-to-run variation (zero to three
+   false alarms on the same memo) is measured on one run per condition.
+   Local Ollama models and the hosted narrators are **not measured**: the
+   models could not be downloaded here, and no provider key was used. The
+   figures checker cannot read a figure written in words ("one in five");
+   the figures-auditor reads the text for those.
 
 ## Resolved since the first release
 
@@ -156,12 +174,18 @@ required local files. Both behaviors are covered by tests
     deployments there keep the client-stepped path. One worker advances
     one run at a time; parallelism means running more workers. A
     paused or interrupted run resumes from its durable state either way.
-11. The repository is configured to deploy to Vercel as a full-stack
-    project (static frontend + Python function). **No deployment has been
-    performed or verified** — importing the repo and setting the
-    credentials are owner steps. Without `DATABASE_URL` a deployment
-    falls back to ephemeral per-instance storage. See
-    docs/VERCEL_DEPLOYMENT.md.
+11. The repository is deployed to Vercel as a full-stack project (static
+    frontend + Python function) at `agentic-os-final-project.vercel.app`,
+    and `/api/health`, `/api/pipelines` and the interface were verified
+    there by HTTP on 2026-10-02. What was **not** verified from the
+    implementation environment: that the domain is reachable without a
+    Vercel login (the project has Standard Protection on), a full run and
+    approval in a browser there, and whether `DATABASE_URL` is set —
+    without it a deployment keeps per-instance storage that a cold start
+    wipes. No identity provider is configured, so the deployment is
+    single-owner with no login, like a laptop. See
+    docs/VERCEL_DEPLOYMENT.md for the exact state and the two things to
+    tidy by hand.
 12. Android support is a verified installable PWA; a native Capacitor
     project is documented but not shipped (no Android SDK available to
     build or test one honestly).
@@ -190,7 +214,7 @@ required local files. Both behaviors are covered by tests
     (ADR 0005). Supabase's automated daily backups cover Pro plans and
     above, not the free plan this project uses. Backup files are
     unencrypted JSON, the whole database is held in memory while one is
-    written (fine at the 2 MB dataset limit, not at hundreds of
+    written (fine at the 10 MB dataset limit, not at hundreds of
     megabytes), and in local mode `data/memory.json` lives outside the
     database and must be backed up separately.
 16. Usage is bounded per owner (runs/day, dataset count, dataset bytes)
@@ -199,11 +223,17 @@ required local files. Both behaviors are covered by tests
     time is not measured. `/api/usage` names those gaps rather than
     hiding them. The daily window is calendar-based (midnight UTC), so a
     burst either side of midnight can exceed the intended daily rate.
-17. Dataset ingestion is CSV only — uploaded as a file or pasted, up to
-    2 MB and 50,000 rows, held in the database rather than object
-    storage. XLSX, JSON, Parquet, and database connectors are not
-    implemented, and analysis is in-memory (no DuckDB/Polars), so
-    larger-than-memory datasets are out of scope.
+17. Datasets come from a file (CSV, TSV, Excel `.xlsx`, JSON or JSON
+    Lines) or pasted CSV (ADR 0024): up to 4 MB as uploaded, the limit
+    of the platform the app is deployed to, 50,000 rows, and 10 MB once
+    converted to CSV. They are held in the database rather than object
+    storage. Not read: old `.xls` workbooks, OpenDocument, Parquet, CSV
+    in any encoding but UTF-8 or UTF-16, and database connectors. A
+    workbook gives one sheet per upload; the API can name another
+    sheet, but the interface cannot yet. A formula with no saved result
+    arrives empty, with a warning. Analysis is in-memory (no
+    DuckDB/Polars), so larger-than-memory datasets are out of scope, and
+    a dataset cannot yet be deleted from the interface.
 18. Custom stages (ADR 0020) are **trusted Python in this process**, not
     a sandbox: the contract catches a malformed result, a mis-cited
     claim or a mutated context, and a plugin that wants to misbehave
@@ -225,3 +255,96 @@ required local files. Both behaviors are covered by tests
     are not in `requirements.txt` and CI does not install them; their
     tests skip there, and the versions verified are the ones in the
     ADR's table.
+20. The Overview and Datasets views (ADR 0023) read existing endpoints
+    and nothing more. The Overview's counts cover the 50 most recent
+    analyses that `GET /api/runs` returns, and the view says so when
+    the list is full; the Datasets view lists the 50 most recent
+    datasets. Hash addresses now restore these views and an individual
+    run (ADR 0029); browser back preserves the destination. On a phone the header has
+    room for only the first letters of the agent's name.
+21. Column mapping (ADR 0025) gives each column one role and analyses
+    one measure, broken down by at most one dimension. The other
+    measures are drivers, not subjects. There is no week grain, no
+    fiscal year, no derived or computed column, and no unit per
+    measure. A decimal comma is refused rather than read, and
+    two-digit years follow the POSIX rule, so `70` is 1970. The
+    suggestion reads an even sample of 10,000 rows of a larger table,
+    while saving checks every row. A mapping belongs to one dataset:
+    a changed file is new content, so it starts unmapped. Pasted CSV
+    and the sample always use automatic detection. Unmapped data is
+    still typed from column names, and its periods still sort as text.
+22. Uneven periods are read per record (ADR 0026) only in the
+    descriptive stage: its headline and a limitation claim give the
+    per-record change when the quietest period holds under three
+    quarters of the busiest's records. The segment, diagnostic,
+    predictive and prescriptive stages still work on totals, so a
+    forecast follows the record count, and "protect the leading group"
+    can name the group with the most records rather than the largest
+    loss per record. The dashboards skill shows per-record charts beside
+    the totals; the app's report does not yet.
+23. The agent team (`docs/AGENT_TEAM.md`) is tooling for this
+    repository and its deliverables, not part of the app.
+    - **Local models:** the free models behind `scripts/consult.py` are
+      tested only against a stub server. This environment cannot
+      download them, so no local model has answered a request here.
+    - **Reviewers:** they are Claude subagents. Their findings are
+      checked by recomputation before they are acted on, but a reviewer
+      can miss what it was not asked about.
+    - **Scores:** the loop's percentage counts gates, not findings.
+    - **Claude Dashboards:** this is a hosted claude.ai feature. The
+      skill reaches it only in a claude.ai session, and elsewhere writes
+      an offline page. A new agent file loads at the next session start.
+24. Views load on demand (ADR 0028). A reader who goes offline before
+    the idle prefetch finishes, or whose browser asks to save data, can
+    reach a view whose chunk was never fetched. That view says it could
+    not be shown and offers a reload, which works once the reader is
+    back online. The split did not make today's app measurably faster:
+    Lighthouse mobile scored 98 against 99 before, with the same largest
+    paint (2.13 s). What it saves is the unused script, which halved.
+    Both dictionaries still ship on the first load.
+25. Several datasets per run (ADR 0030) are joined, not stacked: up to
+    four lookups, each on one to three key columns, onto one main
+    dataset of the same owner. Keys match as trimmed text, as numbers
+    when the main key is numeric, or as periods when it is the mapped
+    date; there is no case-insensitive or fuzzy matching, so `north`
+    and `North` do not match and the coverage figure is how the owner
+    finds out. A lookup whose key repeats is refused rather than
+    aggregated. The stages before cleaning (contract, profiling,
+    quality, privacy) describe the main dataset only; joined datasets
+    are screened for personal data by the merge stage itself.
+26. A run's cleaned table (ADR 0031) downloads as CSV only, not Excel or
+    Parquet, and is read-only. Its query language is deliberately small:
+    named aggregates, eleven filter operators, at most two groupings and
+    no expressions or joins at query time. A table is parsed into memory
+    on first use and three are kept, so the first question asked of a
+    50,000-row run is slower than the ones after it, and a server with
+    several processes parses once per process.
+27. Dashboards (ADR 0032) are one run's table, read-only, with a fixed
+    set of pages chosen from its fields: no saved layouts, no choice of
+    chart per page and no cross-filtering by dragging. The relationship
+    page reads an even sample of at most 500 records, and a filter list
+    offers a column only when it has at most 200 values, so an ID or
+    free-text column cannot be filtered from the bar.
+28. The modelling stages (ADR 0033) are four fixed, standard-library
+    models: least squares, naive Bayes, k-means and an additive trend
+    and season. There are no trees, ensembles or tuning, and nothing
+    beyond the documented settings. The models are associations, not
+    causes. A model cannot know which inputs were recorded after the
+    outcome, so an input like that makes it look better than it is; every
+    model says so, but none can check it. Fewer than 30 records, or fewer
+    than three seasons for the seasonal forecast, is reported as a
+    limitation and shows no card.
+29. Live sources (ADR 0034) fetch public files over https only: no
+    credentials, databases or APIs that need a key, and no proxy, so a
+    server that reaches the internet only through one cannot refresh.
+    Each refresh is a whole snapshot of at most 4 MB; ten sources per
+    account, and "Refresh now" once a minute per source. Addresses that
+    carry a credential in their query are refused. The cap of five event
+    streams per owner is per server process. Scheduled refreshes need the
+    background worker
+    (`python scripts/worker.py`); a serverless deployment refreshes only
+    when someone presses **Refresh now**. The event stream ends every 55
+    seconds and the page reconnects, so a hosting platform that limits a
+    request's length is fine; one that buffers responses delays events
+    until the stream ends. A connector's error is stored in the
+    language it was created in.

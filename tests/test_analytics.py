@@ -231,7 +231,7 @@ class FourAnalyticsTypesTestCase(unittest.TestCase):
                      if c["id"] == "chart_contributions")
         self.assertEqual(chart["values"],
                          [item["change"] for item in ctx["diagnostic"]["contributions"]])
-        self.assertIn("moved against the overall direction", chart["alt"])
+        self.assertIn("moved against the overall", chart["alt"])
 
     def test_the_forecast_chart_is_labelled_as_a_projection(self):
         ctx, _ = run_pipeline(analytics.sample_dataset())
@@ -240,6 +240,100 @@ class FourAnalyticsTypesTestCase(unittest.TestCase):
         measured = len(ctx["preparer"]["trend"])
         self.assertEqual(len(chart["values"]),
                          measured + len(ctx["predictive"]["forecast"]))
+        # The boundary is data, not only alt text, so a chart can draw it:
+        # every point from forecast_from onwards is a projection.
+        self.assertEqual(chart["forecast_from"], measured)
+        self.assertEqual(chart["labels"][chart["forecast_from"]],
+                         ctx["predictive"]["forecast"][0]["label"])
+
+
+def two_team_dataset(alpha, beta, measure="Net_Sales"):
+    lines = [f"month,team,{measure}"]
+    for index, (a, b) in enumerate(zip(alpha, beta)):
+        lines += [f"2025-{index + 1:02d},Alpha,{a}", f"2025-{index + 1:02d},Beta,{b}"]
+    return "\n".join(lines) + "\n"
+
+
+class DirectionOfChangeTestCase(unittest.TestCase):
+    """“Against the overall direction” means the opposite sign to the total.
+
+    Found by running the dashboards skill on a falling series: every group
+    fell with the total, yet the diagnostic said the largest faller “moved
+    against the overall direction”, and the chart's alt text said bars below
+    zero did.
+    """
+
+    def claim(self, ctx, claim_id, stage="diagnostic"):
+        return next((c for c in ctx[stage + "_result"]["claims"] if c["id"] == claim_id), None)
+
+    def test_a_group_that_falls_with_a_falling_total_is_not_against_it(self):
+        ctx, _ = run_pipeline(two_team_dataset([100, 96, 92, 88, 84, 80], [50, 48, 46, 44, 42, 40]))
+        self.assertLess(ctx["diagnostic"]["contributions"][0]["change"], 0)
+        self.assertIsNone(self.claim(ctx, "cl_decline"))
+        chart = next(c for c in ctx["visuals"]["charts"] if c["id"] == "chart_contributions")
+        self.assertIn("bars above zero moved against the overall fall", chart["alt"])
+
+    def test_the_group_that_rises_against_a_falling_total_is_named(self):
+        ctx, _ = run_pipeline(two_team_dataset([100, 94, 88, 82, 76, 70], [50, 52, 54, 56, 58, 60]))
+        claim = self.claim(ctx, "cl_decline")
+        self.assertIsNotNone(claim)
+        self.assertIn("“Beta” moved against the overall direction", claim["text"])
+        self.assertIn("10.00", claim["text"])
+
+    def test_the_group_that_falls_against_a_rising_total_is_named(self):
+        ctx, _ = run_pipeline(two_team_dataset([100, 106, 112, 118, 124, 130], [60, 58, 56, 54, 52, 50]))
+        claim = self.claim(ctx, "cl_decline")
+        self.assertIn("“Beta” moved against the overall direction", claim["text"])
+        chart = next(c for c in ctx["visuals"]["charts"] if c["id"] == "chart_contributions")
+        self.assertIn("bars below zero moved against the overall rise", chart["alt"])
+
+    def test_totals_keep_the_number_of_records_behind_them(self):
+        ctx, _ = run_pipeline(two_team_dataset([100, 96, 92, 88, 84, 80], [50, 48, 46, 44, 42, 40]))
+        prep = ctx["preparer"]
+        self.assertEqual(prep["group_counts"], {"Alpha": 6, "Beta": 6})
+        self.assertEqual(list(prep["trend_counts"]), list(prep["trend"]))
+        self.assertEqual(set(prep["trend_counts"].values()), {2})
+        # Even periods need no per-record view.
+        self.assertIsNone(self.claim(ctx, "cl_uneven_periods", "descriptive"))
+        self.assertIsNone(ctx["descriptive"]["change_per_record"])
+
+    def test_a_period_with_fewer_records_is_read_per_record(self):
+        """Found on the capstone data: monthly loss "fell 39%" only because the
+        last year held half as many records a month; per record it rose."""
+        lines = ["month,site,loss"]
+        for month in range(1, 7):
+            sites = ["North", "South", "East", "West"] if month <= 3 else ["North", "South"]
+            value = 120 if month == 6 else 100
+            lines += [f"2025-{month:02d},{site},{value}" for site in sites]
+        ctx, _ = run_pipeline("\n".join(lines) + "\n")
+        self.assertEqual(ctx["descriptive"]["change"], -0.4)            # 400 → 240 in total
+        self.assertEqual(ctx["descriptive"]["change_per_record"], 0.2)  # 100 → 120 a record
+        claim = self.claim(ctx, "cl_uneven_periods", "descriptive")
+        self.assertEqual(claim["type"], "limitation")
+        self.assertIn("from 2 to 4", claim["text"])
+        self.assertIn("Per record, loss has risen 20.0%", claim["text"])
+        self.assertIn("per record it is up 20%", ctx["descriptive"]["headline"])
+        calcs = {c["id"]: c["value"] for c in ctx["descriptive_result"]["calculations"]}
+        self.assertEqual((calcs["c_period_records_min"], calcs["c_period_records_max"]), (2, 4))
+
+    def test_the_uneven_periods_warning_is_written_in_arabic_too(self):
+        lines = ["month,site,loss"] + [f"2025-{m:02d},{s},100" for m in range(1, 7)
+                                       for s in (["A", "B", "C", "D"] if m <= 3 else ["A", "B"])]
+        ctx = {"goal": "Analyze the data", "dataset_name": "t.csv", "dataset_text": "\n".join(lines) + "\n",
+               "run_id": "test-run", "glossary": None, "report_language": "ar"}
+        for role, stage in analytics.PIPELINE:
+            result = stage(ctx, gateway=None) if role in analytics.NARRATED_STAGES else stage(ctx)
+            ctx[role], ctx[role + "_result"] = result["output"], result
+            if role == "descriptive":
+                break
+        claim = next(c for c in ctx["descriptive_result"]["claims"] if c["id"] == "cl_uneven_periods")
+        self.assertIn("تضم الفترات أعداداً مختلفة من السجلات", claim["text_ar"])
+        self.assertIn("ولكل سجل", ctx["descriptive"]["headline"])
+
+    def test_a_headline_keeps_the_column_name_as_written(self):
+        ctx, _ = run_pipeline(two_team_dataset([100, 96, 92, 88, 84, 80], [50, 48, 46, 44, 42, 40],
+                                               measure="Net_Sales_USD"))
+        self.assertTrue(ctx["descriptive"]["headline"].startswith("Net_Sales_USD is down"))
 
 
 class GovernedSpecialistsTestCase(unittest.TestCase):

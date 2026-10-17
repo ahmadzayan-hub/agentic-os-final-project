@@ -24,6 +24,7 @@ TABLES = (
     "memory_kv",
     "vault_notes",
     "datasets",
+    "connectors",
 )
 
 # Restore must insert parents before children.
@@ -36,6 +37,7 @@ RESTORE_ORDER = (
     "sessions",
     "memory_kv",
     "vault_notes",
+    "connectors",
 )
 
 SCHEMA_STATEMENTS = [
@@ -79,6 +81,17 @@ SCHEMA_STATEMENTS = [
       id TEXT PRIMARY KEY, sha256 TEXT NOT NULL, name TEXT NOT NULL,
       content TEXT NOT NULL, byte_size INTEGER NOT NULL,
       owner TEXT NOT NULL, created_at TEXT NOT NULL)""",
+    # Live data (ADR 0034): an owner's saved source, what its last
+    # refresh found, when the next one is due, and the worker's lease.
+    """CREATE TABLE IF NOT EXISTS connectors (
+      id TEXT PRIMARY KEY, owner TEXT NOT NULL, name TEXT NOT NULL,
+      url TEXT NOT NULL, format TEXT, sheet TEXT, every_minutes INTEGER,
+      goal TEXT NOT NULL, language TEXT NOT NULL, profile TEXT,
+      enabled INTEGER NOT NULL, failures INTEGER NOT NULL,
+      last_status TEXT, last_error TEXT, last_checked_at TEXT,
+      last_dataset_id TEXT, last_sha256 TEXT, last_run_id TEXT,
+      next_due_at TEXT, lease_owner TEXT, lease_expires_at TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL)""",
 ]
 
 
@@ -132,8 +145,12 @@ class SqlStore:
                     f"UPDATE {table} SET owner = 'local-owner' WHERE owner IS NULL")
         # report_language: NULL for runs written before reports had a
         # language, which were all English (ADR 0022).
+        # joins_json: the datasets a run joins and on what (ADR 0030); NULL
+        # for a run of one dataset, which is every run before it.
+        # connector_id: the source a refresh made the run from (ADR 0034).
         for column in ("dataset_id", "lease_owner", "lease_expires_at",
-                       "report_language"):
+                       "report_language", "mapping_json", "joins_json",
+                       "connector_id"):
             try:
                 self._exec(f"ALTER TABLE runs ADD COLUMN {column} TEXT")
             except Exception:
@@ -143,6 +160,16 @@ class SqlStore:
             self._exec("ALTER TABLE runs ADD COLUMN paused INTEGER")
         except Exception:
             self._rollback()
+        # What a dataset is (ADR 0024). NULL for rows stored before the
+        # dataset API, until the same data is stored again.
+        # The owner's column mapping (ADR 0025), and the copy a run takes.
+        for column, kind in (("source_format", "TEXT"), ("row_count", "INTEGER"),
+                             ("column_count", "INTEGER"), ("mapping_json", "TEXT"),
+                             ("mapping_updated_at", "TEXT")):
+            try:
+                self._exec(f"ALTER TABLE datasets ADD COLUMN {column} {kind}")
+            except Exception:
+                self._rollback()
         self._migrate_memory_owner()
 
     def _migrate_memory_owner(self):
@@ -295,6 +322,71 @@ class SqlStore:
             "UPDATE runs SET lease_owner = NULL, lease_expires_at = NULL "
             "WHERE id = ? AND lease_owner = ?", (run_id, worker_id))
 
+    # -- connectors (ADR 0034) ----------------------------------------------
+    def get_connector(self, connector_id):
+        rows = self._exec("SELECT * FROM connectors WHERE id = ?", (connector_id,))
+        return rows[0] if rows else None
+
+    def list_connectors(self, owner):
+        return self._exec(
+            "SELECT * FROM connectors WHERE owner = ? ORDER BY created_at", (owner,))
+
+    def count_connectors(self, owner):
+        rows = self._exec(
+            "SELECT COUNT(*) AS n FROM connectors WHERE owner = ?", (owner,))
+        return int(rows[0]["n"]) if rows else 0
+
+    def delete_connector(self, connector_id):
+        self._exec("DELETE FROM connectors WHERE id = ?", (connector_id,))
+
+    def claim_connector(self, worker_id, now, expires_at):
+        """Take the lease on one connector whose refresh is due, as
+        claim_run does for runs. Returns its id, or None."""
+        candidates = self._exec(
+            "SELECT id FROM connectors WHERE enabled = 1 "
+            "AND next_due_at IS NOT NULL AND next_due_at <= ? "
+            "AND (lease_owner IS NULL OR lease_expires_at < ?) "
+            "ORDER BY next_due_at LIMIT 5", (now, now))
+        for row in candidates:
+            if self._exec_rowcount(
+                    "UPDATE connectors SET lease_owner = ?, lease_expires_at = ? "
+                    "WHERE id = ? AND enabled = 1 AND next_due_at <= ? "
+                    "AND (lease_owner IS NULL OR lease_expires_at < ?)",
+                    (worker_id, expires_at, row["id"], now, now)):
+                return row["id"]
+        return None
+
+    def take_connector(self, connector_id, holder, now, expires_at):
+        """The lease for a refresh asked for now, due or not. False when a
+        refresh is already under way."""
+        return self._exec_rowcount(
+            "UPDATE connectors SET lease_owner = ?, lease_expires_at = ? "
+            "WHERE id = ? AND (lease_owner IS NULL OR lease_expires_at < ?)",
+            (holder, expires_at, connector_id, now)) == 1
+
+    def release_connector(self, connector_id, holder):
+        self._exec(
+            "UPDATE connectors SET lease_owner = NULL, lease_expires_at = NULL "
+            "WHERE id = ? AND lease_owner = ?", (connector_id, holder))
+
+    # -- pushed updates (ADR 0034) -----------------------------------------
+    def changes_since(self, owner, since, limit=200, before=None):
+        """An owner's runs and connectors changed at or after `since` (and
+        before `before`, when given), oldest first, for the event stream.
+        Timestamps are compared as text, which orders them because they
+        share one format and offset."""
+        until, args = ("AND updated_at < ? ", (before,)) if before else ("", ())
+        runs = self._exec(
+            "SELECT id, goal, state, connector_id, created_at, updated_at FROM runs "
+            f"WHERE owner = ? AND updated_at >= ? {until}ORDER BY updated_at LIMIT ?",
+            (owner, since, *args, limit))
+        connectors = self._exec(
+            "SELECT id, name, enabled, last_status, last_error, last_run_id, "
+            "last_checked_at, next_due_at, updated_at FROM connectors "
+            f"WHERE owner = ? AND updated_at >= ? {until}ORDER BY updated_at LIMIT ?",
+            (owner, since, *args, limit))
+        return runs, connectors
+
     # -- sessions ---------------------------------------------------------
     def get_session(self, session_id):
         rows = self._exec("SELECT * FROM sessions WHERE id = ?", (session_id,))
@@ -383,7 +475,8 @@ class SqlStore:
 
     def list_datasets(self, owner):
         return self._exec(
-            "SELECT id, sha256, name, byte_size, created_at FROM datasets "
+            "SELECT id, sha256, name, byte_size, created_at, source_format, "
+            "row_count, column_count, mapping_updated_at FROM datasets "
             "WHERE owner = ? ORDER BY created_at DESC LIMIT 50", (owner,))
 
     # -- backup and restore ----------------------------------------------

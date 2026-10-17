@@ -88,6 +88,11 @@ jobs:
         run: npm test
         working-directory: frontend
 
+      - name: Brain and snapshot contracts
+        run: |
+          python scripts/brain_check.py --strict
+          node --experimental-strip-types frontend/src/tests/native-run-logic.test.mjs
+
       - name: Type check and production build
         run: npm run build
         working-directory: frontend
@@ -100,6 +105,20 @@ jobs:
         run: npx playwright test
         working-directory: frontend
 
+      - name: Interface budget
+        run: python -c "from scripts.verify import check_budget; import sys; ok, detail = check_budget(); print(detail); sys.exit(0 if ok else 1)"
+
+      - name: Upload UI evidence and production bundle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: agentic-ui-evidence
+          path: |
+            docs/screenshots/*.png
+            frontend/dist
+            frontend/test-results
+          retention-days: 14
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
@@ -107,3 +126,4 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report
           retention-days: 7
+

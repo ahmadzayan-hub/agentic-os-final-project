@@ -1,0 +1,40 @@
+{
+ "about": "Seeded documents for scripts/figures_check.py in sourcing mode. Each case has a register, a reference text and a document; bad lists the figures in the document that are not sourced (unsourced, wrongly rounded, glued table cells, wrong arithmetic). Every other figure the checker reads in the document is correct. A good checker flags the bad ones (recall) and leaves the rest (precision).",
+ "labels": [true, false],
+ "dev": [
+  {"register": {"Revenue": "$3,583,440", "Units": "33,525"}, "reference": "Revenue reached $3,583,440 from 33,525 units.",
+   "doc": "Revenue was $3.58 million on 33,525 units, up 12.4% on 2024.", "bad": ["12.4%"]},
+  {"register": {"Records": "798", "MTBF": "219"}, "reference": "Reactive 798 records, 8.1 years, MTBF 219 h.",
+   "doc": "Reactive7988.1 y219 h", "bad": ["7988.1"]},
+  {"register": {"Critical": "24.4", "Rest": "16.9"}, "reference": "Critical records average 24.4 h of downtime, the rest 16.9 h.",
+   "doc": "The gap is 24.4 h − 16.9 h = 6.5 h per record.", "bad": ["6.5"]},
+  {"register": {"Maintenance cost": "$50,430,446"}, "reference": "Maintenance cost was $50,430,446.",
+   "doc": "Maintenance cost was $50.5 million over three years.", "bad": ["$50.5 million"]},
+  {"register": {"SLA met": "0.461"}, "reference": "SLA met in 46.1% of records.",
+   "doc": "46.1% of records met the SLA, against 47.6% last year.", "bad": ["47.6%"]},
+  {"register": {"Sales": "3583440"}, "reference": "Sales 3,583,440 in total.",
+   "doc": "بلغت المبيعات ٣٬٥٨٣٬٤٤٠ درهم، وارتفعت ١٢٫٤٪ عن العام الماضي.", "bad": ["١٢٫٤٪"]},
+  {"register": {"Gap hours": "6421"}, "reference": "The critical gap is 6,421 hours.",
+   "doc": "About 6,400 fewer downtime hours would have been lost.", "bad": []},
+  {"register": {"Critical": "24.4", "Rest": "16.9"}, "reference": "Critical 24.4 h against 16.9 h.",
+   "doc": "Critical gap: 24.4 h − 16.9 h = 7.5 h per record.", "bad": []},
+  {"register": {"New": "26501", "Old": "83610"}, "reference": "Loss per record 26,501 and 83,610.",
+   "doc": "Loss per record was $26.5k for new assets and $83.6k for the oldest.", "bad": []},
+  {"register": {"Variance": "-1200"}, "reference": "Variance -1,200.",
+   "doc": "The variance was (1,200) against plan.", "bad": []}
+ ],
+ "holdout": [
+  {"register": {"Revenue": "$1,250,000"}, "reference": "Revenue $1,250,000.",
+   "doc": "Revenue was $1.25M, and margin was 18.3%.", "bad": ["18.3%"]},
+  {"register": {"Plan": "120", "Actual": "95"}, "reference": "Plan 120 units, actual 95 units.",
+   "doc": "The shortfall was 120 − 95 = 35 units.", "bad": ["35"]},
+  {"register": {"Cost": "48200"}, "reference": "Cost 48,200.",
+   "doc": "بلغت التكلفة ٤٨٬٢٠٠ درهم مقابل ٥١٬٠٠٠ في الخطة.", "bad": ["٥١٬٠٠٠"]},
+  {"register": {"Downtime": "91074"}, "reference": "Downtime 91,074 hours.",
+   "doc": "Roughly 91,000 hours of downtime were recorded.", "bad": []},
+  {"register": {"Old": "83610"}, "reference": "Loss per record 83,610.",
+   "doc": "The oldest assets lose $83.7k a record.", "bad": ["$83.7k"]},
+  {"register": {"Preventive ratio": "0.752"}, "reference": "Preventive ratio 75.2%.",
+   "doc": "The preventive ratio was 75.2%, up from 74.1%.", "bad": ["74.1%"]}
+ ]
+}

@@ -96,13 +96,45 @@ class PipelineCountsTestCase(unittest.TestCase):
                           f"{path.name} does not name the orchestrator")
 
     def test_the_dataset_limits_quoted_in_docs_are_the_real_ones(self):
+        from server import datasets
+
         megabytes = analytics.MAX_DATASET_BYTES // 1_000_000
+        upload = datasets.MAX_UPLOAD_BYTES // 1_000_000
         rows = f"{analytics.MAX_ROWS:,}"
-        for path in (DOCS / "README.md", DOCS / "user_guide.md"):
+        for path in (DOCS / "README.md", DOCS / "user_guide.md",
+                     DOCS / "docs" / "KNOWN_LIMITATIONS.md"):
             text = path.read_text(encoding="utf-8")
             if "MB" in text and "rows" in text:
                 self.assertIn(f"{megabytes} MB", text, path.name)
+                self.assertIn(f"{upload} MB", text, path.name)
                 self.assertIn(rows, text, path.name)
+
+
+class AgentInstructionsTestCase(unittest.TestCase):
+    """AGENTS.md tells other coding agents where things are; keep it true."""
+
+    # Paths that exist only while the application runs.
+    RUNTIME = {"vault/"}
+
+    def setUp(self):
+        self.text = (DOCS / "AGENTS.md").read_text(encoding="utf-8")
+
+    def test_it_defers_to_claude_md(self):
+        self.assertIn("`CLAUDE.md`", self.text)
+
+    def test_every_path_it_names_exists(self):
+        named = {p for p in re.findall(r"`([^`\s]+)`", self.text)
+                 if "/" in p or re.search(r"\.(md|py|css|example)$", p)}
+        self.assertTrue(named)
+        for path in sorted(named - self.RUNTIME):
+            with self.subTest(path=path):
+                self.assertTrue((DOCS / path).exists(), f"AGENTS.md names {path}, which does not exist")
+
+    def test_the_verify_options_it_lists_are_real(self):
+        source = (DOCS / "scripts" / "verify.py").read_text(encoding="utf-8")
+        for option in re.findall(r"scripts/verify\.py (--[a-z0-9-]+)", self.text):
+            with self.subTest(option=option):
+                self.assertIn(f'"{option}"', source)
 
 
 if __name__ == "__main__":

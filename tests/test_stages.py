@@ -166,6 +166,8 @@ class RegistryTestCase(unittest.TestCase):
         self.assertEqual(describe(stages["target_attainment"]), {
             "role": "target_attainment",
             "title": "Target Attainment Agent — how far from the target?",
+            # No Arabic title, so an Arabic run shows the English one (ADR 0033).
+            "title_ar": None,
             "after": "sensitivity", "question": "Did we hit the target?",
             "can_fail_run": False})
 

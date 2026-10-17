@@ -9,6 +9,17 @@ data/agentic.db*
 vault/
 # Backups contain every row of the database, including user data.
 backups/
+# Course files and anything with personal data (names, student numbers).
+# This repository is public: keep them here, where Git never sees them.
+# This also covers brain/private/, for second-brain notes that stay local.
+private/
+# Claude Code: per-person settings and the hooks' per-session state.
+.claude/settings.local.json
+.claude/state/
+.claude/agent-memory-local/
+# Obsidian's per-device files when brain/ is opened as a vault.
+brain/.obsidian/workspace*.json
+brain/.trash/
 __pycache__/
 *.pyc
 .venv/

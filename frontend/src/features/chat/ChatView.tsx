@@ -32,10 +32,11 @@ interface ChatViewProps {
   failedText: string | null
   offline: boolean
   userName: string | null
-  onSend: (text: string) => void
+  onSend: (text: string) => void | Promise<boolean>
   onRetry: () => void
   onDismissFailed: () => void
   composerRef: React.RefObject<ComposerHandle | null>
+  onOpenRun?: (id: string) => void
 }
 
 export function ChatView({
@@ -48,6 +49,7 @@ export function ChatView({
   onRetry,
   onDismissFailed,
   composerRef,
+  onOpenRun,
 }: ChatViewProps) {
   const { t, tx } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -82,9 +84,7 @@ export function ChatView({
       <div className="chat__scroll" ref={scrollRef} onScroll={handleScroll}>
         {empty ? (
           <div className="chat__empty">
-            <div className="hero__orb" aria-hidden="true">
-              <Icon name="sparkle" size={26} />
-            </div>
+            <img className="hero__artwork" src="/artwork/evidence-still-life.webp" width="1536" height="1024" alt="" decoding="async" />
             <h2 className="hero__greeting">{greeting}</h2>
             <p className="hero__question">{t('chat.question')}</p>
             <div className="suggestions">
@@ -115,7 +115,7 @@ export function ChatView({
         ) : (
           <div className="chat__stream" aria-live="polite">
             {session.transcript.map((entry) => (
-              <MessageBubble key={entry.id} entry={entry} agentName={session.agent_name} />
+              <MessageBubble key={entry.id} entry={entry} agentName={session.agent_name} onOpenRun={onOpenRun} />
             ))}
             {sending ? (
               <div className="typing" role="status" aria-label={t('chat.typing')}>
@@ -168,6 +168,7 @@ export function ChatView({
       ) : null}
 
       <Composer
+        draftKey={`${session.session_id}:composer`}
         ref={composerRef}
         onSend={onSend}
         busy={sending}
@@ -176,3 +177,4 @@ export function ChatView({
     </section>
   )
 }
+

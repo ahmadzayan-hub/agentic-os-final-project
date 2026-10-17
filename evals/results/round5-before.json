@@ -1,0 +1,846 @@
+[
+ {
+  "suite": "intent",
+  "agent": "Assistant: what a chat sentence asks for",
+  "module": "assistant.understand",
+  "about": "What a chat sentence asks the assistant to do (assistant.understand). Labels are the action a person means; chat covers small talk and anything outside the vocabulary. English and Arabic. Synthetic sentences.",
+  "dev": {
+   "labels": [
+    "help",
+    "remember",
+    "recall",
+    "forget",
+    "clear_history",
+    "set_preference",
+    "start_run",
+    "run_status",
+    "explain_report",
+    "chat"
+   ],
+   "matrix": {
+    "help": {
+     "help": 20,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 1,
+     "chat": 1
+    },
+    "remember": {
+     "help": 0,
+     "remember": 21,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 1
+    },
+    "recall": {
+     "help": 0,
+     "remember": 0,
+     "recall": 20,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "forget": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 19,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "clear_history": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 17,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "set_preference": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 27,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "start_run": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 21,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 1
+    },
+    "run_status": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 21,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "explain_report": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 22,
+     "chat": 2
+    },
+    "chat": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 26
+    }
+   },
+   "per_class": {
+    "help": {
+     "precision": 1.0,
+     "recall": 0.9090909090909091,
+     "f1": 0.9523809523809523,
+     "support": 22,
+     "predicted": 20
+    },
+    "remember": {
+     "precision": 1.0,
+     "recall": 0.9545454545454546,
+     "f1": 0.9767441860465117,
+     "support": 22,
+     "predicted": 21
+    },
+    "recall": {
+     "precision": 1.0,
+     "recall": 0.9090909090909091,
+     "f1": 0.9523809523809523,
+     "support": 22,
+     "predicted": 20
+    },
+    "forget": {
+     "precision": 1.0,
+     "recall": 0.9047619047619048,
+     "f1": 0.9500000000000001,
+     "support": 21,
+     "predicted": 19
+    },
+    "clear_history": {
+     "precision": 1.0,
+     "recall": 0.8947368421052632,
+     "f1": 0.9444444444444444,
+     "support": 19,
+     "predicted": 17
+    },
+    "set_preference": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 27,
+     "predicted": 27
+    },
+    "start_run": {
+     "precision": 1.0,
+     "recall": 0.9545454545454546,
+     "f1": 0.9767441860465117,
+     "support": 22,
+     "predicted": 21
+    },
+    "run_status": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 21,
+     "predicted": 21
+    },
+    "explain_report": {
+     "precision": 0.9565217391304348,
+     "recall": 0.9166666666666666,
+     "f1": 0.9361702127659574,
+     "support": 24,
+     "predicted": 23
+    },
+    "chat": {
+     "precision": 0.7027027027027027,
+     "recall": 1.0,
+     "f1": 0.8253968253968255,
+     "support": 26,
+     "predicted": 37
+    }
+   },
+   "accuracy": 0.9469026548672567,
+   "macro_recall": 0.9443438140806562,
+   "cases": 226,
+   "misses": [
+    {
+     "item": "Could you possibly walk me through how to upload a spreadsheet and get a report out of it?",
+     "truth": "help",
+     "predicted": "explain_report"
+    },
+    {
+     "item": "ممكن تفهمني أستخدمك إزاي؟ أنا مش فاهم حاجة",
+     "truth": "help",
+     "predicted": "chat"
+    },
+    {
+     "item": "خلك حافظ عندك إن المورد الجديد يطلب الدفع خلال 45 يوم",
+     "truth": "remember",
+     "predicted": "chat"
+    },
+    {
+     "item": "what have you got saved about me so far, just list it",
+     "truth": "recall",
+     "predicted": "chat"
+    },
+    {
+     "item": "وش المعلومات اللي حفظتها لي قبل؟",
+     "truth": "recall",
+     "predicted": "chat"
+    },
+    {
+     "item": "pls forget that thing about the discount i mentioned earlier",
+     "truth": "forget",
+     "predicted": "chat"
+    },
+    {
+     "item": "امسح المعلومة اللي قولتهالك عن الميزانية القديمة دي",
+     "truth": "forget",
+     "predicted": "chat"
+    },
+    {
+     "item": "Erase our previous messages from this session, please.",
+     "truth": "clear_history",
+     "predicted": "chat"
+    },
+    {
+     "item": "هل يمكنك حذف سجل هذه المحادثة بالكامل؟",
+     "truth": "clear_history",
+     "predicted": "chat"
+    },
+    {
+     "item": "Would you mind going through the full Q3 finance sheet and putting together a proper report? No rush, but I need it before the board pack goes out on Monday.",
+     "truth": "start_run",
+     "predicted": "chat"
+    },
+    {
+     "item": "ما الأسباب التي أظهرها التقرير لانخفاض الإيرادات في الفرع الغربي؟",
+     "truth": "explain_report",
+     "predicted": "chat"
+    },
+    {
+     "item": "التقرير بيقول إيه بالظبط عن المصاريف في الربع اللي فات؟",
+     "truth": "explain_report",
+     "predicted": "chat"
+    }
+   ]
+  },
+  "holdout": {
+   "labels": [
+    "help",
+    "remember",
+    "recall",
+    "forget",
+    "clear_history",
+    "set_preference",
+    "start_run",
+    "run_status",
+    "explain_report",
+    "chat"
+   ],
+   "matrix": {
+    "help": {
+     "help": 2,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 1,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 3
+    },
+    "remember": {
+     "help": 0,
+     "remember": 4,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "recall": {
+     "help": 0,
+     "remember": 0,
+     "recall": 3,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 3
+    },
+    "forget": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 3,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 3
+    },
+    "clear_history": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 4,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "set_preference": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 4,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "start_run": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 6,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "run_status": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 4,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "explain_report": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 5,
+     "chat": 1
+    },
+    "chat": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 6
+    }
+   },
+   "per_class": {
+    "help": {
+     "precision": 1.0,
+     "recall": 0.3333333333333333,
+     "f1": 0.5,
+     "support": 6,
+     "predicted": 2
+    },
+    "remember": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "support": 6,
+     "predicted": 4
+    },
+    "recall": {
+     "precision": 1.0,
+     "recall": 0.5,
+     "f1": 0.6666666666666666,
+     "support": 6,
+     "predicted": 3
+    },
+    "forget": {
+     "precision": 1.0,
+     "recall": 0.5,
+     "f1": 0.6666666666666666,
+     "support": 6,
+     "predicted": 3
+    },
+    "clear_history": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "support": 6,
+     "predicted": 4
+    },
+    "set_preference": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "support": 6,
+     "predicted": 4
+    },
+    "start_run": {
+     "precision": 0.8571428571428571,
+     "recall": 1.0,
+     "f1": 0.923076923076923,
+     "support": 6,
+     "predicted": 7
+    },
+    "run_status": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "support": 6,
+     "predicted": 4
+    },
+    "explain_report": {
+     "precision": 1.0,
+     "recall": 0.8333333333333334,
+     "f1": 0.9090909090909091,
+     "support": 6,
+     "predicted": 5
+    },
+    "chat": {
+     "precision": 0.25,
+     "recall": 1.0,
+     "f1": 0.4,
+     "support": 6,
+     "predicted": 24
+    }
+   },
+   "accuracy": 0.6833333333333333,
+   "macro_recall": 0.6833333333333333,
+   "cases": 60,
+   "misses": [
+    {
+     "item": "Could you possibly give me a quick tour of the main features before I load our maintenance data?",
+     "truth": "help",
+     "predicted": "chat"
+    },
+    {
+     "item": "ما هي الإمكانيات التي توفرها هذه المنصة لتحليل بيانات الصيانة؟",
+     "truth": "help",
+     "predicted": "start_run"
+    },
+    {
+     "item": "كيف أرفع ملف الإكسل وأحصل على تقرير منه؟",
+     "truth": "help",
+     "predicted": "chat"
+    },
+    {
+     "item": "ايش تقدر تسوي بالضبط؟ ابغى أعرف قبل ما أبدأ",
+     "truth": "help",
+     "predicted": "chat"
+    },
+    {
+     "item": "يرجى تذكّر أن المورد الجديد للأدوية يحتاج اعتماداً قبل نهاية الشهر",
+     "truth": "remember",
+     "predicted": "chat"
+    },
+    {
+     "item": "خلي في بالك إن المستشفى الشمالي غيّر نظام الفرز من الأسبوع الجاي",
+     "truth": "remember",
+     "predicted": "chat"
+    },
+    {
+     "item": "list everything you've stored for me so far",
+     "truth": "recall",
+     "predicted": "chat"
+    },
+    {
+     "item": "هل ما زلت تحتفظ بالملاحظة التي طلبتُ منك حفظها عن عقد الشحن؟",
+     "truth": "recall",
+     "predicted": "chat"
+    },
+    {
+     "item": "ورّيني كل المعلومات اللي حفظتها عندي قبل كده",
+     "truth": "recall",
+     "predicted": "chat"
+    },
+    {
+     "item": "Could you possibly drop the freight contract note from what you know about me?",
+     "truth": "forget",
+     "predicted": "chat"
+    },
+    {
+     "item": "يرجى حذف جميع المعلومات المحفوظة عني",
+     "truth": "forget",
+     "predicted": "chat"
+    },
+    {
+     "item": "شيل كل اللي حفظته عني، ابغى نبدأ من جديد",
+     "truth": "forget",
+     "predicted": "chat"
+    },
+    {
+     "item": "Would it be possible to reset this thread so the earlier questions are gone?",
+     "truth": "clear_history",
+     "predicted": "chat"
+    },
+    {
+     "item": "احذف سجل الدردشة اللي فوق ده",
+     "truth": "clear_history",
+     "predicted": "chat"
+    },
+    {
+     "item": "make your tone a bit friendlier and less stiff, thanks",
+     "truth": "set_preference",
+     "predicted": "chat"
+    },
+    {
+     "item": "خاطبني باسم فهد من الآن فصاعداً",
+     "truth": "set_preference",
+     "predicted": "chat"
+    },
+    {
+     "item": "Has the pipeline finished the cost stage, or is it still going?",
+     "truth": "run_status",
+     "predicted": "chat"
+    },
+    {
+     "item": "وين وصل التقرير؟ كم باقي له؟",
+     "truth": "run_status",
+     "predicted": "chat"
+    },
+    {
+     "item": "التقرير بيقول إيه بالظبط عن سبب زيادة الأعطال في الخطوط؟",
+     "truth": "explain_report",
+     "predicted": "chat"
+    }
+   ]
+  }
+ },
+ {
+  "suite": "jargon",
+  "agent": "Validator: statistical jargon in claims",
+  "module": "server/analytics._jargon_in",
+  "about": "Whether a sentence written for a business reader carries statistical jargon the report must avoid (server/analytics JARGON, the validator's claims_avoid_statistical_jargon check). Business words that look statistical, such as a budget variance, are not jargon. English and Arabic.",
+  "dev": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 34,
+     "False": 2
+    },
+    "False": {
+     "True": 0,
+     "False": 32
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 0.9444444444444444,
+     "f1": 0.9714285714285714,
+     "support": 36,
+     "predicted": 34
+    },
+    "False": {
+     "precision": 0.9411764705882353,
+     "recall": 1.0,
+     "f1": 0.9696969696969697,
+     "support": 32,
+     "predicted": 34
+    }
+   },
+   "accuracy": 0.9705882352941176,
+   "macro_recall": 0.9722222222222222,
+   "cases": 68,
+   "positive": "True",
+   "recall": 0.9444444444444444,
+   "precision": 1.0,
+   "misses": [
+    {
+     "item": "After a Bonferroni correction, only two of the seven pairwise comparisons stay significant.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "وجدنا عدم تجانس التباين في البواقي، لذلك نحتاج إلى تعديل لأخطاء المعيار.",
+     "truth": "True",
+     "predicted": "False"
+    }
+   ]
+  },
+  "holdout": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 10,
+     "False": 2
+    },
+    "False": {
+     "True": 0,
+     "False": 12
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 0.8333333333333334,
+     "f1": 0.9090909090909091,
+     "support": 12,
+     "predicted": 10
+    },
+    "False": {
+     "precision": 0.8571428571428571,
+     "recall": 1.0,
+     "f1": 0.923076923076923,
+     "support": 12,
+     "predicted": 14
+    }
+   },
+   "accuracy": 0.9166666666666666,
+   "macro_recall": 0.9166666666666667,
+   "cases": 24,
+   "positive": "True",
+   "recall": 0.8333333333333334,
+   "precision": 1.0,
+   "misses": [
+    {
+     "item": "تشير نتائج نموذج ARIMA إلى وجود ارتباط ذاتي في بيانات الشحن الأسبوعية.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "We applied a Bonferroni correction across the twelve comparisons before reporting any significance.",
+     "truth": "True",
+     "predicted": "False"
+    }
+   ]
+  }
+ },
+ {
+  "suite": "causal",
+  "agent": "Claims lint: causal wording in deliverables",
+  "module": "scripts/claims_lint.causal_phrases",
+  "about": "Whether a sentence claims a cause. Observational findings must be written as associations unless a controlled comparison supports them (the analytics-expert review's most frequent blocker). Used to measure scripts/claims_lint.py, a zero-cost check for deliverables. English and Arabic.",
+  "dev": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 32,
+     "False": 4
+    },
+    "False": {
+     "True": 3,
+     "False": 30
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 0.9142857142857143,
+     "recall": 0.8888888888888888,
+     "f1": 0.9014084507042254,
+     "support": 36,
+     "predicted": 35
+    },
+    "False": {
+     "precision": 0.8823529411764706,
+     "recall": 0.9090909090909091,
+     "f1": 0.8955223880597014,
+     "support": 33,
+     "predicted": 34
+    }
+   },
+   "accuracy": 0.8985507246376812,
+   "macro_recall": 0.898989898989899,
+   "cases": 69,
+   "positive": "True",
+   "recall": 0.8888888888888888,
+   "precision": 0.9142857142857143,
+   "misses": [
+    {
+     "item": "Stations with more cleaning staff tend to have fewer complaints, but we have not checked whether one drives the other.",
+     "truth": "False",
+     "predicted": "True"
+    },
+    {
+     "item": "أدى إلغاء الدعم عن تذاكر الطلاب إلى انخفاض عدد الركاب في الفترة المسائية.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "Training the dispatchers boosted on-time performance, according to the controlled comparison.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "الحر الشديد يسوي أعطال بالمكيفات ويرفع طلبات الصيانة بشكل كبير",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "The hypothesis that heat causes the breakdowns is still untested; we have not run the analysis yet.",
+     "truth": "False",
+     "predicted": "True"
+    },
+    {
+     "item": "هل ارتفاع درجات الحرارة يسبب زيادة الأعطال؟ هذا سؤال نحتاج لاختباره قبل أن نستنتج شيئاً.",
+     "truth": "False",
+     "predicted": "True"
+    },
+    {
+     "item": "التأخير في استلام القطع بيخلي الأتوبيسات تفضل واقفة أيام، وده بيقلل الإيراد",
+     "truth": "True",
+     "predicted": "False"
+    }
+   ]
+  },
+  "holdout": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 11,
+     "False": 5
+    },
+    "False": {
+     "True": 1,
+     "False": 15
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 0.9166666666666666,
+     "recall": 0.6875,
+     "f1": 0.7857142857142857,
+     "support": 16,
+     "predicted": 12
+    },
+    "False": {
+     "precision": 0.75,
+     "recall": 0.9375,
+     "f1": 0.8333333333333334,
+     "support": 16,
+     "predicted": 20
+    }
+   },
+   "accuracy": 0.8125,
+   "macro_recall": 0.8125,
+   "cases": 32,
+   "positive": "True",
+   "recall": 0.6875,
+   "precision": 0.9166666666666666,
+   "misses": [
+    {
+     "item": "خفّض التدريب الجديد على التشغيل زمن التوقف غير المخطط في محطة الضخ.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "ارتفاع أسعار الوقود يدفع تكاليف النقل إلى الأعلى كل شهر.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "The shift change may have contributed to the error spike, but the sample is small and we cannot confirm it.",
+     "truth": "False",
+     "predicted": "True"
+    },
+    {
+     "item": "يعود تراجع دقة التنبؤ إلى نقص البيانات في الأشهر الأخيرة.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "The impact of the new triage rule was a 15-minute cut in average waiting time.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "انخفاض حوادث التصادم عند التقاطعات الرئيسية جاء نتيجة تحديث نظام الإشارات.",
+     "truth": "True",
+     "predicted": "False"
+    }
+   ]
+  }
+ }
+]

@@ -20,6 +20,13 @@ export async function openTab(page: Page, name: RegExp) {
     await menu.click()
   }
   await target.first().click()
+  await viewLoaded(page)
+}
+
+/** Wait until the view's chunk has arrived (ADR 0028), so a check reads
+ *  the view and not its loading skeleton. */
+export async function viewLoaded(page: Page) {
+  await page.locator('.viewload').waitFor({ state: 'detached' })
 }
 
 /** Click a sidebar quick action (New session / Clear history / End session),

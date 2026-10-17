@@ -1,0 +1,31 @@
+FINDING T01 · major · P15
+Category: unsourced_figure
+Evidence: $52 is not in the register.
+
+FINDING T02 · major · P13
+Category: unsourced_figure
+Evidence: $640,000 is not in the register.
+
+FINDING T03 · major · P03
+Category: unsourced_figure
+Evidence: 27% is not in the register.
+
+FINDING T04 · major · P07
+Category: unsourced_figure
+Evidence: 40% is not in the register.
+
+FINDING T05 · major · P06
+Category: unsourced_figure
+Evidence: 9.1% is not in the register.
+
+FINDING T06 · major · P12
+Category: unsourced_figure
+Evidence: 92% is not in the register.
+
+FINDING T07 · major · P02
+Category: arithmetic
+Evidence: “[P02] That is growth of 13.4% in one year.” computes to 11.428571.
+
+FINDING T08 · major · P09
+Category: arithmetic
+Evidence: “[P09] With 610 staff across 48 stores, each store has 15.2 staff on average.” computes to 12.708333.

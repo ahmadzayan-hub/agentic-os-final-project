@@ -8,27 +8,38 @@ snapshots so the frontend never has to parse reply strings.
 The command-line application (python main.py) is unaffected by this module.
 """
 
+import asyncio
 import json
 import os
 import re
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from agent import Agent, language_code
 from server.agent_runtime import build_runtime
+from server import analytics
+from server import datasets as dataset_reader
+from server import joins as joining
+from server import live
+from server import mapping as colmap
+from server import query as table_query
 from server.assistant import Assistant
+from server.connectors import Busy, ConnectorError, Connectors, TooSoon
 from server.model_gateway import ModelGateway
 from server.routing import RoutedGateway, build_router
 from server.stages import describe, load_stages
-from server.runs import RunEngine
+from server.runs import RunEngine, TableNotReady, dataset_summary
 from server.auth import AuthError, build_identity, public_auth_config
 from server.quota import QuotaExceeded, load_limits
 from server.quota import usage as quota_usage
@@ -170,25 +181,124 @@ class PreferenceIn(BaseModel):
     value: str = Field(min_length=1, max_length=200)
 
 
+class KeyPairIn(BaseModel):
+    """One key of a join: a column of the table so far and the column of
+    the joined dataset that holds the same values (ADR 0030)."""
+    left: str = Field(min_length=1, max_length=200)
+    right: str = Field(min_length=1, max_length=200)
+
+
+class JoinIn(BaseModel):
+    dataset_id: str = Field(min_length=1, max_length=32)
+    keys: list[KeyPairIn] = Field(min_length=1, max_length=joining.MAX_KEYS)
+    how: str = Field(default="left", pattern="^(left|inner)$")
+    alias: str | None = Field(default=None, max_length=24)
+
+
+class JoinPreviewIn(BaseModel):
+    dataset_id: str = Field(min_length=1, max_length=32)
+    joins: list[JoinIn] = Field(min_length=1, max_length=joining.MAX_JOINS)
+    breakdown: str | None = Field(default=None, max_length=200)
+
+
 class RunIn(BaseModel):
     goal: str = Field(min_length=3, max_length=500)
     profile: str | None = Field(default=None, max_length=64)
-    dataset_text: str | None = Field(default=None, max_length=2_100_000)
+    # Pasted CSV. A file goes through POST /api/datasets (ADR 0024).
+    dataset_text: str | None = Field(default=None, max_length=dataset_reader.MAX_UPLOAD_BYTES)
     dataset_id: str | None = Field(default=None, max_length=32)
     dataset_name: str | None = Field(default=None, max_length=100)
     # The language the report is written in (ADR 0022). The interface
     # sends the reader's language.
     language: str = Field(default="en", pattern="^(en|ar)$")
+    # Other stored datasets joined onto this one, and an optional
+    # breakdown from the merged table (ADR 0030).
+    joins: list[JoinIn] | None = Field(default=None, max_length=joining.MAX_JOINS)
+    breakdown: str | None = Field(default=None, max_length=200)
+
+
+class MappingIn(BaseModel):
+    """A column mapping (ADR 0025). Roles, orders and grains are checked
+    by server.mapping, which explains a refusal in the reader's language."""
+    roles: dict[str, str] = Field(default_factory=dict, max_length=500)
+    measure: str | None = Field(default=None, max_length=200)
+    dimension: str | None = Field(default=None, max_length=200)
+    date_order: str = Field(default="auto", max_length=20)
+    grain: str = Field(default="auto", max_length=20)
+
+
+class QueryIn(BaseModel):
+    """Totals by group under filters (ADR 0031). The shapes are checked by
+    server.query, which explains a refusal in the reader's language."""
+    group_by: list = Field(default_factory=list, max_length=table_query.MAX_GROUP_BY)
+    measures: list = Field(default_factory=list, max_length=table_query.MAX_MEASURES)
+    filters: list = Field(default_factory=list, max_length=table_query.MAX_FILTERS)
+    sort: dict | None = None
+    limit: int = 100
+
+
+class RecordsIn(BaseModel):
+    filters: list = Field(default_factory=list, max_length=table_query.MAX_FILTERS)
+    sort: dict | None = None
+    offset: int = 0
+    limit: int = 50
+    sample: int | None = None
 
 
 class ApprovalIn(BaseModel):
     decision: str = Field(pattern="^(approve|reject)$")
 
 
+class ConnectorIn(BaseModel):
+    """A live source (ADR 0034). The address is checked by server.connectors,
+    which explains a refusal in the reader's language."""
+    name: str = Field(min_length=1, max_length=100)
+    url: str = Field(min_length=1, max_length=2000)
+    goal: str = Field(min_length=1, max_length=500)
+    format: str | None = Field(default=None, pattern="^(csv|tsv|xlsx|json|jsonl)$")
+    sheet: str | None = Field(default=None, max_length=31)
+    every_minutes: int | None = None
+    language: str = Field(default="en", pattern="^(en|ar)$")
+    profile: str | None = Field(default=None, max_length=64)
+
+
+class ConnectorUpdateIn(BaseModel):
+    """Pause or resume, or change the interval. An interval that is not
+    sent is kept; `null` means "only when asked"."""
+    enabled: bool | None = None
+    every_minutes: int | None = None
+
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
+# Vite names every file under /assets by a hash of its content, so a cached
+# copy can never be stale. The page, the service worker and the manifest
+# point at the current hashes, so the browser revalidates them each visit.
+# vercel.json sets the same headers in production (ADR 0023, amendment).
+IMMUTABLE = "public, max-age=31536000, immutable"
+REVALIDATE = "no-cache"
 
-def create_app(config_path=None, env=None):
+
+class InterfaceGZip:
+    """Compress the built interface, never the API.
+
+    API responses can carry a token beside text the caller chose, which is
+    the shape a compression side channel (BREACH) needs, and they are small
+    JSON anyway. The interface is public, static and most of the bytes.
+    """
+
+    def __init__(self, app):
+        self.app = app
+        self.gzip = GZipMiddleware(app, minimum_size=1024)
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and not scope["path"].startswith("/api/"):
+            await self.gzip(scope, receive, send)
+        else:
+            await self.app(scope, receive, send)
+
+
+def create_app(config_path=None, env=None, dist_dir=None):
     config = load_config(config_path or PROJECT_ROOT / "config.json")
     # Fails closed: declaring production without a managed identity
     # provider raises here rather than serving data unauthenticated.
@@ -281,6 +391,14 @@ def create_app(config_path=None, env=None):
     )
 
     environ = os.environ if env is None else env
+    # Live sources (ADR 0034). The fence reads its host list and the test
+    # fixture folder from the same environment as everything else.
+    connectors = Connectors(engine, env=environ)
+    app.state.connectors = connectors
+    # Open event streams per owner in this process (ADR 0034): each polls
+    # the database every second, so one owner cannot open hundreds.
+    open_streams = {}
+    streams_lock = threading.Lock()
     # The default must exceed the application's own legitimate write
     # cadence: a client-stepped analytics run issues ~3 advance calls per
     # second, so a 120/min budget (2/s) would throttle a normal run.
@@ -321,10 +439,17 @@ def create_app(config_path=None, env=None):
         response.headers.setdefault(
             "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
         )
-        if request.url.path.startswith("/api/"):
+        path = request.url.path
+        if path.startswith("/api/"):
             # Session, memory, and export payloads are private.
             response.headers.setdefault("Cache-Control", "no-store")
+        elif path.startswith("/assets/") and response.status_code == 200:
+            response.headers.setdefault("Cache-Control", IMMUTABLE)
+        else:
+            response.headers.setdefault("Cache-Control", REVALIDATE)
         return response
+
+    app.add_middleware(InterfaceGZip)
 
     @app.exception_handler(Exception)
     async def handle_unexpected_error(request: Request, exc: Exception):
@@ -609,9 +734,14 @@ def create_app(config_path=None, env=None):
                                          owner=principal.subject,
                                          dataset_id=run.dataset_id,
                                          profile=run.profile,
-                                         language=run.language)
+                                         language=run.language,
+                                         joins=([j.model_dump() for j in run.joins]
+                                                if run.joins else None),
+                                         breakdown=run.breakdown)
             except KeyError:
                 raise HTTPException(status_code=404, detail='Dataset not found.')
+            except joining.JoinError as error:
+                raise HTTPException(status_code=422, detail=error.detail(run.language))
             except ValueError as error:
                 # An unknown profile, or one naming an unregistered stage.
                 raise HTTPException(status_code=422, detail=str(error))
@@ -620,6 +750,28 @@ def create_app(config_path=None, env=None):
                 # entitled to make it — just not right now, or not this
                 # much. The message says which and when it clears.
                 raise HTTPException(status_code=429, detail=error.message)
+
+    @app.post("/api/joins/preview")
+    async def preview_joins(body: JoinPreviewIn,
+                            language: str = Query(default="en", pattern="^(en|ar)$"),
+                            principal=Depends(requires("read"))):
+        """What a run with these joins would merge, without making the run
+        (ADR 0030). Reads under the lock; merges outside it, because a
+        merge of large tables takes long enough to hold up everyone."""
+        def plan():
+            with lock:
+                return engine.join_plan(principal.subject, body.dataset_id,
+                                        [j.model_dump() for j in body.joins],
+                                        body.breakdown)
+        try:
+            primary, mapping, spec, inputs = await run_in_threadpool(plan)
+            return await run_in_threadpool(
+                analytics.preview_merge, primary["content"], mapping, inputs,
+                spec["breakdown"], language)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Dataset not found.")
+        except joining.JoinError as error:
+            raise HTTPException(status_code=422, detail=error.detail(language))
 
     @app.get("/api/pipelines")
     def read_pipelines(principal=Depends(requires("read"))):
@@ -636,10 +788,89 @@ def create_app(config_path=None, env=None):
         with lock:
             return quota_usage(store, principal.subject, limits)
 
+    @app.post("/api/datasets", status_code=201)
+    async def upload_dataset(
+        request: Request,
+        name: str = Query(min_length=1, max_length=100),
+        format: str | None = Query(default=None, pattern="^(csv|tsv|xlsx|json|jsonl)$"),
+        sheet: str | None = Query(default=None, max_length=31),
+        language: str = Query(default="en", pattern="^(en|ar)$"),
+        principal=Depends(requires("write")),
+    ):
+        """One file as the request body, read into a canonical table and
+        stored content-addressed (ADR 0024). 201 when it is new; 200 when
+        the same data was already stored, which costs nothing."""
+        limit = dataset_reader.MAX_UPLOAD_BYTES
+        declared = request.headers.get("content-length", "")
+        if declared.isdigit() and int(declared) > limit:
+            raise HTTPException(413, detail=dataset_reader.too_large().message(language))
+        chunks, size = [], 0
+        async for chunk in request.stream():
+            size += len(chunk)
+            if size > limit:
+                raise HTTPException(413, detail=dataset_reader.too_large().message(language))
+            chunks.append(chunk)
+        # Only the file's own name: a browser sends no path, a script might.
+        filename = re.split(r"[\\/]", name)[-1].strip() or "dataset"
+        try:
+            parsed = await run_in_threadpool(
+                dataset_reader.read, b"".join(chunks), filename, format, sheet)
+        except dataset_reader.DatasetError as error:
+            raise HTTPException(error.status, detail=error.message(language))
+
+        def store_it():
+            with lock:
+                return engine.store_upload(parsed, filename, principal.subject)
+        try:
+            dataset, created = await run_in_threadpool(store_it)
+        except QuotaExceeded as error:
+            raise HTTPException(status_code=429, detail=error.message)
+        return JSONResponse(status_code=201 if created else 200, content={
+            "dataset": dataset_summary(dataset), "created": created,
+            "columns": parsed.columns, "preview": parsed.preview(),
+            "warnings": parsed.warning_texts(language), "sheets": parsed.sheets})
+
     @app.get("/api/datasets")
     def list_datasets(principal=Depends(requires("read"))):
         with lock:
-            return {"datasets": store.list_datasets(principal.subject)}
+            return {"datasets": [
+                {**row, "mapped": row.get("mapping_updated_at") is not None}
+                for row in store.list_datasets(principal.subject)]}
+
+    # Column mapping (ADR 0025). Another owner's dataset is a 404, never a
+    # 403: whether it exists is not theirs to learn.
+    @app.get("/api/datasets/{dataset_id}")
+    def read_dataset(dataset_id: str,
+                     language: str = Query(default="en", pattern="^(en|ar)$"),
+                     principal=Depends(requires("read"))):
+        with lock:
+            try:
+                return engine.dataset_detail(dataset_id, principal.subject, language)
+            except KeyError:
+                raise HTTPException(status_code=404, detail="Dataset not found.")
+
+    @app.put("/api/datasets/{dataset_id}/mapping")
+    def save_mapping(dataset_id: str, mapping: MappingIn,
+                     language: str = Query(default="en", pattern="^(en|ar)$"),
+                     principal=Depends(requires("write"))):
+        with lock:
+            try:
+                return engine.save_mapping(dataset_id, principal.subject,
+                                           mapping.model_dump(), language)
+            except KeyError:
+                raise HTTPException(status_code=404, detail="Dataset not found.")
+            except colmap.MappingError as error:
+                raise HTTPException(status_code=422, detail=error.detail(language))
+
+    @app.delete("/api/datasets/{dataset_id}/mapping")
+    def clear_mapping(dataset_id: str,
+                      language: str = Query(default="en", pattern="^(en|ar)$"),
+                      principal=Depends(requires("write"))):
+        with lock:
+            try:
+                return engine.clear_mapping(dataset_id, principal.subject, language)
+            except KeyError:
+                raise HTTPException(status_code=404, detail="Dataset not found.")
 
     @app.get("/api/runs")
     def list_runs(principal=Depends(requires("read"))):
@@ -674,6 +905,68 @@ def create_app(config_path=None, env=None):
         with lock:
             return _run_or_404(lambda: engine.cancel(run_id), principal, run_id)
 
+    # ------------------------------------------------------------------
+    # A run's cleaned table (ADR 0031): download, fields, totals, records
+    # ------------------------------------------------------------------
+    async def run_table(run_id, principal, language):
+        """The run's analysis table, for its owner. Ownership and the store
+        are read under the lock; the table is parsed and queried outside
+        it, so a large table does not hold up everyone else."""
+        def source():
+            with lock:
+                if not owns(principal, engine.owner_of(run_id)):
+                    raise KeyError(run_id)
+                return engine.table_source(run_id)
+        try:
+            key, stored, run = await run_in_threadpool(source)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Run not found.")
+        except TableNotReady:
+            raise HTTPException(status_code=409, detail=(
+                "الجدول المنظَّف غير جاهز بعد: لم ينتهِ التشغيل من تنظيف بياناته."
+                if language == "ar" else
+                "The cleaned table is not ready yet: the run has not finished cleaning its data."))
+        return await run_in_threadpool(engine.load_table, key, stored), run
+
+    @app.get("/api/runs/{run_id}/data.csv")
+    async def download_table(run_id: str,
+                             language: str = Query(default="en", pattern="^(en|ar)$"),
+                             principal=Depends(requires("read"))):
+        table, run = await run_table(run_id, principal, language)
+        name = table_query.download_name(run["goal"], run_id)
+        text = await run_in_threadpool(table_query.to_csv, table)
+        return Response(content=text.encode("utf-8"), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition":
+                                 f'attachment; filename="{name}"; filename*=UTF-8\'\'{name}'})
+
+    @app.get("/api/runs/{run_id}/fields")
+    async def table_fields(run_id: str,
+                           language: str = Query(default="en", pattern="^(en|ar)$"),
+                           principal=Depends(requires("read"))):
+        table, _ = await run_table(run_id, principal, language)
+        return {"fields": await run_in_threadpool(table_query.fields, table),
+                "records": len(table.rows)}
+
+    @app.post("/api/runs/{run_id}/query")
+    async def query_table(run_id: str, body: QueryIn,
+                          language: str = Query(default="en", pattern="^(en|ar)$"),
+                          principal=Depends(requires("read"))):
+        table, _ = await run_table(run_id, principal, language)
+        try:
+            return await run_in_threadpool(table_query.aggregate, table, body.model_dump())
+        except table_query.QueryError as error:
+            raise HTTPException(status_code=422, detail=error.detail(language))
+
+    @app.post("/api/runs/{run_id}/records")
+    async def table_records(run_id: str, body: RecordsIn,
+                            language: str = Query(default="en", pattern="^(en|ar)$"),
+                            principal=Depends(requires("read"))):
+        table, _ = await run_table(run_id, principal, language)
+        try:
+            return await run_in_threadpool(table_query.records, table, body.model_dump())
+        except table_query.QueryError as error:
+            raise HTTPException(status_code=422, detail=error.detail(language))
+
     @app.post("/api/runs/{run_id}/approvals/{approval_id}")
     def decide_approval(run_id: str, approval_id: str, decision: ApprovalIn, principal=Depends(requires("approve"))):
         with lock:
@@ -683,14 +976,125 @@ def create_app(config_path=None, env=None):
             )
 
     # ------------------------------------------------------------------
+    # Live data (ADR 0034): connectors and the event stream. A connector
+    # is its owner's alone; another owner's is a 404, never a 403.
+    # ------------------------------------------------------------------
+    def _no_connector():
+        raise HTTPException(status_code=404, detail="Live source not found.")
+
+    @app.get("/api/connectors")
+    def list_connectors(principal=Depends(requires("read"))):
+        with lock:
+            return {"connectors": connectors.list(principal.subject)}
+
+    @app.post("/api/connectors", status_code=201)
+    def create_connector(body: ConnectorIn,
+                         language: str = Query(default="en", pattern="^(en|ar)$"),
+                         principal=Depends(requires("write"))):
+        with lock:
+            try:
+                return connectors.create(
+                    principal.subject, body.name, body.url, body.goal, language=body.language,
+                    format=body.format, sheet=body.sheet, every_minutes=body.every_minutes,
+                    profile=body.profile)
+            except ConnectorError as error:
+                raise HTTPException(status_code=error.status, detail=error.message(language))
+            except ValueError as error:  # an unknown pipeline profile
+                raise HTTPException(status_code=422, detail=str(error))
+
+    @app.put("/api/connectors/{connector_id}")
+    def update_connector(connector_id: str, body: ConnectorUpdateIn,
+                         language: str = Query(default="en", pattern="^(en|ar)$"),
+                         principal=Depends(requires("write"))):
+        every = body.every_minutes if "every_minutes" in body.model_fields_set else "keep"
+        with lock:
+            try:
+                return connectors.update(connector_id, principal.subject,
+                                         enabled=body.enabled, every_minutes=every)
+            except KeyError:
+                _no_connector()
+            except ConnectorError as error:
+                raise HTTPException(status_code=error.status, detail=error.message(language))
+
+    @app.delete("/api/connectors/{connector_id}", status_code=204)
+    def delete_connector(connector_id: str, principal=Depends(requires("write"))):
+        with lock:
+            try:
+                connectors.delete(connector_id, principal.subject)
+            except KeyError:
+                _no_connector()
+        return Response(status_code=204)
+
+    @app.post("/api/connectors/{connector_id}/refresh")
+    async def refresh_connector(connector_id: str,
+                                language: str = Query(default="en", pattern="^(en|ar)$"),
+                                principal=Depends(requires("write"))):
+        """Fetch now. The fetch and the parse run outside the lock; the
+        connector's lease keeps a worker from fetching it at the same time."""
+        try:
+            return await run_in_threadpool(
+                connectors.refresh_now, connector_id, principal.subject, lock)
+        except KeyError:
+            _no_connector()
+        except Busy:
+            raise HTTPException(status_code=409, detail=(
+                "يجري تحديث هذا المصدر الآن. حاول بعد قليل." if language == "ar" else
+                "This source is being refreshed already. Try again in a moment."))
+        except TooSoon as wait:
+            raise HTTPException(status_code=429, headers={"Retry-After": str(wait.seconds)},
+                                detail=(f"حُدّث هذا المصدر للتو. حاول بعد {wait.seconds} ثانية."
+                                        if language == "ar" else
+                                        f"This source was fetched moments ago. Try again in "
+                                        f"{wait.seconds} seconds."))
+
+    @app.get("/api/events")
+    async def events(request: Request,
+                     wait: float = Query(default=live.MAX_SECONDS, ge=0, le=live.MAX_SECONDS),
+                     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
+                     principal=Depends(requires("read"))):
+        """The owner's runs and connectors as they change, as server-sent
+        events. Each stream ends within `wait` seconds; the client resumes
+        with Last-Event-ID. An unreadable one starts from now."""
+        owner = principal.subject
+        with streams_lock:
+            if open_streams.get(owner, 0) >= live.MAX_STREAMS_PER_OWNER:
+                raise HTTPException(status_code=429, headers={"Retry-After": "30"},
+                                    detail="Too many open update streams. Close a tab.")
+            open_streams[owner] = open_streams.get(owner, 0) + 1
+        reader = live.Reader(store, owner,
+                             live.parse_cursor(last_event_id) or live.cursor_now())
+
+        def poll_locked():
+            with lock:
+                return reader.poll()
+
+        async def poll():
+            return await run_in_threadpool(poll_locked)
+
+        async def body():
+            try:
+                async for part in live.stream(reader, poll, asyncio.sleep, time.monotonic,
+                                              request.is_disconnected, max_seconds=wait):
+                    yield part
+            finally:
+                with streams_lock:
+                    open_streams[owner] -= 1
+
+        return StreamingResponse(body(), media_type="text/event-stream", headers={
+            "Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+    # ------------------------------------------------------------------
     # Static frontend (production build), if present
     # ------------------------------------------------------------------
-    dist = PROJECT_ROOT / "frontend" / "dist"
+    dist = Path(dist_dir) if dist_dir else PROJECT_ROOT / "frontend" / "dist"
     if dist.is_dir():
         app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
 
         @app.get("/{full_path:path}", include_in_schema=False)
         def spa(full_path: str):
+            # An API path no route matched is a missing endpoint, not a page.
+            if full_path == "api" or full_path.startswith("api/"):
+                raise HTTPException(status_code=404, detail="Not found.")
             candidate = (dist / full_path).resolve()
             # Serve real files inside dist; anything else falls back to the
             # SPA entry point. Path-aware containment (is_relative_to on the

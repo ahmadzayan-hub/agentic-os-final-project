@@ -1,0 +1,1293 @@
+[
+ {
+  "suite": "intent",
+  "agent": "Assistant: what a chat sentence asks for",
+  "module": "assistant.understand",
+  "about": "What a chat sentence asks the assistant to do (assistant.understand). Labels are the action a person means; chat covers small talk and anything outside the vocabulary. English and Arabic. Synthetic sentences.",
+  "dev": {
+   "labels": [
+    "help",
+    "remember",
+    "recall",
+    "forget",
+    "clear_history",
+    "set_preference",
+    "start_run",
+    "run_status",
+    "explain_report",
+    "chat"
+   ],
+   "matrix": {
+    "help": {
+     "help": 16,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "remember": {
+     "help": 0,
+     "remember": 16,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "recall": {
+     "help": 0,
+     "remember": 0,
+     "recall": 16,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "forget": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 15,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "clear_history": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 13,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "set_preference": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 21,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "start_run": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 16,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "run_status": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 15,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "explain_report": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 18,
+     "chat": 0
+    },
+    "chat": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 20
+    }
+   },
+   "per_class": {
+    "help": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 16,
+     "predicted": 16
+    },
+    "remember": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 16,
+     "predicted": 16
+    },
+    "recall": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 16,
+     "predicted": 16
+    },
+    "forget": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 15,
+     "predicted": 15
+    },
+    "clear_history": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 13,
+     "predicted": 13
+    },
+    "set_preference": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 21,
+     "predicted": 21
+    },
+    "start_run": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 16,
+     "predicted": 16
+    },
+    "run_status": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 15,
+     "predicted": 15
+    },
+    "explain_report": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 18,
+     "predicted": 18
+    },
+    "chat": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 20,
+     "predicted": 20
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 166,
+   "misses": []
+  },
+  "holdout": {
+   "labels": [
+    "help",
+    "remember",
+    "recall",
+    "forget",
+    "clear_history",
+    "set_preference",
+    "start_run",
+    "run_status",
+    "explain_report",
+    "chat"
+   ],
+   "matrix": {
+    "help": {
+     "help": 4,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 1,
+     "chat": 1
+    },
+    "remember": {
+     "help": 0,
+     "remember": 5,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 1
+    },
+    "recall": {
+     "help": 0,
+     "remember": 0,
+     "recall": 4,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "forget": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 4,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "clear_history": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 4,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 2
+    },
+    "set_preference": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 6,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "start_run": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 5,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 1
+    },
+    "run_status": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 6,
+     "explain_report": 0,
+     "chat": 0
+    },
+    "explain_report": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 4,
+     "chat": 2
+    },
+    "chat": {
+     "help": 0,
+     "remember": 0,
+     "recall": 0,
+     "forget": 0,
+     "clear_history": 0,
+     "set_preference": 0,
+     "start_run": 0,
+     "run_status": 0,
+     "explain_report": 0,
+     "chat": 6
+    }
+   },
+   "per_class": {
+    "help": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "support": 6,
+     "predicted": 4
+    },
+    "remember": {
+     "precision": 1.0,
+     "recall": 0.8333333333333334,
+     "f1": 0.9090909090909091,
+     "support": 6,
+     "predicted": 5
+    },
+    "recall": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "support": 6,
+     "predicted": 4
+    },
+    "forget": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "support": 6,
+     "predicted": 4
+    },
+    "clear_history": {
+     "precision": 1.0,
+     "recall": 0.6666666666666666,
+     "f1": 0.8,
+     "support": 6,
+     "predicted": 4
+    },
+    "set_preference": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 6,
+     "predicted": 6
+    },
+    "start_run": {
+     "precision": 1.0,
+     "recall": 0.8333333333333334,
+     "f1": 0.9090909090909091,
+     "support": 6,
+     "predicted": 5
+    },
+    "run_status": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 6,
+     "predicted": 6
+    },
+    "explain_report": {
+     "precision": 0.8,
+     "recall": 0.6666666666666666,
+     "f1": 0.7272727272727272,
+     "support": 6,
+     "predicted": 5
+    },
+    "chat": {
+     "precision": 0.35294117647058826,
+     "recall": 1.0,
+     "f1": 0.5217391304347826,
+     "support": 6,
+     "predicted": 17
+    }
+   },
+   "accuracy": 0.8,
+   "macro_recall": 0.8,
+   "cases": 60,
+   "misses": [
+    {
+     "item": "Could you possibly walk me through how to upload a spreadsheet and get a report out of it?",
+     "truth": "help",
+     "predicted": "explain_report"
+    },
+    {
+     "item": "ممكن تفهمني أستخدمك إزاي؟ أنا مش فاهم حاجة",
+     "truth": "help",
+     "predicted": "chat"
+    },
+    {
+     "item": "خلك حافظ عندك إن المورد الجديد يطلب الدفع خلال 45 يوم",
+     "truth": "remember",
+     "predicted": "chat"
+    },
+    {
+     "item": "what have you got saved about me so far, just list it",
+     "truth": "recall",
+     "predicted": "chat"
+    },
+    {
+     "item": "وش المعلومات اللي حفظتها لي قبل؟",
+     "truth": "recall",
+     "predicted": "chat"
+    },
+    {
+     "item": "pls forget that thing about the discount i mentioned earlier",
+     "truth": "forget",
+     "predicted": "chat"
+    },
+    {
+     "item": "امسح المعلومة اللي قولتهالك عن الميزانية القديمة دي",
+     "truth": "forget",
+     "predicted": "chat"
+    },
+    {
+     "item": "Erase our previous messages from this session, please.",
+     "truth": "clear_history",
+     "predicted": "chat"
+    },
+    {
+     "item": "هل يمكنك حذف سجل هذه المحادثة بالكامل؟",
+     "truth": "clear_history",
+     "predicted": "chat"
+    },
+    {
+     "item": "Would you mind going through the full Q3 finance sheet and putting together a proper report? No rush, but I need it before the board pack goes out on Monday.",
+     "truth": "start_run",
+     "predicted": "chat"
+    },
+    {
+     "item": "ما الأسباب التي أظهرها التقرير لانخفاض الإيرادات في الفرع الغربي؟",
+     "truth": "explain_report",
+     "predicted": "chat"
+    },
+    {
+     "item": "التقرير بيقول إيه بالظبط عن المصاريف في الربع اللي فات؟",
+     "truth": "explain_report",
+     "predicted": "chat"
+    }
+   ]
+  }
+ },
+ {
+  "suite": "column_roles",
+  "agent": "Column mapping: each column's role",
+  "module": "server/mapping.suggest",
+  "about": "Synthetic tables, built with a fixed seed; no real data. roles: what an analyst would map each column to (ADR 0025: one date column is the time axis and a second date is ignored; identifiers, free text and personal columns are ignored). personal: the column directly identifies or contacts a person (name, email, phone, government or passport number, date of birth, home address, IP address). Internal pseudonymous keys such as an employee or member number are not counted as personal here.",
+  "dev": {
+   "labels": [
+    "measure",
+    "dimension",
+    "date",
+    "ignore"
+   ],
+   "matrix": {
+    "measure": {
+     "measure": 19,
+     "dimension": 0,
+     "date": 0,
+     "ignore": 0
+    },
+    "dimension": {
+     "measure": 0,
+     "dimension": 20,
+     "date": 0,
+     "ignore": 0
+    },
+    "date": {
+     "measure": 0,
+     "dimension": 0,
+     "date": 8,
+     "ignore": 0
+    },
+    "ignore": {
+     "measure": 0,
+     "dimension": 0,
+     "date": 0,
+     "ignore": 17
+    }
+   },
+   "per_class": {
+    "measure": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 19,
+     "predicted": 19
+    },
+    "dimension": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 20,
+     "predicted": 20
+    },
+    "date": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 8,
+     "predicted": 8
+    },
+    "ignore": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 17,
+     "predicted": 17
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 64,
+   "misses": []
+  },
+  "holdout": {
+   "labels": [
+    "measure",
+    "dimension",
+    "date",
+    "ignore"
+   ],
+   "matrix": {
+    "measure": {
+     "measure": 9,
+     "dimension": 0,
+     "date": 0,
+     "ignore": 0
+    },
+    "dimension": {
+     "measure": 0,
+     "dimension": 9,
+     "date": 0,
+     "ignore": 0
+    },
+    "date": {
+     "measure": 0,
+     "dimension": 0,
+     "date": 5,
+     "ignore": 0
+    },
+    "ignore": {
+     "measure": 0,
+     "dimension": 0,
+     "date": 0,
+     "ignore": 10
+    }
+   },
+   "per_class": {
+    "measure": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 9,
+     "predicted": 9
+    },
+    "dimension": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 9,
+     "predicted": 9
+    },
+    "date": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 5,
+     "predicted": 5
+    },
+    "ignore": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 10,
+     "predicted": 10
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 33,
+   "misses": []
+  }
+ },
+ {
+  "suite": "personal_data",
+  "agent": "Privacy Agent: columns holding personal data",
+  "module": "server/analytics.personal_data_findings",
+  "about": "Synthetic tables, built with a fixed seed; no real data. roles: what an analyst would map each column to (ADR 0025: one date column is the time axis and a second date is ignored; identifiers, free text and personal columns are ignored). personal: the column directly identifies or contacts a person (name, email, phone, government or passport number, date of birth, home address, IP address). Internal pseudonymous keys such as an employee or member number are not counted as personal here.",
+  "dev": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 6,
+     "False": 0
+    },
+    "False": {
+     "True": 0,
+     "False": 58
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 6,
+     "predicted": 6
+    },
+    "False": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 58,
+     "predicted": 58
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 64,
+   "positive": "True",
+   "recall": 1.0,
+   "precision": 1.0,
+   "misses": []
+  },
+  "holdout": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 6,
+     "False": 0
+    },
+    "False": {
+     "True": 0,
+     "False": 27
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 6,
+     "predicted": 6
+    },
+    "False": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 27,
+     "predicted": 27
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 33,
+   "positive": "True",
+   "recall": 1.0,
+   "precision": 1.0,
+   "misses": []
+  }
+ },
+ {
+  "suite": "router",
+  "agent": "Model router: which provider a model name means",
+  "module": "server/routing.provider_for",
+  "about": "Which reachable provider a router's model name means (server/routing.provider_for), with every provider reachable. A tag after a colon is an Ollama model; -versatile, -instant, -it and provider/ prefixes are hosted names served by Groq; claude-* is Anthropic; the app maps the gpt family to Groq, its OpenAI-compatible host; none means the name is not recognised and no guess should be made.",
+  "dev": {
+   "labels": [
+    "ollama",
+    "anthropic",
+    "groq",
+    "deterministic",
+    "none"
+   ],
+   "matrix": {
+    "ollama": {
+     "ollama": 8,
+     "anthropic": 0,
+     "groq": 0,
+     "deterministic": 0,
+     "none": 0
+    },
+    "anthropic": {
+     "ollama": 0,
+     "anthropic": 4,
+     "groq": 0,
+     "deterministic": 0,
+     "none": 0
+    },
+    "groq": {
+     "ollama": 0,
+     "anthropic": 0,
+     "groq": 6,
+     "deterministic": 0,
+     "none": 0
+    },
+    "deterministic": {
+     "ollama": 0,
+     "anthropic": 0,
+     "groq": 0,
+     "deterministic": 2,
+     "none": 0
+    },
+    "none": {
+     "ollama": 0,
+     "anthropic": 0,
+     "groq": 0,
+     "deterministic": 0,
+     "none": 3
+    }
+   },
+   "per_class": {
+    "ollama": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 8,
+     "predicted": 8
+    },
+    "anthropic": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 4,
+     "predicted": 4
+    },
+    "groq": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 6,
+     "predicted": 6
+    },
+    "deterministic": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 2,
+     "predicted": 2
+    },
+    "none": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 3,
+     "predicted": 3
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 23,
+   "misses": []
+  },
+  "holdout": {
+   "labels": [
+    "ollama",
+    "anthropic",
+    "groq",
+    "deterministic",
+    "none"
+   ],
+   "matrix": {
+    "ollama": {
+     "ollama": 4,
+     "anthropic": 0,
+     "groq": 0,
+     "deterministic": 0,
+     "none": 0
+    },
+    "anthropic": {
+     "ollama": 0,
+     "anthropic": 2,
+     "groq": 0,
+     "deterministic": 0,
+     "none": 0
+    },
+    "groq": {
+     "ollama": 1,
+     "anthropic": 0,
+     "groq": 2,
+     "deterministic": 0,
+     "none": 1
+    },
+    "deterministic": {
+     "ollama": 0,
+     "anthropic": 0,
+     "groq": 0,
+     "deterministic": 1,
+     "none": 0
+    },
+    "none": {
+     "ollama": 0,
+     "anthropic": 0,
+     "groq": 0,
+     "deterministic": 0,
+     "none": 1
+    }
+   },
+   "per_class": {
+    "ollama": {
+     "precision": 0.8,
+     "recall": 1.0,
+     "f1": 0.888888888888889,
+     "support": 4,
+     "predicted": 5
+    },
+    "anthropic": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 2,
+     "predicted": 2
+    },
+    "groq": {
+     "precision": 1.0,
+     "recall": 0.5,
+     "f1": 0.6666666666666666,
+     "support": 4,
+     "predicted": 2
+    },
+    "deterministic": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 1,
+     "predicted": 1
+    },
+    "none": {
+     "precision": 0.5,
+     "recall": 1.0,
+     "f1": 0.6666666666666666,
+     "support": 1,
+     "predicted": 2
+    }
+   },
+   "accuracy": 0.8333333333333334,
+   "macro_recall": 0.9,
+   "cases": 12,
+   "misses": [
+    {
+     "item": "llama-3.1-8b-instant",
+     "truth": "groq",
+     "predicted": "ollama"
+    },
+    {
+     "item": "gemma2-9b-it",
+     "truth": "groq",
+     "predicted": "none"
+    }
+   ]
+  }
+ },
+ {
+  "suite": "raw_guard",
+  "agent": "Raw-data guard: rows that must not reach a model",
+  "module": "scripts/consult.looks_like_raw_rows",
+  "about": "Whether a text holds raw data rows that must not be sent to a model (scripts/consult.py, looks_like_raw_rows). true = a block of records; false = prose, a short summary table, code or logs.",
+  "dev": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 7,
+     "False": 0
+    },
+    "False": {
+     "True": 0,
+     "False": 6
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 7,
+     "predicted": 7
+    },
+    "False": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 6,
+     "predicted": 6
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 13,
+   "positive": "True",
+   "recall": 1.0,
+   "precision": 1.0,
+   "misses": []
+  },
+  "holdout": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 4,
+     "False": 0
+    },
+    "False": {
+     "True": 0,
+     "False": 3
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 4,
+     "predicted": 4
+    },
+    "False": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 3,
+     "predicted": 3
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 7,
+   "positive": "True",
+   "recall": 1.0,
+   "precision": 1.0,
+   "misses": []
+  }
+ },
+ {
+  "suite": "jargon",
+  "agent": "Validator: statistical jargon in claims",
+  "module": "server/analytics._jargon_in",
+  "about": "Whether a sentence written for a business reader carries statistical jargon the report must avoid (server/analytics JARGON, the validator's claims_avoid_statistical_jargon check). Business words that look statistical, such as a budget variance, are not jargon. English and Arabic.",
+  "dev": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 24,
+     "False": 0
+    },
+    "False": {
+     "True": 0,
+     "False": 20
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 24,
+     "predicted": 24
+    },
+    "False": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 20,
+     "predicted": 20
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 44,
+   "positive": "True",
+   "recall": 1.0,
+   "precision": 1.0,
+   "misses": []
+  },
+  "holdout": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 10,
+     "False": 2
+    },
+    "False": {
+     "True": 0,
+     "False": 12
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 0.8333333333333334,
+     "f1": 0.9090909090909091,
+     "support": 12,
+     "predicted": 10
+    },
+    "False": {
+     "precision": 0.8571428571428571,
+     "recall": 1.0,
+     "f1": 0.923076923076923,
+     "support": 12,
+     "predicted": 14
+    }
+   },
+   "accuracy": 0.9166666666666666,
+   "macro_recall": 0.9166666666666667,
+   "cases": 24,
+   "positive": "True",
+   "recall": 0.8333333333333334,
+   "precision": 1.0,
+   "misses": [
+    {
+     "item": "After a Bonferroni correction, only two of the seven pairwise comparisons stay significant.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "وجدنا عدم تجانس التباين في البواقي، لذلك نحتاج إلى تعديل لأخطاء المعيار.",
+     "truth": "True",
+     "predicted": "False"
+    }
+   ]
+  }
+ },
+ {
+  "suite": "causal",
+  "agent": "Claims lint: causal wording in deliverables",
+  "module": "scripts/claims_lint.causal_phrases",
+  "about": "Whether a sentence claims a cause. Observational findings must be written as associations unless a controlled comparison supports them (the analytics-expert review's most frequent blocker). Used to measure scripts/claims_lint.py, a zero-cost check for deliverables. English and Arabic.",
+  "dev": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 24,
+     "False": 0
+    },
+    "False": {
+     "True": 0,
+     "False": 21
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 24,
+     "predicted": 24
+    },
+    "False": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 21,
+     "predicted": 21
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 45,
+   "positive": "True",
+   "recall": 1.0,
+   "precision": 1.0,
+   "misses": []
+  },
+  "holdout": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 8,
+     "False": 4
+    },
+    "False": {
+     "True": 3,
+     "False": 9
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 0.7272727272727273,
+     "recall": 0.6666666666666666,
+     "f1": 0.6956521739130435,
+     "support": 12,
+     "predicted": 11
+    },
+    "False": {
+     "precision": 0.6923076923076923,
+     "recall": 0.75,
+     "f1": 0.7199999999999999,
+     "support": 12,
+     "predicted": 13
+    }
+   },
+   "accuracy": 0.7083333333333334,
+   "macro_recall": 0.7083333333333333,
+   "cases": 24,
+   "positive": "True",
+   "recall": 0.6666666666666666,
+   "precision": 0.7272727272727273,
+   "misses": [
+    {
+     "item": "Stations with more cleaning staff tend to have fewer complaints, but we have not checked whether one drives the other.",
+     "truth": "False",
+     "predicted": "True"
+    },
+    {
+     "item": "أدى إلغاء الدعم عن تذاكر الطلاب إلى انخفاض عدد الركاب في الفترة المسائية.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "Training the dispatchers boosted on-time performance, according to the controlled comparison.",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "الحر الشديد يسوي أعطال بالمكيفات ويرفع طلبات الصيانة بشكل كبير",
+     "truth": "True",
+     "predicted": "False"
+    },
+    {
+     "item": "The hypothesis that heat causes the breakdowns is still untested; we have not run the analysis yet.",
+     "truth": "False",
+     "predicted": "True"
+    },
+    {
+     "item": "هل ارتفاع درجات الحرارة يسبب زيادة الأعطال؟ هذا سؤال نحتاج لاختباره قبل أن نستنتج شيئاً.",
+     "truth": "False",
+     "predicted": "True"
+    },
+    {
+     "item": "التأخير في استلام القطع بيخلي الأتوبيسات تفضل واقفة أيام، وده بيقلل الإيراد",
+     "truth": "True",
+     "predicted": "False"
+    }
+   ]
+  }
+ },
+ {
+  "suite": "figures",
+  "agent": "Figures check: unsourced or wrong figures",
+  "module": "scripts/figures_check.check",
+  "about": "Seeded documents for scripts/figures_check.py in sourcing mode. Each case has a register, a reference text and a document; bad lists the figures in the document that are not sourced (unsourced, wrongly rounded, glued table cells, wrong arithmetic). Every other figure the checker reads in the document is correct. A good checker flags the bad ones (recall) and leaves the rest (precision).",
+  "dev": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 6,
+     "False": 0
+    },
+    "False": {
+     "True": 0,
+     "False": 13
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 6,
+     "predicted": 6
+    },
+    "False": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 13,
+     "predicted": 13
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 19,
+   "positive": "True",
+   "recall": 1.0,
+   "precision": 1.0,
+   "misses": []
+  },
+  "holdout": {
+   "labels": [
+    "True",
+    "False"
+   ],
+   "matrix": {
+    "True": {
+     "True": 5,
+     "False": 0
+    },
+    "False": {
+     "True": 0,
+     "False": 6
+    }
+   },
+   "per_class": {
+    "True": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 5,
+     "predicted": 5
+    },
+    "False": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support": 6,
+     "predicted": 6
+    }
+   },
+   "accuracy": 1.0,
+   "macro_recall": 1.0,
+   "cases": 11,
+   "positive": "True",
+   "recall": 1.0,
+   "precision": 1.0,
+   "misses": []
+  }
+ }
+]

@@ -20,7 +20,8 @@ User memory (`data/memory.json`), run data and reports (`data/agentic.db`,
 | Sensitive data caching | `Cache-Control: no-store` on all `/api/*` responses | `tests/test_api.py` |
 | Clickjacking / MIME sniffing | `X-Frame-Options: DENY`, `nosniff`, referrer & permissions policies (server + Vercel headers) | header test |
 | Secret exposure | No secrets in the repo; provider keys are env-only, never logged or sent to the browser; `.env.example` has placeholders only | repo scan, code review |
-| Unbounded loops / cost | Runs have a fixed bounded stage list; datasets capped (2 MB / 50,000 rows); model calls capped (1 per run, 220 tokens, 12 s timeout) | code + tests |
+| Unbounded loops / cost | Runs have a fixed bounded stage list; uploads capped at 4 MB (checked from `Content-Length` and again while streaming), datasets at 10 MB as CSV, 50,000 rows and 500 columns; model calls capped (1 per run, 220 tokens, 12 s timeout) | code + tests |
+| Hostile uploaded files (ADR 0024) | Workbooks are read with the standard library, never executed: a `DOCTYPE` is refused before parsing, XML read is capped at 200 MB across a workbook (decompression bombs), only parts the workbook's own relationships name are opened, and a target outside the archive is ignored. Old `.xls` and other binary files are refused; non-UTF-8 text is refused rather than guessed | `tests/test_datasets.py` |
 | Stack-trace disclosure | Global exception handler returns a generic message | `server/app.py` |
 | Privacy in git history | Runtime data (`memory.json`, `agentic.db`, `vault/`) untracked and ignored; note: `data/memory.json` existed in history as `{}` only — no personal data was ever committed | git log |
 

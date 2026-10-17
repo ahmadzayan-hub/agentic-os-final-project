@@ -1,0 +1,44 @@
+FINDING 1 · blocker · memo.md P02
+Evidence: The register gives mean km between failures as km ÷ failures = 4,960,000 ÷ 1,240 = 4,000 km (register row "Mean km between failures", and P14). P02 says 4,800 km, which would need only 1,033 failures. P02 and P14 contradict each other.
+Fix: Change P02 to "one failure every 4,000 km" and keep it consistent with P14.
+Category: arithmetic
+
+FINDING 2 · blocker · memo.md P04
+Evidence: "Hot weather causes door faults to double in summer." The register has no weather, season or door-fault counts, so the "double" is unsourced. Nothing supports cause either. A summer rise in door faults could come from higher service hours, passenger load, or the fleet's age and mix. P10 says the same summer pattern cannot be attributed.
+Fix: Reword to "Door faults were higher in summer (X in summer vs Y outside it); this is an association, and weather has not been tested as a cause." Give X and Y from the data, or delete the claim.
+Category: causal_claim
+
+FINDING 3 · major · memo.md P05
+Evidence: "Door faults made up 31% of all failures." The register has no door-fault count, so the figure has no source or calculation. The implied count is about 384 of 1,240 (0.31 × 1,240 = 384.4), and it is not shown. The denominator is also not stated, so the reader cannot tell whether it covers all failures or only classified ones.
+Fix: State the numerator and denominator ("N door faults of 1,240 failures = 31%"), add them to the register, or delete the sentence.
+Category: unsourced_figure
+
+FINDING 4 · blocker · memo.md P06
+Evidence: "Depot B's punctuality was 0.4 points better in March, which proves its new shift pattern works." This rests on one month at one depot, with no pre-period, no comparison depot, no baseline variance and no volumes behind the rate. A 0.4-point move is within ordinary month-to-month noise for a rate near 98%. Neither the register nor the memo has a depot-level punctuality figure or the shift-pattern dates. "Proves" is unsupported by this design.
+Fix: Say "Depot B's March punctuality was 0.4 points higher than [stated baseline] (a, b; n trips each). This is one month with no control group, so it is not evidence the shift pattern caused it." Add the depot figures to the register.
+Category: causal_claim
+
+FINDING 5 · major · memo.md P07
+Evidence: This is the mean of each vehicle's rate (98.0%) set against the register's 96.4%, whose definition is available hours ÷ scheduled hours, a ratio of sums. An average of row rates is a defect (Weighted KPIs). It gives a vehicle with few scheduled hours the same weight as one with many. It also reverses the conclusion: the register's 96.4% is the correct fleet figure, so it does not "understate" anything. The 98.0% has no per-vehicle source either.
+Fix: Remove the sentence, or write "Availability was 96.4% (available hours ÷ scheduled hours, summed across the 40 vehicles)." Do not report an average of vehicle rates as a fleet KPI.
+Category: denominator
+
+FINDING 6 · blocker · memo.md P09
+Evidence: 52,300 ÷ 1,240 = 42.18 minutes per failure, not 48.2. The inputs match the register (delay minutes 52,300; failures 1,240), so only the quotient is wrong. Using 48.2 would imply about 59,770 delay minutes.
+Fix: Change to "52,300 ÷ 1,240 = 42.2 minutes", state it as delay minutes per failure (ratio of sums), and update anywhere 48.2 is reused.
+Category: arithmetic
+
+FINDING 7 · blocker · memo.md P11
+Evidence: "The new brake pads reduced failures by 12%." There is no baseline period or fitted fleet, no comparison group, no count of before and after failures and no exposure adjustment (km). The 12% is not in the register. Failures are measured per km, so a raw count change confounds the pads with changes in km run, season and the vehicles fitted. A brake-pad effect cannot be separated from these.
+Fix: Report "Failures per million km fell from A to B (-12%) after the pads were fitted; this is a before/after association, not an estimate of the pads' effect." Add A, B and the km to the register, or delete the claim.
+Category: causal_claim
+
+FINDING 8 · major · memo.md P12
+Evidence: "Spare-parts stockouts cost $1.9 million." There is no stockout, parts or cost line in the register, and the memo does not say how the cost was derived (lost service, expedited orders, or idle vehicles). It is also unclear whether the $1.9M is part of the $18.6M maintenance cost or additional to it.
+Fix: Cite its source and calculation, say whether it falls inside the $18.6M, and label it as an estimate if it is modelled. If it cannot be sourced, delete it.
+Category: unsourced_figure
+
+FINDING 9 · blocker · memo.md P13
+Evidence: "A failure-prediction model reached an AUC of 0.81, so it will prevent most failures." An AUC measures ranking, not prevention. It says nothing about how many failures could be avoided through intervention, the intervention cost or lead time. No baseline is given (such as a base-rate model or a km- or age-based rule), nor the held-out split, and there is no check for leakage (for example, post-failure work orders used as inputs). A held-out AUC of 0.81 is also only moderate. The AUC figure is not in the register.
+Fix: Say "On held-out data (state the split) the model's AUC was 0.81 against X for [baseline]. It ranks vehicles by failure risk; it has not been tested for preventing failures." Also name the features and confirm that no outcome-derived fields were used.
+Category: overclaim

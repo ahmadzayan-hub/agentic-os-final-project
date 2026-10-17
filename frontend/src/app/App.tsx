@@ -1,14 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityView } from '../features/activity/ActivityView'
-import { SignIn } from '../features/auth/SignIn'
+import { Activity, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { ChatView } from '../features/chat/ChatView'
 import type { ComposerHandle } from '../features/chat/Composer'
-import { CommandPalette } from '../features/commands/CommandPalette'
-import { HelpDialog } from '../features/commands/HelpDialog'
-import { MemoryView } from '../features/memory/MemoryView'
-import { Onboarding } from '../features/onboarding/Onboarding'
-import { PreferencesView } from '../features/preferences/PreferencesView'
-import { RunsView } from '../features/runs/RunsView'
+import type { RunPreset } from '../features/runs/RunsView'
 import { useI18n } from '../i18n'
 import type { MessageKey } from '../i18n'
 import { ConfirmDialog } from '../shared/components/ConfirmDialog'
@@ -17,18 +11,72 @@ import type { IconName } from '../shared/components/Icon'
 import { StatusBadge } from '../shared/components/StatusBadge'
 import { languageLabel, toneLabel } from '../shared/labels'
 import type { CommandInfo } from '../shared/types'
+import {
+  ActivityView,
+  ApprovalsView,
+  CommandPalette,
+  DatasetsView,
+  HelpDialog,
+  MemoryView,
+  Onboarding,
+  OverviewView,
+  PreferencesView,
+  prefetchWhenIdle,
+  RunsView,
+  DashboardView,
+  SignIn,
+  ViewBoundary,
+  ViewLoading,
+} from './lazyViews'
 import { useStore } from './store'
 import { useTheme } from './useTheme'
 
-type Tab = 'chat' | 'runs' | 'memory' | 'preferences' | 'activity'
+import { runStore } from '../features/runs/runStore'
+import { useHashRoute } from './routing'
+import type { Route, Tab } from './routing'
 
-const TABS: Array<{ id: Tab; label: MessageKey; icon: IconName }> = [
-  { id: 'chat', label: 'nav.workspace', icon: 'chat' },
-  { id: 'runs', label: 'nav.runs', icon: 'sparkle' },
-  { id: 'memory', label: 'nav.memory', icon: 'memory' },
-  { id: 'activity', label: 'nav.activity', icon: 'activity' },
-  { id: 'preferences', label: 'nav.preferences', icon: 'settings' },
+interface NavItem {
+  id: Tab
+  label: MessageKey
+  icon: IconName
+}
+
+// The sidebar groups the views by what a person is doing (ADR 0023):
+// analysing data, or working with the assistant. Preferences stand apart.
+const NAV_GROUPS: Array<{ id: string; label: MessageKey | null; items: NavItem[] }> = [
+  {
+    id: 'analyse',
+    label: 'nav.analyse',
+    items: [
+      { id: 'overview', label: 'nav.overview', icon: 'dashboard' },
+      { id: 'datasets', label: 'nav.datasets', icon: 'database' },
+      { id: 'runs', label: 'nav.runs', icon: 'sparkle' },
+      { id: 'dashboard', label: 'nav.dashboard', icon: 'dashboard' },
+      { id: 'approvals', label: 'nav.approvals', icon: 'shield' },
+    ],
+  },
+  {
+    id: 'work',
+    label: 'nav.workWith',
+    items: [
+      { id: 'chat', label: 'nav.workspace', icon: 'chat' },
+      { id: 'memory', label: 'nav.memory', icon: 'memory' },
+      { id: 'activity', label: 'nav.activity', icon: 'activity' },
+    ],
+  },
+  {
+    id: 'settings',
+    label: null,
+    items: [{ id: 'preferences', label: 'nav.preferences', icon: 'settings' }],
+  },
 ]
+
+const ALL_ITEMS = NAV_GROUPS.flatMap((group) => group.items)
+
+// A phone's bottom bar holds at most five places. Four views and "More",
+// which opens the drawer holding the rest.
+const BAR_TABS: Tab[] = ['overview', 'datasets', 'runs', 'chat']
+const BAR_ITEMS = BAR_TABS.map((id) => ALL_ITEMS.find((item) => item.id === id)!)
 
 const ONBOARDING_KEY = 'aos-onboarded'
 
@@ -36,7 +84,17 @@ export function App() {
   const store = useStore()
   const { t, locale } = useI18n()
   const { isDark, toggleTheme } = useTheme()
-  const [tab, setTab] = useState<Tab>('chat')
+  // The session opens on the assistant: it greets a newcomer and is where
+  // a returning reader types. The Overview is one click away.
+  const [route, navigate] = useHashRoute()
+  const tab = route.tab
+  const [visited, setVisited] = useState<Tab[]>(['chat'])
+  useEffect(() => { setVisited((previous) => previous.includes(tab) ? previous : [...previous, tab]) }, [tab])
+  // Which run the Runs view opens, and what its form starts with. Only one
+  // of the two is set at a time, so the view never has to choose.
+  const [runTarget, setRunTarget] = useState<{ id: string; nonce: number } | null>(null)
+  const [runPreset, setRunPreset] = useState<RunPreset | null>(null)
+  const runNonce = useRef(0)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -50,12 +108,65 @@ export function App() {
     }
   })
   const composerRef = useRef<ComposerHandle | null>(null)
+  const [pendingCommand, setPendingCommand] = useState<string | null>(null)
+  const currentRunId = tab === 'runs' ? route.runId ?? null : runTarget?.id ?? null
+  // The dashboard keeps its address while another view is open, so going
+  // back to it returns to the same page and filters (ADR 0032).
+  const lastDashboard = useRef<Route>({ tab: 'dashboard' })
+  if (tab === 'dashboard') lastDashboard.current = route
+  const dashboardRoute = lastDashboard.current
+
+  useLayoutEffect(() => {
+    runStore.reset()
+  }, [store.session?.session_id, store.identity?.principal.subject, store.identity?.principal.role])
+
+  useEffect(() => {
+    if (tab === 'chat' && pendingCommand) { composerRef.current?.insert(pendingCommand); setPendingCommand(null) }
+  }, [tab, pendingCommand])
+
+  useEffect(() => {
+    if (tab === 'runs' && route.runId) setRunTarget((previous) => previous?.id === route.runId ? previous : { id: route.runId!, nonce: ++runNonce.current })
+  }, [tab, route.runId])
+
+  const selectRun = useCallback((id: string | null) => {
+    setRunTarget(id ? { id, nonce: ++runNonce.current } : null)
+    if (tab === 'runs') navigate({ tab: 'runs', runId: id ?? undefined })
+  }, [tab, navigate])
 
   // "Analyse the sales data" in the chat starts a run; the person
   // should see it, not be told to go and find it.
   useEffect(() => {
-    if (store.openRun) setTab('runs')
-  }, [store.openRun])
+    if (!store.openRun) return
+    setRunPreset(null)
+    setRunTarget(store.openRun)
+    navigate({ tab: 'runs', runId: store.openRun.id })
+  }, [store.openRun, navigate])
+
+  /** Move to a view from the navigation: a plain visit, with no preset. */
+  function go(next: Tab) {
+    setRunPreset(null)
+    if (next === 'dashboard') navigate(lastDashboard.current)
+    else navigate({ tab: next, runId: next === 'runs' ? runTarget?.id : undefined })
+    setDrawerOpen(false)
+  }
+
+  function openDashboard(id: string) {
+    navigate({ tab: 'dashboard', runId: id })
+  }
+
+  function openRun(id: string) {
+    runNonce.current += 1
+    setRunPreset(null)
+    setRunTarget({ id, nonce: runNonce.current })
+    navigate({ tab: 'runs', runId: id })
+  }
+
+  function startAnalysis(preset: RunPreset | null) {
+    runNonce.current += 1
+    setRunTarget(null)
+    setRunPreset(preset)
+    navigate({ tab: 'runs' })
+  }
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -72,19 +183,39 @@ export function App() {
   // returns to the menu button on close.
   const drawerRef = useRef<HTMLDivElement | null>(null)
   const menuButtonRef = useRef<HTMLButtonElement | null>(null)
+  // The drawer opens from the header's menu button or the bar's "More";
+  // focus goes back to whichever opened it.
+  const drawerOpenerRef = useRef<HTMLButtonElement | null>(null)
   useEffect(() => {
     if (!drawerOpen) return
     const first = drawerRef.current?.querySelector<HTMLElement>('button')
     first?.focus()
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') setDrawerOpen(false)
+      if (event.key === 'Tab') {
+        const items = drawerRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]')
+        if (!items?.length) return
+        const first = items[0], last = items[items.length - 1]
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+      }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      menuButtonRef.current?.focus()
+      ;(drawerOpenerRef.current ?? menuButtonRef.current)?.focus()
     }
   }, [drawerOpen])
+
+  function openDrawer(opener: HTMLButtonElement) {
+    drawerOpenerRef.current = opener
+    setDrawerOpen(true)
+  }
+
+  // The other views' chunks follow in idle time once the session is up,
+  // so the first paint waits only for the shell and the chat (ADR 0028).
+  const hasSession = store.session !== null
+  useEffect(() => (hasSession ? prefetchWhenIdle() : undefined), [hasSession])
 
   const dismissOnboarding = useCallback(() => {
     setShowOnboarding(false)
@@ -97,9 +228,9 @@ export function App() {
 
   function pickCommand(command: CommandInfo) {
     setPaletteOpen(false)
-    setTab('chat')
+    go('chat')
     const hasArguments = command.usage.trim() !== command.command
-    composerRef.current?.insert(hasArguments ? `${command.command} ` : command.command)
+    setPendingCommand(hasArguments ? `${command.command} ` : command.command)
   }
 
   async function confirmAction() {
@@ -137,10 +268,14 @@ export function App() {
   // Hosted deployments gate everything behind the identity provider.
   if (store.needsSignIn && store.authConfig) {
     return (
-      <SignIn
-        config={store.authConfig}
-        onSignedIn={(token) => void store.signIn(token)}
-      />
+      <ViewBoundary>
+        <Suspense fallback={<ViewLoading />}>
+          <SignIn
+            config={store.authConfig}
+            onSignedIn={(token) => void store.signIn(token)}
+          />
+        </Suspense>
+      </ViewBoundary>
     )
   }
 
@@ -187,27 +322,33 @@ export function App() {
   const rawName = session.preferences.user_name
   const userName = typeof rawName === 'string' && rawName.trim() ? rawName.trim() : null
 
+  function pane(id: Tab, content: ReactNode) {
+    if (tab !== id && !visited.includes(id)) return null
+    return <Activity key={id} mode={tab === id ? 'visible' : 'hidden'}><ViewBoundary><Suspense fallback={<ViewLoading />}>{content}</Suspense></ViewBoundary></Activity>
+  }
+
   const sidebar = (
     <div className="sidebar">
-      <p className="sidebar__label">{t('nav.section')}</p>
       <nav className="sidebar__nav" aria-label={t('nav.main')}>
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className="navbtn"
-            aria-current={tab === item.id ? 'page' : undefined}
-            onClick={() => {
-              setTab(item.id)
-              setDrawerOpen(false)
-            }}
-          >
-            <Icon name={item.icon} size={18} />
-            {t(item.label)}
-            {item.id === 'memory' && memoryCount > 0 ? (
-              <span className="navbtn__badge">{memoryCount}</span>
-            ) : null}
-          </button>
+        {NAV_GROUPS.map((group) => (
+          <div key={group.id} className="sidebar__group">
+            {group.label ? <p className="sidebar__label">{t(group.label)}</p> : null}
+            {group.items.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="navbtn"
+                aria-current={tab === item.id ? 'page' : undefined}
+                onClick={() => go(item.id)}
+              >
+                <Icon name={item.icon} size={18} />
+                {t(item.label)}
+                {item.id === 'memory' && memoryCount > 0 ? (
+                  <span className="navbtn__badge">{memoryCount}</span>
+                ) : null}
+              </button>
+            ))}
+          </div>
         ))}
       </nav>
       <div className="sidebar__footer">
@@ -216,8 +357,7 @@ export function App() {
           className="btn btn--ghost"
           onClick={() => {
             void store.start()
-            setTab('chat')
-            setDrawerOpen(false)
+            go('chat')
           }}
         >
           <Icon name="plus" size={16} />
@@ -266,17 +406,20 @@ export function App() {
 
   return (
     <div className="shell">
-      <a className="skiplink" href="#composer-input">
-        {t('shell.skip')}
+      <a className="skiplink" href={tab === 'chat' ? '#composer-input' : '#workspace-main'} onClick={(event) => {
+        event.preventDefault()
+        document.getElementById(tab === 'chat' ? 'composer-input' : 'workspace-main')?.focus()
+      }}>
+        {t(tab === 'chat' ? 'shell.skip' : 'shell.skipMain')}
       </a>
-      <header className="shell__header">
+      <header className="shell__header" inert={drawerOpen}>
         <button
           type="button"
           ref={menuButtonRef}
           className="iconbtn menubtn"
           aria-label={t('nav.open')}
           aria-expanded={drawerOpen}
-          onClick={() => setDrawerOpen(true)}
+          onClick={(event) => openDrawer(event.currentTarget)}
         >
           <Icon name="menu" />
         </button>
@@ -345,24 +488,52 @@ export function App() {
           </>
         ) : null}
 
-        <main className="main">
-          {tab === 'chat' ? (
+        <main className="main" id="workspace-main" inert={drawerOpen} tabIndex={-1} key={`${session.session_id}:${store.identity?.principal.subject ?? 'local'}:${store.identity?.principal.role ?? 'local'}`}>
+          {pane('overview', (
+            <OverviewView onOpenRun={openRun} onStart={startAnalysis} onApprovals={() => go('approvals')} />
+          ))}
+          {pane('datasets', (
+            <DatasetsView
+              onAnalyse={(dataset) =>
+                startAnalysis({ kind: 'stored', id: dataset.id, name: dataset.name })
+              }
+            />
+          ))}
+          {pane('chat', (
             <ChatView
               session={session}
               sending={store.sending}
               failedText={store.failedText}
               offline={status === 'offline'}
               userName={userName}
-              onSend={(text) => void store.send(text)}
+              onSend={store.send}
               onRetry={() => void store.retryFailed()}
               onDismissFailed={store.dismissFailed}
               composerRef={composerRef}
+              onOpenRun={openRun}
             />
-          ) : null}
-          {tab === 'runs' ? (
-            <RunsView openRunId={store.openRun?.id ?? null} openNonce={store.openRun?.nonce ?? 0} />
-          ) : null}
-          {tab === 'memory' ? (
+          ))}
+          {pane('runs', (
+            <RunsView
+              draftScope={session.session_id}
+              key={currentRunId ?? `form-${runNonce.current}`}
+              onRunSelected={selectRun}
+              openRunId={currentRunId}
+              openNonce={runTarget?.nonce ?? 0}
+              preset={runPreset}
+              onOpenDashboard={openDashboard}
+            />
+          ))}
+          {pane('dashboard', (
+            <DashboardView
+              runId={dashboardRoute.runId ?? null}
+              page={dashboardRoute.page ?? null}
+              query={dashboardRoute.query ?? ''}
+              onNavigate={navigate}
+              onOpenRun={openRun}
+            />
+          ))}
+          {pane('memory', (
             <MemoryView
               entries={session.memory_entries}
               disabled={session.ended}
@@ -373,8 +544,8 @@ export function App() {
               onExport={store.exportData}
               onClearHistory={() => setConfirming('history')}
             />
-          ) : null}
-          {tab === 'preferences' ? (
+          ))}
+          {pane('preferences', (
             <PreferencesView
               preferences={session.preferences}
               disabled={session.ended}
@@ -382,15 +553,16 @@ export function App() {
               onSet={store.setPreference}
               onSetLanguage={store.setLanguage}
             />
-          ) : null}
-          {tab === 'activity' ? (
+          ))}
+          {pane('activity', (
             <ActivityView
               events={store.events}
               session={session}
               status={status}
               lastSyncedAt={store.lastSyncedAt}
             />
-          ) : null}
+          ))}
+        {pane('approvals', <ApprovalsView onOpenRun={openRun} />)}
         </main>
 
         {tab === 'chat' ? (
@@ -438,29 +610,57 @@ export function App() {
       </div>
 
       <nav className="tabbar" aria-label={t('nav.primary')}>
-        {TABS.map((item) => (
+        {BAR_ITEMS.map((item) => (
           <button
             key={item.id}
             type="button"
             className="tabbar__btn"
             aria-current={tab === item.id ? 'page' : undefined}
-            onClick={() => setTab(item.id)}
+            onClick={() => go(item.id)}
           >
             <Icon name={item.icon} size={20} />
             <span>{t(item.label)}</span>
           </button>
         ))}
+        <button
+          type="button"
+          className={`tabbar__btn ${BAR_TABS.includes(tab) ? '' : 'tabbar__btn--holding'}`}
+          aria-haspopup="dialog"
+          aria-expanded={drawerOpen}
+          onClick={(event) => openDrawer(event.currentTarget)}
+        >
+          <Icon name="more" size={20} />
+          <span>{t('nav.more')}</span>
+        </button>
       </nav>
 
+      {/* Each dialog appears when its chunk arrives, with nothing to hold its
+          place; one that fails to load leaves the page as it was. */}
       {paletteOpen ? (
-        <CommandPalette
-          commands={session.commands}
-          onPick={pickCommand}
-          onClose={() => setPaletteOpen(false)}
-        />
+        <ViewBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <CommandPalette
+              commands={session.commands}
+              onPick={pickCommand}
+              onClose={() => setPaletteOpen(false)}
+            />
+          </Suspense>
+        </ViewBoundary>
       ) : null}
-      {helpOpen ? <HelpDialog commands={session.commands} onClose={() => setHelpOpen(false)} /> : null}
-      {showOnboarding ? <Onboarding onDismiss={dismissOnboarding} /> : null}
+      {helpOpen ? (
+        <ViewBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <HelpDialog commands={session.commands} onClose={() => setHelpOpen(false)} />
+          </Suspense>
+        </ViewBoundary>
+      ) : null}
+      {showOnboarding ? (
+        <ViewBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <Onboarding onDismiss={dismissOnboarding} />
+          </Suspense>
+        </ViewBoundary>
+      ) : null}
       {confirming ? (
         <ConfirmDialog
           title={confirming === 'history' ? t('confirm.history.title') : t('confirm.end.title')}

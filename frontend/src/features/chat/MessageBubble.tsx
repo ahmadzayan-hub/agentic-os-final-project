@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { useI18n } from '../../i18n'
 import { Icon } from '../../shared/components/Icon'
 import type { TranscriptEntry } from '../../shared/types'
+import { ResultCard, ToolCards } from './ResultCard'
 
 interface MessageBubbleProps {
   entry: TranscriptEntry
   agentName: string
+  onOpenRun?: (id: string) => void
 }
 
-export function MessageBubble({ entry, agentName }: MessageBubbleProps) {
+export function MessageBubble({ entry, agentName, onOpenRun }: MessageBubbleProps) {
   const { t, plural, formatTime } = useI18n()
   const [copied, setCopied] = useState(false)
   const isAgent = entry.role === 'agent'
@@ -42,6 +44,7 @@ export function MessageBubble({ entry, agentName }: MessageBubbleProps) {
       <div className="msg__bubble" dir="auto">
         {entry.text}
       </div>
+      {isAgent ? <><ResultCard entry={entry} onOpenRun={onOpenRun} /><ToolCards entry={entry} /></> : null}
       <div className="msg__meta">
         {isAgent ? (
           <>
@@ -73,3 +76,4 @@ export function MessageBubble({ entry, agentName }: MessageBubbleProps) {
     </article>
   )
 }
+

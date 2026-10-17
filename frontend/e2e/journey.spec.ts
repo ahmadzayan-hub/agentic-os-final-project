@@ -30,7 +30,7 @@ test.describe('main user journey', () => {
 
     // 4. Manage memory in the Memory panel: add, edit, export, delete.
     await openTab(page, /^Memory/)
-    await expect(page.getByText('My preferred language is English')).toBeVisible()
+    await expect(page.locator('.memory__item').filter({ hasText: 'My preferred language is English' })).toBeVisible()
 
     await page.getByLabel('Information to remember').fill('Coffee at 8am')
     await page.getByLabel('Category', { exact: true }).selectOption('work')
@@ -152,3 +152,4 @@ test.describe('main user journey', () => {
     expect(overflow).toBeLessThanOrEqual(0)
   })
 })
+

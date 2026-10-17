@@ -302,5 +302,79 @@ class ApiTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 422)
 
 
+@unittest.skipUnless(FASTAPI_AVAILABLE, "fastapi is not installed")
+class InterfaceServingTestCase(unittest.TestCase):
+    """The built interface is served compressed and cached as on Vercel.
+
+    A small stand-in build is written to a temporary folder, so these run
+    in CI, where the real frontend is built after the Python tests.
+    """
+
+    SCRIPT = "export const text = " + json.dumps("Agentic OS " * 400) + "\n"
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        root = Path(self.temp_dir.name)
+        dist = root / "dist"
+        (dist / "assets").mkdir(parents=True)
+        (dist / "index.html").write_text(
+            "<!doctype html><title>Agentic OS</title>" + "<!-- page -->" * 120,
+            encoding="utf-8")
+        (dist / "sw.js").write_text("self.addEventListener('fetch', () => {})\n", encoding="utf-8")
+        (dist / "assets" / "index-AbC123.js").write_text(self.SCRIPT, encoding="utf-8")
+        config = root / "config.json"
+        config.write_text(json.dumps({
+            "agent_name": "Serving Test", "version": "1",
+            "memory_file": str(root / "memory.json"),
+            "database_file": str(root / "agentic.db"),
+            "vault_dir": str(root / "vault"),
+        }), encoding="utf-8")
+        self.client = TestClient(create_app(config, dist_dir=dist), raise_server_exceptions=False)
+
+    def get(self, path, encoding="gzip"):
+        return self.client.get(path, headers={"Accept-Encoding": encoding})
+
+    def test_hashed_assets_are_compressed_and_cached_for_a_year(self):
+        response = self.get("/assets/index-AbC123.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers.get("content-encoding"), "gzip")
+        self.assertEqual(response.headers.get("cache-control"), "public, max-age=31536000, immutable")
+        self.assertIn("Accept-Encoding", response.headers.get("vary", ""))
+        self.assertEqual(response.text, self.SCRIPT)
+
+    def test_a_client_that_cannot_decompress_gets_plain_bytes(self):
+        response = self.get("/assets/index-AbC123.js", encoding="identity")
+        self.assertIsNone(response.headers.get("content-encoding"))
+        self.assertEqual(response.text, self.SCRIPT)
+
+    def test_the_page_and_service_worker_are_revalidated(self):
+        for path in ("/", "/runs", "/sw.js"):
+            with self.subTest(path=path):
+                response = self.get(path)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.headers.get("cache-control"), "no-cache")
+        self.assertEqual(self.get("/").headers.get("content-encoding"), "gzip")
+
+    def test_a_missing_asset_is_not_cached_as_permanent(self):
+        response = self.get("/assets/index-Missing.js")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.headers.get("cache-control"), "no-cache")
+
+    def test_api_responses_are_never_compressed(self):
+        response = self.client.post("/api/sessions", headers={"Accept-Encoding": "gzip"})
+        self.assertEqual(response.status_code, 201)
+        self.assertGreater(len(response.content), 1024)  # above the compression threshold
+        self.assertIsNone(response.headers.get("content-encoding"))
+        self.assertEqual(response.headers.get("cache-control"), "no-store")
+
+    def test_an_unknown_api_path_is_a_404_not_the_page(self):
+        for path in ("/api/nothing-here", "/api"):
+            with self.subTest(path=path):
+                response = self.get(path)
+                self.assertEqual(response.status_code, 404)
+                self.assertEqual(response.json(), {"detail": "Not found."})
+
+
 if __name__ == "__main__":
     unittest.main()

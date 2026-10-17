@@ -1,0 +1,51 @@
+FINDING F01 · blocker · P03
+Category: arithmetic
+Evidence: The memo says $52.10 per visit and shows its own inputs: $18,450,000 / 412,600. Recomputed, that is $44.716, which rounds to $44.72. The register row "Operating cost per visit" also expects $44.72. The stated figure is wrong by $7.38, or 16.5%.
+Fix: Change the figure to $44.72, which is $18,450,000 / 412,600 visits. Check that no other paragraph reuses $52.10.
+
+FINDING F02 · blocker · P11
+Category: arithmetic
+Evidence: The memo says visits grew 18.0%, moving from 368,400 to 412,600. (412,600 − 368,400) / 368,400 = 44,200 / 368,400 = 11.998%, or 12.0%. The register expects 12.0%. P04 and P13 also say 12.0%, so P11 contradicts them. A rise of 18.0% from 368,400 would give about 434,700 visits.
+Fix: Change 18.0% to 12.0%, or delete P11 because it duplicates P04.
+
+FINDING F03 · blocker · P07
+Category: denominator
+Evidence: The memo takes the simple mean of the clinic rates, (12.0 + 11.4 + 6.0) / 3 = 9.8%, and calls it the department rate. This is an average of row rates, which `brain/Concepts/Weighted KPIs.md` treats as a defect. The clinics differ greatly in size: Clinic B has 200,000 booked appointments and Clinic A has 50,000. The ratio of sums is (6,000 + 12,000 + 11,400) / (50,000 + 200,000 + 100,000) = 29,400 / 350,000 = 8.4%. That matches the register and P06. P07 contradicts P05, P06 and P15, and it overstates the rate by 1.4 percentage points.
+Fix: Delete P07, or replace it with "the department rate is 8.4% (29,400 / 350,000), the ratio of sums. An unweighted mean of clinic rates (9.8%) is not the department rate."
+
+FINDING F04 · blocker · P05
+Category: causal_claim
+Evidence: "The SMS reminder scheme pulled the no-show rate down to 8.4%" is a causal claim. The memo has no pre-period rate, no comparison group, no rollout date and no test. P06 gives only one year-wide rate (29,400 / 350,000 = 8.4%), and nothing in the memo describes an SMS scheme. The general caveat in P12 does not cure this, because P12 contradicts the wording used here.
+Fix: Reword to the figure that is supported: "The 2025 no-show rate was 8.4% (29,400 / 350,000)." Remove the SMS attribution, or add a before-and-after or controlled comparison and label it association unless a design supports cause.
+
+FINDING F05 · blocker · P13
+Category: causal_claim
+Evidence: "The new evening sessions accounted for the 12.0% rise in visits" is a causal attribution. The memo gives no visit counts for evening sessions, no split of the 44,200 extra visits by session type, and no comparison. The register has no such row. P12 says explanations cannot be confirmed, yet P13 states one as fact.
+Fix: Remove the attribution. Or report evening-session visits as a share of the 44,200 increase, with its calculation, and say the growth is "coincident with" evening sessions, not caused by them.
+
+FINDING F06 · major · P02
+Category: unsourced_figure
+Evidence: "About one patient in five arrived after their appointment time" is a rate of about 20%. It has no count, no numerator or denominator, no formula, no register row and no definition of late. It is also not derived from any figure in P01 to P15. A "patient in five" is a statement about patients, but the memo's other counts are visits and appointments.
+Fix: Delete it, or add a register entry with late arrivals / attended appointments, stating the definition of late and the source. Report the exact rate.
+
+FINDING F07 · major · P10
+Category: unsourced_figure
+Evidence: "Nurse vacancies stood at 14% through the year" has no formula or denominator. It does not say whether this is vacant posts over established posts or FTE, and "through the year" does not say whether it is a mean, a snapshot or a month-end figure. No count appears in the memo or in `register.csv`. Nothing links it to any other finding.
+Fix: Delete it, or add a register row such as vacant FTE / budgeted FTE with the counts, the date or period basis and the source.
+
+FINDING F08 · major · P08
+Category: overclaim
+Evidence: "Clinic B's 6.0% no-show rate settles the matter: every clinic can expect that level next year, so staffing should be planned on it." The 6.0% is a single-year observation (12,000 / 200,000). Clinics A and C ran at 12.0% and 11.4%, about double that. The memo gives no reason why they would fall to 6.0%, and no forecast, variance or driver analysis. Planning staffing on 6.0% for all clinics would understate the department's expected no-show load. On 2025 volumes the department rate is 8.4%, not 6.0%. The recommendation traces to no finding.
+Fix: Delete the forecast and the staffing instruction. Replace with: "Clinic B had the lowest 2025 no-show rate, 6.0%, against 12.0% at Clinic A and 11.4% at Clinic C. One year of data cannot show whether the other clinics would converge." If a planning figure is needed, label it illustrative.
+
+FINDING F09 · major · P14
+Category: overclaim
+Evidence: "Visits can be expected to keep rising by 12.0% a year, so the department should open a fourth clinic in 2026." The 12.0% is a single year-on-year change (368,400 to 412,600), so it gives no trend. There is no capacity, utilisation, cost-per-clinic or demand evidence. P13's driver is unsupported, and P11 contradicts the growth figure. The recommendation does not trace to a finding with a figure. Compounding 12.0% would put 2026 visits at about 462,100, and the memo never relates that to capacity.
+Fix: Delete the recommendation. If a projection is wanted, label it illustrative and show the assumption and its calculation. Any decision to open a clinic needs capacity and cost evidence that the memo does not contain.
+
+FINDING F10 · minor · P01
+Category: denominator
+Evidence: The memo reports 412,600 visits and 350,000 booked appointments, and never defines "visit". Appointments attended come to 350,000 − 29,400 = 320,600. That is 92,000 fewer than the visit count. The gap may be walk-ins or unbooked activity, but the memo does not say. This matters because cost per visit (P03) uses visits as its denominator, while the no-show rate uses booked appointments.
+Fix: Define "visit" in the register and say how visits relate to booked appointments. State whether walk-ins or other unbooked contacts are included in the 412,600.
+
+Instructions: v1

@@ -1,0 +1,51 @@
+FINDING A-01 · blocker · P02
+Category: arithmetic
+Evidence: The memo's own figures (P01) and the register give 12,480,000 / 11,200,000 − 1 = 11.43%. The memo says 13.4%, which no combination of the two revenues reproduces.
+Fix: State growth as 11.4% (about $1.28 million).
+
+FINDING A-02 · blocker · P03
+Category: unsourced_figure
+Evidence: The register has no 2024 online-order count, no 2025 online-order count and no growth rate. The only online figure is the 2025 share of orders (18.5%, about 57,800 orders). A year-on-year growth rate cannot be computed from it.
+Fix: Cite the source for 27% and the 2024 online order count, or remove the sentence.
+
+FINDING A-03 · blocker · P05
+Category: causal_claim
+Evidence: "The loyalty app drove the revenue growth." The register has no loyalty-app data, such as adoption, member versus non-member sales, or a comparison group. The memo is one year of observational data, and P16 concedes that no controlled test exists.
+Fix: Remove the claim, or reword it as an untested hypothesis, for example "revenue growth coincided with the loyalty app launch; no test separates its effect". Without loyalty data, the sentence should not stay as a finding.
+
+FINDING A-04 · major · P06
+Category: denominator
+Evidence: The 9.1% is the mean of each store's own rate. The register defines the returns rate as returns / orders, a pooled ratio of sums, and gives 6.2%. The unweighted mean gives a small store the same weight as a large one. The gap between 9.1% and 6.2% is a weighting effect. It does not show that "returns are worse". Weighted KPIs.md says never to average row rates.
+Fix: Report 6.2% (returns / orders). If store-level dispersion matters, show the spread across stores separately and do not call the unweighted mean the chain rate. Delete "returns are worse than the register suggests".
+
+FINDING A-05 · blocker · P07
+Category: overclaim
+Evidence: One store's 40% rise after its refit (n = 1, no comparison stores, no seasonal or trend control) is generalised to "every refit will lift sales by 40%". This is a forecast for all future refits drawn from a single case.
+Fix: Restrict the claim to "Store 17's sales were 40% higher after its refit; one store, no control". Do not state a uniform expected lift. A matched comparison across refitted and non-refitted stores is needed before any recommendation.
+
+FINDING A-06 · blocker · P09
+Category: arithmetic
+Evidence: 610 staff / 48 stores = 12.7 per store (12.708). The memo says 15.2. Both inputs match the register.
+Fix: Change to 12.7 staff per store on average.
+
+FINDING A-07 · blocker · P10
+Category: causal_claim
+Evidence: "Longer opening hours caused higher weekend revenue." The register holds no opening-hours or weekend-revenue data and no experiment or before/after design. Reverse causality is plausible, since busy stores may extend their hours. P16 says only associations are shown, which contradicts the verb "caused".
+Fix: Reword as an association ("stores with longer hours had higher weekend revenue"), name the figure and its source, and add that no test separates cause from selection. If there is no source, remove the sentence.
+
+FINDING A-08 · major · P12
+Category: overclaim
+Evidence: "92% accuracy" is given with no baseline, no named held-out split, no metric definition and no target variable. Accuracy for a revenue prediction is undefined, because revenue is continuous (R², MAE or MAPE would be needed). "So it should set next year's targets" is a decision drawn from a single accuracy figure. A weak or near-baseline model could produce the same number.
+Fix: Name the metric and the held-out data. Show the model against a naive baseline, such as last year's revenue per store. Drop "should set targets" until the model beats the baseline on held-out data.
+
+FINDING A-09 · blocker · P13
+Category: unsourced_figure
+Evidence: The $640,000 shrinkage cost appears nowhere in the register and cannot be derived from it. The memo gives no source and no definition (cost versus retail value, which stores).
+Fix: Add the source and the definition, or remove it. If kept, say how it is defined. As a share of revenue it would be 5.1%, which makes the unsourced figure material.
+
+FINDING A-10 · blocker · P15
+Category: denominator
+Evidence: $52 is described as the mean of the 48 stores' own averages. The register defines average basket as revenue / orders = 12,480,000 / 312,400 = $39.95, the pooled ratio of sums (P04 also uses it). The unweighted mean of store averages overweights small stores. Also, $52 contradicts P04's $39.95 in the same memo. The claim that the register "understates what customers spend" is therefore wrong. The $39.95 is the customer-level average, and the $52 is a different quantity.
+Fix: Use $39.95 (revenue / orders). Remove "understates". If $52 is shown at all, label it an unweighted store mean and do not present it as a correction.
+
+Notes: P01, P04, P08, P11 and P14 reproduce from the register (P04 gives $39.95, P14 gives $260,000, P08's 18.5% and P11's NPS 41 on 2,100 responses are listed). P16 states that the data are associations, but P05 and P10 use causal verbs, so the memo contradicts itself. The title says "synthetic benchmark", but no claim repeats that limit where it is made.

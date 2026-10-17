@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "note": "Free, open-weight models for scripts/consult.py, first choice first. Every one is Apache 2.0 and runs through Ollama. Change the lists to match what your machine can hold. See docs/AGENT_TEAM.md.",
+  "tasks": {
+    "summarise": {
+      "models": ["qwen3:4b", "qwen3:1.7b", "qwen3:0.6b"],
+      "max_tokens": 600,
+      "system": "Summarise the text for a busy reader in at most eight short bullet points. Keep every number exactly as written. Add nothing that is not in the text."
+    },
+    "prose-review": {
+      "models": ["qwen3:8b", "qwen3:4b"],
+      "max_tokens": 900,
+      "system": "You review business writing. List concrete problems only: unclear sentences, claims without evidence, inconsistent terms, jargon. Quote the passage, say why, suggest a fix. Never change or invent a number. If there is nothing to fix, say so."
+    },
+    "translate-check": {
+      "models": ["qwen3:8b", "qwen3:4b"],
+      "max_tokens": 900,
+      "system": "You compare an English text with its Arabic version. List places where the meaning differs, something is missing, or a number differs. Quote both sides. If they match, say so."
+    },
+    "code-review": {
+      "models": ["qwen3-coder:30b", "qwen2.5-coder:7b", "qwen3:8b"],
+      "max_tokens": 1200,
+      "system": "You review a code change. List real defects only: bugs, unsafe input handling, missing error handling, leaked secrets. For each, give the line, the failure it causes, and a fix. If there are none, say so."
+    },
+    "reason": {
+      "models": ["gpt-oss:20b", "qwen3:8b"],
+      "max_tokens": 1200,
+      "system": "You check a deliverable against the requirements given. For each requirement say met, partly met or not met, with the evidence quoted. Do not assume anything not shown."
+    },
+    "classify": {
+      "models": ["qwen3:1.7b", "qwen3:0.6b"],
+      "max_tokens": 20,
+      "system": "Answer with exactly one of the labels given in the question, and nothing else."
+    }
+  }
+}

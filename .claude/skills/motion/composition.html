@@ -1,0 +1,258 @@
+<!doctype html>
+<!--
+  The motion composition (.claude/skills/motion). render.mjs fills the two
+  placeholders below with the fonts and the spec, then calls
+  window.motion.seek(t) for every frame. Every pixel is a pure function of
+  t: no timers, no requestAnimationFrame, no randomness. That makes a
+  render repeatable and lets one number change without touching the rest.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+/*FONTS*/
+:root {
+  --paper: #f6f5f1; --surface: #fbfbf8; --ink: #17252f; --ink-2: #3d4a55; --muted: #5b6770;
+  --rule: #dce2e5; --accent: #2f6690; --accent-soft: #dbe7f0; --amber: #a35a14; --amber-soft: #f6e6d3;
+}
+:root[data-theme="dark"] {
+  --paper: #0f1a24; --surface: #152331; --ink: #eef2f5; --ink-2: #c6d0d8; --muted: #9aa8b4;
+  --rule: #2a3b4a; --accent: #7fb2dc; --accent-soft: #1d3346; --amber: #f0b46e; --amber-soft: #3a2a17;
+}
+/* The user's house style, from .claude/skills/rta-style/tokens.json (tests/test_rta_style.py
+   keeps the two in step). Colours and type only: no logo, name or data. */
+:root[data-theme="rta"] {
+  --paper: #f1f2f3; --surface: #ffffff; --ink: #1f2225; --ink-2: #2b2e31; --muted: #58595b;
+  --rule: #d6d8db; --accent: #0b3c6e; --accent-soft: #e6eef7; --amber: #c8102e; --amber-soft: #fbe9ec;
+  --bar: #c8102e; --bar-edge: #9b0a22;
+}
+:root[data-theme="rta-dark"] {
+  --paper: #15171a; --surface: #1f2225; --ink: #eef0f2; --ink-2: #d6d8db; --muted: #aab1b8;
+  --rule: #3a3f45; --accent: #8db8e8; --accent-soft: #1b2c3f; --amber: #ef5b6e; --amber-soft: #3a1a20;
+  --bar: #9b0a22; --bar-edge: #c8102e;
+}
+:root[data-theme^="rta"] body { font-family: 'IBM Plex Sans', 'IBM Plex Sans Arabic', system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Naskh Arabic", Tahoma, sans-serif; }
+:root[data-theme^="rta"] body::before { content: ""; position: absolute; inset-inline: 0; top: 0; height: .7em;
+  background: var(--bar); border-bottom: .22em solid var(--bar-edge); }
+:root[data-theme^="rta"] .kicker { color: var(--amber); }
+:root[data-theme^="rta"] .kpi { border-top: 1px solid var(--rule); border-inline-start: .35em solid var(--accent); }
+:root[data-theme^="rta"] .kpi:first-child { border-inline-start-color: var(--amber); }
+:root[data-theme^="rta"] .progress__fill { background: var(--amber); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: var(--w); height: var(--h); overflow: hidden; background: var(--paper); }
+body { font-family: 'Fira Sans', 'Noto Sans Arabic', 'Segoe UI', 'DejaVu Sans', sans-serif; color: var(--ink);
+       font-size: calc(var(--u) * 1px); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+.stage { position: absolute; inset: 0; }
+.scene { position: absolute; inset: 0; padding: 7% 8% 11%; display: flex; flex-direction: column;
+         justify-content: center; gap: 3.2em; opacity: 0; }
+.kicker { font-size: 1.15em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.title { font-size: 3.6em; font-weight: 700; line-height: 1.08; max-width: 18em; text-wrap: balance; }
+.subtitle { font-size: 1.6em; line-height: 1.35; color: var(--ink-2); max-width: 30em; }
+.title-block { display: flex; flex-direction: column; gap: .9em; }
+.heading { font-size: 2.3em; font-weight: 600; line-height: 1.15; max-width: 26em; text-wrap: balance; }
+.kpis { display: grid; gap: 2.2em; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+.kpi { background: var(--surface); border: 1px solid var(--rule); border-radius: .6em; padding: 1.4em 1.5em;
+       border-top: .35em solid var(--accent); display: flex; flex-direction: column; gap: .5em; }
+.kpi__value { font-size: 3.1em; font-weight: 700; line-height: 1; white-space: nowrap; }
+.kpi__label { font-size: 1.15em; color: var(--ink-2); line-height: 1.3; }
+.bars { display: flex; flex-direction: column; gap: 1.1em; }
+.bar { display: grid; grid-template-columns: 11em 1fr 7.5em; align-items: center; gap: 1.2em; }
+.bar__label { font-size: 1.25em; color: var(--ink-2); text-align: end; }
+.bar__track { height: 2.1em; background: var(--accent-soft); border-radius: .35em; overflow: hidden; }
+.bar__fill { height: 100%; width: 0; background: var(--accent); border-radius: .35em; }
+.bar--highlight .bar__fill { background: var(--amber); }
+.bar__value { font-size: 1.35em; font-weight: 600; white-space: nowrap; }
+.statement { display: flex; flex-direction: column; gap: 1em; max-width: 30em; }
+.statement__figure { font-size: 5.2em; font-weight: 700; color: var(--amber); line-height: 1; white-space: nowrap; }
+.statement__text { font-size: 2.4em; font-weight: 600; line-height: 1.2; text-wrap: balance; }
+.note { font-size: 1.1em; color: var(--muted); line-height: 1.4; max-width: 46em; }
+.footer { position: absolute; inset-inline: 8%; bottom: 5%; display: flex; justify-content: space-between;
+          gap: 2em; font-size: .95em; color: var(--muted); }
+.progress { position: absolute; inset-inline: 0; bottom: 0; height: .35em; background: var(--rule); }
+.progress__fill { height: 100%; width: 0; background: var(--accent); }
+[dir="rtl"] .progress__fill { margin-inline-start: auto; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+<div class="footer"><span id="footer"></span><span id="brand"></span></div>
+<div class="progress"><div class="progress__fill" id="progress"></div></div>
+<script>window.__SPEC__ = /*SPEC*/null;</script>
+<script>
+(function () {
+  const spec = window.__SPEC__
+  const W = spec.width, H = spec.height
+  const root = document.documentElement
+  root.lang = spec.language
+  root.dir = spec.language === 'ar' ? 'rtl' : 'ltr'
+  root.dataset.theme = spec.theme
+  // One unit is 1/46 of the shorter side, so text scales with the frame:
+  // body text is about 23 px at 1080p, a title about 85 px.
+  root.style.setProperty('--w', W + 'px')
+  root.style.setProperty('--h', H + 'px')
+  root.style.setProperty('--u', String(Math.min(W, H) / 46))
+
+  const ENTER = 0.6, EXIT = 0.45, STAGGER = 0.15, COUNT = 1.4, GROW = 1.0
+  const ease = (x) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3)
+  const tag = spec.language === 'ar' ? 'ar-u-nu-latn' : 'en'
+
+  function format(item, value) {
+    const decimals = item.decimals ?? 0
+    const options = { minimumFractionDigits: decimals, maximumFractionDigits: decimals }
+    if (item.format === 'currency') Object.assign(options, { style: 'currency', currency: item.currency || 'USD' })
+    if (item.compact) Object.assign(options, { notation: 'compact', maximumFractionDigits: Math.max(1, decimals) })
+    // Arabic formatting adds direction marks inside the string; the figure
+    // is isolated in a <bdi> instead, so the marks would only reverse it.
+    const text = new Intl.NumberFormat(tag, options).format(value).replace(/[\u200e\u200f\u061c]/g, '')
+    return (item.prefix || '') + text + (item.suffix || '')
+  }
+
+  /** A figure isolated from the text around it, so "US$ 1,200" and "45%"
+   *  keep their order inside Arabic. Returns [container, the part to update]. */
+  function figureEl(cls, text) {
+    const box = el('div', cls)
+    const bdi = el('bdi', null, text)
+    box.append(bdi)
+    return [box, bdi]
+  }
+
+  function el(name, cls, text) {
+    const node = document.createElement(name)
+    if (cls) node.className = cls
+    if (text != null) node.textContent = text
+    return node
+  }
+
+  // Build every scene once; seek(t) only changes styles and counter text.
+  const stage = document.getElementById('stage')
+  let clock = 0
+  const scenes = spec.scenes.map((scene) => {
+    const node = el('section', 'scene')
+    const steps = []   // elements that enter one after another
+    const counters = []
+    const fills = []
+    let offset = 1   // the step at which the first counter's row enters
+    if (scene.type === 'title') {
+      const block = el('div', 'title-block')
+      if (scene.kicker) block.append(el('div', 'kicker', scene.kicker))
+      block.append(el('h1', 'title', scene.title))
+      if (scene.subtitle) block.append(el('p', 'subtitle', scene.subtitle))
+      node.append(block)
+      steps.push(...block.children)
+    } else if (scene.type === 'kpis') {
+      const heading = el('h2', 'heading', scene.heading)
+      const grid = el('div', 'kpis')
+      grid.style.setProperty('--cols', String(Math.min(scene.items.length, 4)))
+      scene.items.forEach((item) => {
+        const card = el('div', 'kpi')
+        const [value, digits] = figureEl('kpi__value', format(item, 0))
+        // Sized for its final text, so the counter never outgrows the card.
+        const longest = format(item, item.value).length
+        const columns = Math.min(scene.items.length, 4)
+        const room = { 1: 22, 2: 14, 3: 10, 4: 8 }[columns]
+        if (longest > room) value.style.fontSize = `${Math.max(1.6, 3.1 * room / longest).toFixed(2)}em`
+        card.append(value, el('div', 'kpi__label', item.label))
+        grid.append(card)
+        counters.push({ node: digits, item })
+      })
+      node.append(heading, grid)
+      steps.push(heading, ...grid.children)
+    } else if (scene.type === 'bars') {
+      const heading = el('h2', 'heading', scene.heading)
+      const list = el('div', 'bars')
+      const max = Math.max(...scene.items.map((i) => Math.abs(i.value))) || 1
+      scene.items.forEach((item) => {
+        const row = el('div', 'bar' + (item.highlight ? ' bar--highlight' : ''))
+        const track = el('div', 'bar__track')
+        const fill = el('div', 'bar__fill')
+        track.append(fill)
+        const [value, digits] = figureEl('bar__value', format(item, 0))
+        row.append(el('div', 'bar__label', item.label), track, value)
+        list.append(row)
+        fills.push({ node: fill, share: Math.abs(item.value) / max })
+        counters.push({ node: digits, item })
+      })
+      node.append(heading, list)
+      steps.push(heading, ...list.children)
+      if (scene.note) { const note = el('p', 'note', scene.note); node.append(note); steps.push(note) }
+    } else if (scene.type === 'statement') {
+      const box = el('div', 'statement')
+      if (scene.figure) {
+        const [figure, digits] = figureEl('statement__figure', format(scene.figure, 0))
+        box.append(figure)
+        counters.push({ node: digits, item: scene.figure })
+      }
+      offset = 0
+      box.append(el('p', 'statement__text', scene.text))
+      if (scene.note) box.append(el('p', 'note', scene.note))
+      node.append(box)
+      steps.push(...box.children)
+    }
+    stage.append(node)
+    const start = clock
+    clock += scene.duration
+    return { scene, node, steps, counters, fills, offset, start, end: clock }
+  })
+  const duration = clock
+  document.getElementById('footer').textContent = spec.footer || ''
+  document.getElementById('brand').textContent = spec.brand || ''
+
+  function seek(t) {
+    scenes.forEach((s, index) => {
+      const last = index === scenes.length - 1
+      const local = t - s.start
+      const active = t >= s.start && (t < s.end || (last && t <= s.end + 1e-6))
+      if (!active) { s.node.style.opacity = '0'; return }
+      const enter = ease(local / ENTER)
+      const exit = last ? 1 : 1 - ease((local - (s.scene.duration - EXIT)) / EXIT)
+      s.node.style.opacity = String(Math.min(enter, exit))
+      s.steps.forEach((step, i) => {
+        const p = ease((local - i * STAGGER) / ENTER)
+        step.style.opacity = String(p)
+        step.style.transform = `translateY(${(1 - p) * 0.9}em)`
+      })
+      // Counters and bars start once their own row has entered.
+      const offset = s.offset
+      s.counters.forEach((c, i) => {
+        const p = ease((local - (offset + i) * STAGGER - ENTER * 0.5) / COUNT)
+        c.node.textContent = format(c.item, c.item.value * p)
+      })
+      s.fills.forEach((f, i) => {
+        const p = ease((local - (offset + i) * STAGGER - ENTER * 0.5) / GROW)
+        f.node.style.width = (f.share * p * 100).toFixed(3) + '%'
+      })
+    })
+    document.getElementById('progress').style.width = (Math.min(1, t / duration) * 100).toFixed(3) + '%'
+  }
+
+  /** The on-screen words in order, exactly as shown, for captions and alt
+   *  text; each figure carries a note number, and the sources follow at
+   *  the end, so the words a viewer reads are kept apart from the citations. */
+  function transcript() {
+    const sources = []
+    const cite = (source) => {
+      if (!sources.includes(source)) sources.push(source)
+      return `[${sources.indexOf(source) + 1}]`
+    }
+    const body = scenes.map((s) => {
+      const sc = s.scene
+      const lines = [`[${s.start.toFixed(1)}–${s.end.toFixed(1)} s] ${sc.type}`]
+      // A statement shows its figure above its words, so it is read first.
+      const figure = sc.figure ? `${format(sc.figure, sc.figure.value)} ${cite(sc.figure.source)}` : null
+      if (figure && sc.type === 'statement') lines.push(figure)
+      for (const key of ['kicker', 'title', 'subtitle', 'heading', 'text', 'note']) if (sc[key]) lines.push(sc[key])
+      for (const item of sc.items || []) lines.push(`${item.label}: ${format(item, item.value)} ${cite(item.source)}`)
+      if (figure && sc.type !== 'statement') lines.push(figure)
+      return lines.join('\n')
+    }).join('\n\n') + (spec.footer ? `\n\n${spec.footer}` : '')
+    const heading = spec.language === 'ar' ? 'المصادر' : 'Sources'
+    return sources.length ? `${body}\n\n${heading}\n${sources.map((x, i) => `[${i + 1}] ${x}`).join('\n')}` : body
+  }
+
+  window.motion = { duration, fps: spec.fps, width: W, height: H, seek, transcript,
+                    scenes: scenes.map((s) => ({ type: s.scene.type, start: s.start, end: s.end })) }
+  seek(0)
+})()
+</script>
+</body>
+</html>

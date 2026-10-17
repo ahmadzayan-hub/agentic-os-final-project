@@ -1,0 +1,97 @@
+/* Live data (ADR 0034): the connection badge and the live sources panel.
+   Shipped with the views that use them. Colour is never the only signal:
+   every state is also a word. */
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-sunken);
+  white-space: nowrap;
+}
+
+.live-badge__dot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.live-badge--live { background: var(--success-soft); }
+.live-badge--live .live-badge__dot { background: var(--success); }
+.live-badge--reconnecting { background: var(--warning-soft); }
+.live-badge--reconnecting .live-badge__dot { background: var(--warning); }
+.live-badge--offline { background: var(--danger-soft); }
+.live-badge--offline .live-badge__dot { background: var(--danger); }
+.live-badge__since { font-weight: 400; }
+
+.live-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-m);
+  background: var(--success-soft);
+  margin-block-end: var(--space-4);
+}
+
+.live-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.live-form {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  margin-block: var(--space-3);
+}
+
+.live-form__wide { grid-column: 1 / -1; }
+
+.live-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.live-source {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  border-block-start: 1px solid var(--border);
+  min-inline-size: 0;
+}
+
+.live-source__url {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.live-source__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.live-follow {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.live-source .statusline { margin: 0; }
+.live-source .dataset__meta { margin: 0; }

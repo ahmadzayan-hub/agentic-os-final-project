@@ -1,0 +1,54 @@
+FINDING F01 · major · memo.md · P02
+Category: unsourced_figure
+Evidence: "About one patient in five arrived after their appointment time." One in five is 20%. The checker cannot read words, and nothing in memo.md or register.csv supports this figure.
+Fix: Source it to a register row with its calculation, or remove it.
+
+FINDING F02 · major · memo.md · P05
+Category: causal_claim
+Evidence: "The SMS reminder scheme pulled the no-show rate down to 8.4% of booked appointments across the year." The 8.4% is sourced (29,400 / 350,000). The memo gives no earlier no-show rate and no comparison group, so "pulled ... down" is unsupported. P12 says the figures cannot confirm explanations.
+Fix: State 8.4% as the 2025 rate without attributing it to the SMS scheme, or add a prior-year rate and a comparison that a register row supports.
+
+FINDING F03 · blocker · memo.md · P03
+Category: arithmetic
+Evidence: Register row "Operating cost per visit (ratio: operating cost / visits)", Expected $44.72, is absent. A grep of memo.md for "44", "per visit" and "cost" finds no $44.72 or 44.7 in any form. The only 44 is "44,200" (P04, visit gain). The nearest form is the same metric at $52.10 in P03, which the checker rejects because it does not follow (see F04).
+Fix: Restate the metric with the register value $44.72 and its calculation, $18,450,000 / 412,600, then re-run the coverage check.
+
+FINDING F04 · blocker · memo.md · P03
+Category: arithmetic
+Evidence: "Operating cost per visit came to $52.10 in 2025, computed as $18,450,000 divided by 412,600 visits." 18,450,000 / 412,600 = 44.716 which rounds to $44.72. $52.10 would need about 354,127 visits, not 412,600. The written calculation does not hold.
+Fix: Replace $52.10 with $44.72, the value the stated calculation gives and the register expects.
+
+FINDING F05 · blocker · memo.md · P07
+Category: arithmetic
+Evidence: "Averaging the three clinics' no-show rates gives 9.8%, which is the department's no-show rate for 2025." The mean (12.0 + 6.0 + 11.4) / 3 = 29.4 / 3 = 9.8 is arithmetically correct, but it is not the department rate. The department rate from the sourced totals is 29,400 / 350,000 = 8.4%, which P05, P06 and the register "No-show rate" row give. The checker also lists 9.8% as UNSOURCED. Classified as wrong.
+Fix: Delete the sentence. The department rate is 8.4%. If a clinic average is shown, label it as the unweighted mean of clinic rates.
+
+FINDING F06 · major · memo.md · P07
+Category: denominator
+Evidence: The simple mean weights each clinic equally, but the clinics book different numbers of appointments (register rows: A 50,000, B 200,000, C 100,000; total 350,000). The mean therefore gives Clinic A (12.0%) the same weight as Clinic B (6.0%), which has four times its volume. The correct department rate weights by appointments: (6,000 + 12,000 + 11,400) / (50,000 + 200,000 + 100,000) = 29,400 / 350,000 = 8.4%.
+Fix: Use the appointment-weighted rate of 8.4%, and do not present the unweighted mean as the department rate.
+
+FINDING F07 · major · memo.md · P08
+Category: overclaim
+Evidence: "Clinic B's 6.0% no-show rate settles the matter: every clinic can expect that level next year, so staffing should be planned on it." The 6.0% is sourced (register row, 12,000 / 200,000). Extending one clinic's rate to every clinic is unsupported, and the register has Clinic A at 12.0% and Clinic C at 11.4%. The memo gives no forecast method.
+Fix: Remove the generalisation. Report each clinic's 2025 rate from its register row and plan staffing per clinic, or support any forecast with a stated method.
+
+FINDING F08 · major · memo.md · P10
+Category: unsourced_figure
+Evidence: "Nurse vacancies stood at 14% through the year." The checker lists 14% as UNSOURCED. It is not in the register, and nothing in memo.md supports it.
+Fix: Source 14% to a register row with its calculation, or remove the sentence.
+
+FINDING F09 · blocker · memo.md · P11
+Category: arithmetic
+Evidence: "Outpatient visits grew 18.0% over 2024, moving from 368,400 to 412,600." (412,600 - 368,400) / 368,400 = 44,200 / 368,400 = 0.11998, which is 12.0%. An 18.0% rise would need 434,712 visits. The written figure contradicts P04 (12.0%) and the register "Visit growth" row (12.0%).
+Fix: Replace 18.0% with 12.0%, matching P04 and the register.
+
+FINDING F10 · major · memo.md · P13
+Category: causal_claim
+Evidence: "The new evening sessions accounted for the 12.0% rise in visits over 2024." The 12.0% is sourced. "New evening sessions" appears nowhere in memo.md or register.csv, so the attribution has no source. P12 says the figures cannot confirm the explanations behind them.
+Fix: Remove the attribution, or source it to evidence that isolates the effect of the evening sessions.
+
+FINDING F11 · major · memo.md · P14
+Category: overclaim
+Evidence: "Visits can be expected to keep rising by 12.0% a year, so the department should open a fourth clinic in 2026." The 12.0% is one year's growth, 2024 to 2025 (register "Visit growth" row). Treating it as a rate for future years is a forecast with no stated method, and it is the only basis given for a fourth clinic (3 + 1). P12 limits the memo to associations observed in one year.
+Fix: Remove the forecast and the recommendation, or support them with a dated forecast method and register rows for its inputs.

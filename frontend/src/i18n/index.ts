@@ -96,7 +96,7 @@ export function applyLocale(locale: Locale, persist = true) {
   listeners.forEach((listener) => listener())
 }
 
-function interpolate(template: string, vars?: Vars): string {
+export function interpolate(template: string, vars?: Vars): string {
   if (!vars) return template
   return template.replace(PLACEHOLDER, (match, name: string) =>
     name in vars ? String(vars[name]) : match,

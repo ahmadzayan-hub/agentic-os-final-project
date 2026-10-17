@@ -12,12 +12,71 @@ environment — not a replacement for Windows, macOS, or Linux.
 
 ![Agentic OS — the same workspace in Arabic, right-to-left](docs/screenshots/desktop-chat-arabic-dark.png)
 
+![Agentic OS — the Overview: key figures, the latest findings and the approval queue](docs/screenshots/desktop-overview-light.png)
+
+[Editable Figma designs](https://www.figma.com/design/nLdKZ5cVOtRMTWEvhCJSEK) ·
+[UI specification and API mapping](docs/design/AGENTIC_UI_SPEC.md) ·
+[Current verification and platform scope](docs/design/VALIDATION.md)
+
 ## Main Features
 
+- **Governed analysis workspace** — grouped specialist progress, findings and evidence,
+  an exact-report approval inbox, server-confirmed publishing, addressable runs,
+  recovered text drafts and installable PWA guidance for Windows, Android and iOS
 - **Web workspace** — a responsive React application with a greeting hero,
   conversation view, centered command search and palette (Ctrl/⌘+K),
   activity timeline with session health, onboarding, and a token-based
   design system with dark, light, and system themes
+- **Overview and Datasets** — the Overview shows the key figures, the
+  latest findings in their report's language, what waits for approval and
+  the newest analyses; the Datasets view lists every stored dataset and
+  analyses one again by reference, without uploading it twice. The
+  interface is planned in `docs/UI_PLAN.md` and its design system is
+  generated with the vendored `ui-ux-pro-max` skill (ADR 0023)
+- **Datasets in the formats business data comes in** — CSV and TSV, Excel
+  workbooks, JSON and JSON Lines, up to 4 megabytes, read with the
+  standard library into one canonical table (`POST /api/datasets`,
+  ADR 0024). Excel dates, error cells and formulas are handled and
+  reported; hostile workbooks (entity and decompression bombs, paths
+  outside the archive) are refused; the same data in any format is stored
+  once
+- **Column mapping** — the owner says once what each column of a dataset
+  is (measure, dimension, date or ignored), how dates are written and
+  what to sum them by. The server suggests a role for each column with a
+  reason, checks a mapping against every row, and explains a refusal
+  field by field in English or Arabic. Runs follow the mapping and keep
+  a copy of it; unmapped data is analysed exactly as before (ADR 0025)
+- **Several datasets in one run** — up to four stored lookups joined onto
+  the main dataset on declared keys, with a preview of the merge. A
+  lookup whose key repeats is refused, a left join never changes a
+  total, an inner join says what it left out, and every join reports how
+  many rows found a match; the Validation Expert recounts the rows
+  itself (ADR 0030)
+- **The cleaned table, downloadable and queryable** — a run's cleaned
+  and merged table downloads as CSV that is safe to open in a
+  spreadsheet (`GET /api/runs/{id}/data.csv`), and can be described,
+  totalled by group under filters, and read row by row
+  (`/fields`, `/query`, `/records`). Rates are ratios of sums, and
+  another owner's run is a 404 (ADR 0031)
+- **Dashboards** — six pages over a run's cleaned table (overview,
+  breakdown, trend, distribution, relationship, records) with filters
+  that apply everywhere, totals or per-record reading, and a way from
+  every group to the rows behind it. The page and filters live in the
+  address, every chart has its numbers as a table, and axe checks every
+  page in both languages (ADR 0032)
+- **Models, each against a plain guess** — a run on the `models` profile
+  adds a regression, a classification, a clustering and a seasonal
+  forecast as governed stages. Each is tested on held-out data against
+  the obvious baseline (the average, the most common class, last
+  season), reports a weak model as weak, and shows a model card with the
+  verdict first (ADR 0033)
+- **Live data** — a live source is a saved `https://` address that
+  snapshots into a dataset, now or every 15 minutes to a week. New
+  content is analysed and stops at the approval gate; the same content
+  starts nothing. Fetching is fenced against server-side request forgery
+  (public addresses only, the checked address pinned, no redirects). Open
+  pages follow `GET /api/events`, a server-sent event stream that resumes
+  where it stopped, with a Live, Reconnecting or Offline badge (ADR 0034)
 - **Command-line interface** — the original `python main.py` experience,
   fully preserved and dependency-free
 - **One brain, two faces** — both interfaces drive the same tested Python
@@ -149,9 +208,12 @@ environment — not a replacement for Windows, macOS, or Linux.
 - **Accessibility** — WCAG 2.2 AA verified by automated axe scans plus
   keyboard review; full keyboard operation, focus-trapped dialogs,
   reduced-motion support (system setting and in-app switch)
-- **Measured performance** — Lighthouse (mobile emulation, production
-  build): Performance 96, Accessibility 100, Best Practices 100, SEO 100;
-  LCP 2.3 s, CLS 0, TBT 0 ms
+- **Measured performance** — Lighthouse 13.4 against the self-hosted
+  server, 16 October 2026: mobile emulation scored Performance 99,
+  Accessibility 100, Best Practices 100 and SEO 100 in each of three runs
+  (LCP 2.0 s, CLS 0, TBT 0–10 ms); desktop scored 100 in all four. The
+  server compresses the interface and caches its hashed assets for a year,
+  as Vercel does in production (ADR 0023, amendment)
 
 ## Architecture
 
@@ -200,8 +262,12 @@ and returns fresh state snapshots.
 │   └── e2e/               # Playwright end-to-end + accessibility tests
 ├── docs/
 │   ├── UI_UX_AUDIT.md     # Audit, plan, and acceptance criteria
+│   ├── PLAYBOOK.md        # How the repository is operated
 │   ├── adr/               # Decision records (database, auth, analytics…)
 │   └── screenshots/       # Final interface captures
+├── brain/                 # Second brain: linked notes, start at Home.md
+├── .claude/               # Claude Code hooks, skills, commands, agents
+├── CLAUDE.md · Memory.md · project-progress.md · session-logs.md
 ├── README.md · user_guide.md · requirements.txt · .env.example
 ```
 
@@ -217,9 +283,8 @@ and returns fresh state snapshots.
 ## Installation
 
 ```bash
-git clone https://github.com/ahmadzayan-hub/11.git
-cd 11
-git checkout claude/agentic-os-final-project-53j6ql
+git clone https://github.com/ahmadzayan-hub/agentic-os-final-project.git
+cd agentic-os-final-project
 
 # Web interface dependencies
 pip install -r requirements.txt
@@ -268,38 +333,53 @@ python main.py
 # Python: agent, utils, API, runs, analytics, sequential ranges,
 # metrics, auth, tenancy, erasure, quotas, backups, worker, recovery,
 # supply chain, launcher, routing, language, assistant, custom stages,
-# agent runtimes, MCP, frameworks, report language, docs (616 tests)
+# agent runtimes, MCP, frameworks, report language, datasets, column
+# mapping, joins, the cleaned-table queries, modelling stages, live sources and the event stream, uneven periods, docs, and the repository's operating system:
+# brain checker, session hooks, the verify script, the motion skill, the
+# agent team's tools, agent evaluation, the house style and the interface
+# budget (1025 tests)
 python -m unittest discover tests
 
-# Frontend unit tests (37 tests)
+# Frontend unit tests (106 tests)
 cd frontend && npm test
 
-# End-to-end + accessibility (52 checks across desktop and mobile,
+# End-to-end + accessibility (104 checks across desktop and mobile,
 # in English and Arabic;
 # requires the production build: npm run build)
 cd frontend && npx playwright test
 
 # Type checking
 cd frontend && npm run typecheck
+
+# All of the above in one run, plus the brain check and the interface
+# budget, printing the real counts (--quick skips the build; --e2e adds
+# Playwright)
+python scripts/verify.py
 ```
 
 The same suite runs automatically in CI (`.github/workflows/ci.yml`) on
 every push, including the run-engine and backup suites against a real
-PostgreSQL 16 service. Last verified: 616 Python tests (600 run in CI;
-the 11 that need an optional agent framework or the MCP SDK, and the 5
-that need LLMRouter, skip there),
-37 frontend unit tests, and 52 end-to-end checks (51 executed, 1
-desktop-only check skipped on the mobile project). In environments with a pre-installed
+PostgreSQL 16 service. Last verified: 1025 Python tests (1006 run in CI;
+the 11 that need an optional agent framework or the MCP SDK, the 5 that
+need LLMRouter, the 1 that cross-checks workbooks with openpyxl, and the
+2 that need the frontend build, which CI makes after the Python step,
+skip there),
+106 frontend unit tests, and 104 end-to-end checks (100 executed; 4
+skipped by design, because each covers one viewport only). In environments with a pre-installed
 browser, point Playwright at it:
 `PLAYWRIGHT_EXECUTABLE_PATH=/path/to/chromium npx playwright test`.
 
-Five of the 616 load real LLMRouter routers and **skip unless LLMRouter
-is installed**, which in CI it is not — so CI reports `OK (skipped=5)`
-and that is the expected result, not a gap. The other 22 routing tests
+Five of the 1025 load real LLMRouter routers and **skip unless LLMRouter
+is installed**, which in CI it is not. With the eleven framework tests,
+the openpyxl cross-check and the two tests that read the frontend build
+(the static files and the interface budget), CI is expected to report
+`OK (skipped=19)`. It reported 18 (CI run 49) before the budget test
+joined them. That is the expected result, not a gap. The other 22 routing tests
 never import it and always run. Both readings were verified: with the
 library and the optional frameworks (ADR 0021) installed, nothing
-skipped (checked at 584 tests; the 32 that ADR 0022 added need neither
-and run everywhere).
+skipped (checked at 584 tests; the 32 that ADR 0022 added and the 30
+operating-system tests need neither and run everywhere). Of the 53
+dataset tests (ADR 0024), one needs openpyxl, which is not a dependency.
 
 ## Background worker (optional)
 
@@ -308,8 +388,11 @@ open, run a worker:
 
 ```bash
 python scripts/worker.py          # poll for work until Ctrl-C
-python scripts/worker.py --once   # advance one run, then exit
+python scripts/worker.py --once   # advance one run and refresh one due source, then exit
 ```
+
+The same worker refreshes live sources whose refresh is due (ADR 0034),
+under the same kind of lease, so two workers never fetch one source.
 
 The worker claims a run with a database lease, advances it one task at a
 time, and releases the lease when the run needs a human or ends. It never
@@ -590,6 +673,42 @@ See `user_guide.md` for the full command reference.
 - A scheduled off-site backup job (see ADR 0005 for why it is not a
   workflow in this public repository)
 - Named memory keys (e.g. `/remember birthday = 1 May`)
+
+## Working on it with Claude Code
+
+The repository carries its own operating system for Claude Code sessions,
+described in [docs/PLAYBOOK.md](docs/PLAYBOOK.md):
+
+- **Working memory:** [CLAUDE.md](CLAUDE.md) holds the instructions,
+  [Memory.md](Memory.md) the durable facts,
+  [project-progress.md](project-progress.md) the board, with the
+  analytics-OS milestones and a code-grounded gap analysis, and
+  [session-logs.md](session-logs.md) one entry per session.
+- **A second brain:** [brain/](brain/Home.md) is an Obsidian vault of
+  linked notes, with `User`, `Identity` and `Soul` at its core.
+  `python scripts/brain_check.py` finds broken links, stale notes,
+  duplicates and unlinked mentions.
+- **Hooks and skills:** the [.claude/](.claude/README.md) folder holds
+  them. A SessionStart hook briefs each session. The session-start,
+  session-end and brain-maintenance skills keep the files above current.
+  A Stop hook makes sure a session that committed work also logs it.
+- **An agent team:** [docs/AGENT_TEAM.md](docs/AGENT_TEAM.md) describes it.
+  - **Reviewers:** five read-only reviewer subagents (figures, brief,
+    analytics method, security and privacy, accessibility and Arabic).
+  - **Makers:** a dashboard analyst and a motion designer.
+  - **The review loop:** it scores a deliverable's gates with
+    `scripts/review_gate.py` and sends the reviewers in parallel until
+    every gate passes, or it reports what is left and whose it is.
+  - **Cost:** each job goes to the cheapest tier that can do it right.
+    Deterministic scripts and free local models (`scripts/consult.py`)
+    come before Claude.
+
+## Contributing
+
+Team members start with [CONTRIBUTING.md](CONTRIBUTING.md). It covers
+getting access, ways to help without writing code, local setup, the
+branch and pull-request flow, and the rules for a public repository: no
+secrets, no personal data, no force-push.
 
 ## Author and Course Information
 

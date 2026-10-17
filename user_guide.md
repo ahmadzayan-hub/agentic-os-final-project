@@ -137,10 +137,16 @@ switch.
 ### Analytics runs
 
 Open **Runs** to turn a goal into a governed analytics pipeline. Choose
-the bundled sample sales dataset, upload a CSV file, or paste one (header
-row first, up to 2 MB / 50,000 rows), then start the run. Uploading the
-same file twice stores it once, and a previous upload can be re-analysed
-without sending it again. Twenty-one specialist agents execute in order,
+the bundled sample sales dataset, a dataset you stored before, or a new
+file, then start the run. A file can be CSV or TSV, an Excel workbook
+(`.xlsx`), JSON or JSON Lines: up to 4 MB as uploaded, 50,000 rows, and
+10 MB once converted to CSV. The server reads it, says how many rows it
+found, and notes anything worth checking, such as error cells or which
+sheet of a workbook it read. CSV must be UTF-8; in Excel, save as "CSV
+UTF-8". You can still paste CSV text, header row first. The **Datasets**
+page adds files without starting a run. The same data is stored once,
+whatever format it came in, and a stored dataset is analysed again without
+being sent again. Twenty-one specialist agents execute in order,
 sequenced by **Hermes**, the orchestrator — planning, ingestion, data
 contract, profiling, quality scoring, privacy scanning, cleaning, metric
 governance, preparation, segment concentration, the four analytics
@@ -164,11 +170,156 @@ the same validator as the built-in ones, and if a custom stage fails the
 report says so rather than leaving it out. Registering a stage is an
 operator task: see "Custom agents" in the README.
 
+### Saying what each column is
+
+A run needs to know three things about a dataset: which number it is
+about, what to break that number down by, and which column is time.
+Unless you say, it guesses from column names. To say, open **Datasets**
+and choose **Columns** beside a dataset. A file you have just added
+opens there by itself.
+
+The panel shows the first rows, then every column with what it holds
+(numbers, dates or text), a suggested role and the reason for it. Give
+each column one role:
+
+- **Measure** — a number. Pick the one the analysis is about under
+  *Measure analysed*; the others are checked as possible drivers.
+- **Dimension** — a category to break totals down by. Pick one under
+  *Breakdown*, or none.
+- **Date** — at most one column. Choose how dates are written (day or
+  month first) and what to sum them by: day, month, quarter or year. The
+  automatic choice keeps the data's own detail until there would be more
+  than 36 periods.
+- **Ignore** — left out of the analysis, such as IDs and free-text notes.
+  The quality and privacy checks still read it.
+
+A mapped measure reads currency signs and codes, `(300)` as −300, and
+Arabic digits. A comma must group thousands: `12,5` is refused rather
+than guessed, and the report counts such cells. Dates are read in ISO
+form, as day, month and year in the order you chose, as quarters, and
+with English or Arabic month names, and trends are ordered by time.
+
+**Save mapping** checks your choices against every row. If something
+cannot work, such as text mapped as a measure or dates that could be day
+first or month first, nothing is saved. A box at the top lists each
+problem and links to its field, and the message also appears beside the
+field. Each run takes a copy of the mapping when it starts, so changing
+the mapping later never changes a finished report. **Use automatic
+detection** removes the mapping. Pasted CSV and the sample always use
+automatic detection.
+
+### Joining other datasets
+
+A run can bring columns from other stored datasets onto each row of its
+main dataset, such as a product's category from a product list or a
+month's target from a planning sheet. In the new-analysis form, choose
+a stored dataset or upload a file, then **Join a dataset** under *Join
+other datasets*:
+
+- **Dataset to join** — any other dataset you have stored.
+- **Key** — a column of the main table and the column of the joined
+  dataset that holds the same values. When both have a column of the
+  same name, it is suggested. Up to three key pairs.
+- **Rows without a match** — *Keep every row* leaves every total as it
+  was and leaves the joined columns empty for unmatched rows; *Keep only
+  matched rows* drops them, and the report says how many.
+
+**Preview the merge** shows the rows in and out, how many rows found a
+match in each dataset, the keys that found none, and the first rows of
+the merged table. A joined dataset whose key appears more than once is
+refused, because a row would otherwise be counted twice. After a
+preview you can choose a column from a joined dataset under *Break
+totals down by*. Up to four datasets can be joined; the run then shows a
+Data Merge Agent right after cleaning.
+
+### Downloading the cleaned data
+
+Once a run has cleaned its data, and merged any joined datasets, **Download
+cleaned data (CSV)** at the top of the run saves the table it analysed:
+the rows it kept, measures as plain numbers and mapped dates as the
+periods it summed by. The file opens correctly in Excel, Arabic
+included, and text that a spreadsheet would run as a formula (a cell
+starting with `=`, `+`, `-` or `@`) is saved with a leading apostrophe so
+it stays text.
+
+### Dashboards
+
+**Dashboards** opens any analysis whose data has been cleaned as a set of
+pages, every figure computed from the same cleaned table the report used.
+A finished analysis also has **Open dashboard** at the top.
+
+- **Overview** — records, the measure's total and its value per record,
+  the largest group, the trend and the top groups.
+- **Breakdown** — the measure by any text column, as totals or per
+  record, largest first.
+- **Trend** — totals and per-record values by period (when the data has
+  a date).
+- **Distribution** — how the measure spreads over twelve equal ranges.
+- **Relationship** — the measure against another number, from an even
+  sample of at most 500 records.
+- **Records** — the rows themselves, 25 at a time, sortable.
+
+The **Filters** card keeps values of any text column and a range of
+periods; a filter applies on every page. Every chart has **Show the
+numbers**, a table of its figures with **Show records** beside each
+group, which filters to that group and opens its rows. The page, the
+filters and every choice are in the address, so a reload keeps them and
+a link opens the same view for anyone who can open the analysis.
+
+### Live sources
+
+**Datasets → Live sources** keeps files that change: give a name, an
+`https://` address of a public file (CSV, TSV, Excel, JSON or JSON Lines,
+up to 4 MB), how often to refresh (every 15 minutes to every week, or
+only when you ask) and the question each analysis should answer.
+
+Each refresh fetches the file. If it has not changed, nothing happens and
+the source says **No change**. If it has, the new version is stored as a
+dataset, gets the previous version's column mapping when that still fits
+every row, and is analysed. The analysis waits for approval like any
+other: nothing publishes itself. A refresh that fails says why, and a
+scheduled source waits longer after each failure, up to a day. **Pause**
+stops the schedule; **Refresh now** fetches at once.
+
+The badge beside the title says whether the page is following changes:
+**Live**, **Reconnecting…** or **Offline**, with the time of the last
+update when it is not live. A dashboard over a live source's analysis
+shows the same badge and, when a newer snapshot has been analysed,
+offers **Open the newer analysis**; the figures on screen never change
+by themselves.
+
+A server administrator can limit which hosts sources may come from.
+Addresses on a private network, addresses that redirect, and addresses
+that carry a password or key are refused. **Refresh now** works once a
+minute per source.
+
+### Models
+
+Choose the **models** pipeline profile when starting an analysis to add
+four models to it: what predicts the measure (a regression), which
+records land in its top quarter, or in the classes of a text column the
+operator names (a classification), whether the records fall into natural groups (a
+clustering) and whether the measure follows a season (a seasonal
+forecast).
+
+Each model is tested on data it did not learn from: the latest fifth of
+the periods, every fifth record when there is no date, or the last full
+season. It is compared with the guess a person would make without it:
+the average, the most common class, or "same as last period" or "same
+as a season ago". The **Models** card under the charts gives the
+verdict first. A model has to beat its guess by at least 5% to count;
+otherwise the card says it is weak and should not be used. A weak model
+is a finding too.
+
+The models show what moves with the measure, not what causes it. An
+input recorded after the outcome makes a model look better than it is,
+so leave such columns out of the mapping.
+
 ### Defining what a number means
 
-By default a run picks the column it analyses by its name — a column
-called `revenue`, or failing that the first numeric column — and the
-report says which rule applied. That is a guess, and the report calls it
+Without a column mapping, a run picks the column it analyses by its
+name — a column called `revenue`, or failing that the first numeric
+column — and the report says which rule applied. That is a guess, and the report calls it
 one: "this run analyses **revenue** because it was chosen by column name.
 No definition exists for it."
 

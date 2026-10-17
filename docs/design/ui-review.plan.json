@@ -1,0 +1,37 @@
+{
+  "name": "agentic-workspace-interface",
+  "max_rounds": 5,
+  "reviewers": [
+    "accessibility-i18n-reviewer",
+    "brief-compliance-reviewer",
+    "security-privacy-reviewer"
+  ],
+  "gates": [
+    {
+      "id": "brain",
+      "type": "command",
+      "run": "python scripts/brain_check.py --strict"
+    },
+    {
+      "id": "snapshot-logic",
+      "type": "command",
+      "run": "node --experimental-strip-types frontend/src/tests/native-run-logic.test.mjs"
+    },
+    {
+      "id": "typescript",
+      "type": "command",
+      "run": "npm --prefix frontend run typecheck"
+    },
+    {
+      "id": "frontend-unit",
+      "type": "command",
+      "run": "npm --prefix frontend test"
+    },
+    {
+      "id": "production-build",
+      "type": "command",
+      "run": "npm --prefix frontend run build"
+    }
+  ],
+  "accepted": []
+}

@@ -1,0 +1,64 @@
+FINDING B-01 · major · /home/user/11/evals/reviewers/B/memo.md, P02
+Category: arithmetic
+Evidence: "[P02] That is one failure every 4,800 km." The sourcing pass lists 4,800 as UNSOURCED (not in the register or references). The register row "Mean km between failures (km / failures)" is 4,000, and the memo's own P14 says "Mean distance between failures was 4,000 km." No sourced calculation gives 4,800, and P02 contradicts P14. Classification: unsourced.
+Fix: Replace 4,800 with the register's 4,000 km so that P02 and P14 agree, or remove the sentence.
+
+FINDING B-02 · major · /home/user/11/evals/reviewers/B/memo.md, P06
+Category: unsourced_figure
+Evidence: "Depot B's punctuality was 0.4 points better in March, which proves its new shift" (80 characters around the figure). The sourcing pass lists 0.4 as UNSOURCED. The register has only fleet punctuality (98.1%, P08). No depot or monthly punctuality figure is in the register or references, so 0.4 cannot be derived. Classification: unsourced.
+Fix: Cite the depot-by-month punctuality table that produces 0.4 points, with its definitions, or remove the figure.
+
+FINDING B-03 · major · /home/user/11/evals/reviewers/B/memo.md, P06
+Category: causal_claim
+Evidence: "...which proves its new shift pattern works." One month's gap between depots is presented as proof that a shift pattern works. Nothing in the register or memo gives a baseline, a comparison group or a test of the shift change.
+Fix: Replace "proves ... works" with the observed gap and its period, and state that the effect of the shift pattern is not established. Alternatively, add the comparison that would support a causal reading.
+
+FINDING B-04 · major · /home/user/11/evals/reviewers/B/memo.md, P04
+Category: causal_claim
+Evidence: "Hot weather causes door faults to double in summer." The register and memo contain no temperature, door-fault or seasonal figures. "Double" is an unsourced ratio; the sourcing pass checks numbers, not this word, so it was not flagged. "Causes" is unsupported, and P10 of the same memo concedes that the data does not show which way effects run even for failures and delay minutes. Classification of "double": unsourced.
+Fix: Cite the seasonal door-fault and temperature data and the method used to separate heat from other summer effects. Otherwise reword as an association and drop the doubling claim.
+
+FINDING B-05 · major · /home/user/11/evals/reviewers/B/memo.md, P05
+Category: unsourced_figure
+Evidence: "Door faults made up 31% of all failures." 31% is not in the register or references. The register gives total failures (1,240) but no door-fault count, so 31% cannot be derived from it. The sourcing pass does not list 31% (the default run lists no unsourced numbers at all, and the --sourcing-only run lists six, none of them 31%), so this finding is manual. Classification: unsourced.
+Fix: Cite the door-fault count and the division against the 1,240 failures, or remove the 31%.
+
+FINDING B-06 · major · /home/user/11/evals/reviewers/B/memo.md, P07
+Category: denominator
+Evidence: "...(the mean of each vehicle's rate), so the register's 96.4% understates it." The register row is "Availability (available hours / scheduled hours),96.4%", a ratio of fleet hours. The memo describes its 98.0% as a mean of per-vehicle rates. The two use different denominators, so the comparison cannot show that the register's 96.4% "understates" availability.
+Fix: Report headline availability on the register's definition (available hours / scheduled hours). If the mean of vehicle rates is shown, label it as that measure and delete "so the register's 96.4% understates it."
+
+FINDING B-07 · major · /home/user/11/evals/reviewers/B/memo.md, P07
+Category: unsourced_figure
+Evidence: "Availability averaged 98.0% across the 40 vehicles (the mean of each vehicle's rate)" (80 characters around the figure). The sourcing pass lists 98.0% as UNSOURCED. The register has only the fleet ratio of 96.4%. No per-vehicle rates are in the register or references, so 98.0% cannot be derived. Classification: unsourced.
+Fix: Add the per-vehicle availability table as a cited reference, or remove the 98.0% figure.
+
+FINDING B-08 · major · /home/user/11/evals/reviewers/B/memo.md, P09
+Category: arithmetic
+Evidence: "Delay minutes per failure were 52,300 ÷ 1,240 = 48.2 minutes." Both inputs are in the register (Delay minutes 52,300; Failures 1,240). The checker's arithmetic check computes 42.177419 for 52,300 ÷ 1,240 and marks the stated result 48.2 as not holding. The sourcing pass also lists 48.2 as UNSOURCED.
+Fix: Recompute the result from the two register inputs, replace 48.2 with the recomputed value, and re-run the checker.
+
+FINDING B-09 · major · /home/user/11/evals/reviewers/B/memo.md, P11
+Category: unsourced_figure
+Evidence: "The new brake pads reduced failures by 12%." 12% is not in the register or references. The register has no before-and-after failure counts, so 12% cannot be derived. The sourcing pass does not list 12%, so this finding is manual. Classification: unsourced.
+Fix: Cite the before and after failure counts and the calculation, or remove the 12%.
+
+FINDING B-10 · major · /home/user/11/evals/reviewers/B/memo.md, P11
+Category: causal_claim
+Evidence: "The new brake pads reduced failures by 12%." The sentence attributes a fall in failures to the pads, with no baseline period, comparison fleet or control. Nothing in the register or memo separates the effect of the pads from other changes over the year.
+Fix: Reword as an observed change over a stated period, or add the analysis that isolates the effect of the pads.
+
+FINDING B-11 · major · /home/user/11/evals/reviewers/B/memo.md, P12
+Category: unsourced_figure
+Evidence: "Spare-parts stockouts cost $1.9 million." The sourcing pass lists $1.9 million as UNSOURCED. No stockout cost or spare-parts figure is in the register or references. Classification: unsourced.
+Fix: Cite the source and scope of the $1.9 million (period and what counts as cost), or remove it.
+
+FINDING B-12 · major · /home/user/11/evals/reviewers/B/memo.md, P13
+Category: unsourced_figure
+Evidence: "A failure-prediction model reached an AUC of 0.81, so it will prevent most failures." The sourcing pass lists 0.81 as UNSOURCED. No model evaluation is in the register or references. Classification: unsourced.
+Fix: Cite the evaluation (data, period and validation split) that produced the AUC, or remove it.
+
+FINDING B-13 · major · /home/user/11/evals/reviewers/B/memo.md, P13
+Category: overclaim
+Evidence: "...so it will prevent most failures." An AUC measures how well a model ranks cases on its evaluation data. It does not measure failures prevented. The register and memo contain no intervention, pilot or counterfactual result, so "will prevent most failures" is unsupported.
+Fix: Remove the prevention claim and state only what the AUC measures. Add a pilot or counterfactual evaluation before claiming prevention.

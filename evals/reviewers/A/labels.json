@@ -1,0 +1,6 @@
+{"about": "Planted defects in memo A, by paragraph. Paragraphs not listed are correct.",
+ "categories": ["unsourced_figure", "arithmetic", "causal_claim", "denominator", "overclaim"],
+ "paragraphs": ["P01","P02","P03","P04","P05","P06","P07","P08","P09","P10","P11","P12","P13","P14","P15","P16"],
+ "defects": {"P02": ["arithmetic"], "P03": ["unsourced_figure"], "P05": ["causal_claim"], "P06": ["denominator"],
+             "P07": ["overclaim"], "P09": ["arithmetic"], "P10": ["causal_claim"], "P12": ["overclaim"],
+             "P13": ["unsourced_figure"], "P15": ["denominator"]}}

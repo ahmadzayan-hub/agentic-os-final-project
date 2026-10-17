@@ -9,7 +9,8 @@ Uizard) — it describes the interface in prose. For tools that generate
 working React (v0, Lovable, Bolt, Subframe), use
 `UI_PROMPT_CODEGEN.md` instead: it carries the real API contract,
 TypeScript types, and design tokens as JSON, so the output can be wired
-to the running backend.
+to the running backend. For a coding agent that works inside this
+repository (OpenAI Codex), use `CODEX_UI_PROMPT.md`.
 
 Two notes before you paste:
 

@@ -1,0 +1,40 @@
+{
+ "about": "The recall each suite must keep (ADR 0027): positive-class recall for a detector, macro recall for a multi-class agent. Set from the latest measurement (round 5 for intent, jargon and causal wording, on blind set v4), rounded down to the whole per cent; tests/test_evals.py fails when a change drops below one. figures_tool is the Tier 0 checker scored as a reviewer on the seeded memos in evals/reviewers (paragraph detection recall, with no false alarms).",
+ "intent": {
+  "dev": 1.0,
+  "holdout": 0.71
+ },
+ "column_roles": {
+  "dev": 1.0,
+  "holdout": 1.0
+ },
+ "personal_data": {
+  "dev": 1.0,
+  "holdout": 1.0
+ },
+ "router": {
+  "dev": 1.0,
+  "holdout": 0.9
+ },
+ "raw_guard": {
+  "dev": 1.0,
+  "holdout": 1.0
+ },
+ "jargon": {
+  "dev": 1.0,
+  "holdout": 0.91
+ },
+ "causal": {
+  "dev": 1.0,
+  "holdout": 0.68
+ },
+ "figures": {
+  "dev": 1.0,
+  "holdout": 1.0
+ },
+ "figures_tool": {
+  "A": 1.0,
+  "B": 1.0,
+  "C": 0.75
+ }
+}

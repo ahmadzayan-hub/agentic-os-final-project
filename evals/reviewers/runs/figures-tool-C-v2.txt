@@ -1,0 +1,15 @@
+FINDING T01 · major · P10
+Category: unsourced_figure
+Evidence: 14% is not in the register.
+
+FINDING T02 · major · P07
+Category: unsourced_figure
+Evidence: 9.8% is not in the register.
+
+FINDING T03 · major · P03
+Category: arithmetic
+Evidence: “[P03] Operating cost per visit came to $52.10 in 2025, computed as $18,450,000 divided by 412,600 visits.” computes to 44.716432.
+
+FINDING T04 · major · P11
+Category: arithmetic
+Evidence: “[P11] Outpatient visits grew 18.0% over 2024, moving from 368,400 to 412,600.” computes to 11.997828.

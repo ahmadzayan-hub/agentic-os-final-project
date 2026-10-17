@@ -1,0 +1,64 @@
+FINDING F01 · major · memo.md · P02
+Category: arithmetic
+Evidence: "[P02] That is one failure every 4,800 km." The register's Operating km (4,960,000) divided by Failures (1,240) gives 4,000; the checker reports this implied calculation as "computes to 4000.0". The register's own Mean km between failures is 4,000, and the memo's P14 also says "Mean distance between failures was 4,000 km.", so P02 contradicts both.
+Fix: Restate P02 with the register's 4,000 km, or name the inputs that produce 4,800 and add them to the register with a source.
+
+FINDING F02 · major · memo.md · P04
+Category: causal_claim
+Evidence: "[P04] Hot weather causes door faults to double in summer." The register and memo have no temperature data and no seasonal door-fault counts. "Causes" is unsupported, and "double" is an unsourced ratio.
+Fix: Remove "causes" and the "double" claim, or add seasonal door-fault counts and a temperature source and state only the observed association.
+
+FINDING F03 · major · memo.md · P05
+Category: unsourced_figure
+Evidence: "[P05] Door faults made up 31% of all failures." The 31% is not in the register. The register has no door-fault count, so it cannot be derived from 1,240 failures. Class: unsourced.
+Fix: Add the door-fault count and its source to the register and show the calculation, or remove the 31%.
+
+FINDING F04 · major · memo.md · P06
+Category: unsourced_figure
+Evidence: "Depot B's punctuality was 0.4 points better in March, which proves its new shift" The 0.4 is not in the register, and the register has no depot or monthly punctuality values. Class: unsourced.
+Fix: Add Depot B's March and comparison punctuality values with a source, or remove the 0.4.
+
+FINDING F05 · major · memo.md · P06
+Category: causal_claim
+Evidence: "Depot B's punctuality was 0.4 points better in March, which proves its new shift pattern works." One month's difference, itself unsourced, cannot prove the cause. The register has no shift data.
+Fix: Replace "proves" with a plain observation, and attribute it to the shift pattern only after a sourced comparison over a stated period.
+
+FINDING F06 · major · memo.md · P07
+Category: unsourced_figure
+Evidence: "Availability averaged 98.0% across the 40 vehicles (the mean of each vehicle's rate)". The register holds only the fleet ratio 96.4% (available hours / scheduled hours). Per-vehicle rates are not in the register, so 98.0% cannot be derived. Class: unsourced.
+Fix: Add the per-vehicle availability values to the register with a source and show the calculation, or remove the 98.0%.
+
+FINDING F07 · major · memo.md · P07
+Category: denominator
+Evidence: "(the mean of each vehicle's rate), so the register's 96.4% understates it." The register's 96.4% is a pooled ratio (available hours / scheduled hours). The memo's 98.0% is an unweighted mean of per-vehicle rates. The two use different denominators, so they are not comparable, and "understates" is not established.
+Fix: Compare on one basis: the pooled ratio over the same hours, or the mean of rates as a separately labelled measure. Drop "understates" unless both figures use the same basis.
+
+FINDING F08 · major · memo.md · P09
+Category: arithmetic
+Evidence: "[P09] Delay minutes per failure were 52,300 ÷ 1,240 = 48.2 minutes." Both inputs are sourced (register: Delay minutes 52,300; Failures 1,240). The checker computes 52,300 ÷ 1,240 = 42.177419 and marks 48.2 as not holding (holds: false).
+Fix: Replace 48.2 with the computed quotient (checker: 42.177419), state the rounding used, and re-run the checker.
+
+FINDING F09 · major · memo.md · P11
+Category: unsourced_figure
+Evidence: "[P11] The new brake pads reduced failures by 12%." The 12% is not in the register. The register and memo have no before-and-after failure counts, so it cannot be derived. Class: unsourced.
+Fix: Add the before and after failure counts and their period to the register and show the calculation, or remove the 12%.
+
+FINDING F10 · major · memo.md · P11
+Category: causal_claim
+Evidence: "[P11] The new brake pads reduced failures by 12%." The sentence credits the brake pads with a change, but the register has no comparison fleet, no pre/post split and no other cause ruled out.
+Fix: State the association and its comparison period, or cite a controlled comparison. Do not attribute the change to the brake pads until then.
+
+FINDING F11 · major · memo.md · P12
+Category: unsourced_figure
+Evidence: "[P12] Spare-parts stockouts cost $1.9 million." The $1.9 million is not in the register, and there is no stockout count or unit cost from which it could be derived. Class: unsourced.
+Fix: Add the figure to the register with its source and calculation, or remove it.
+
+FINDING F12 · major · memo.md · P13
+Category: unsourced_figure
+Evidence: "[P13] A failure-prediction model reached an AUC of 0.81, so it will prevent most failures." The 0.81 is not in the register and has no model-evaluation source. Class: unsourced.
+Fix: Add the evaluation source, the test set and the metric definition to the register, or remove the 0.81.
+
+FINDING F13 · major · memo.md · P13
+Category: overclaim
+Evidence: "so it will prevent most failures." An AUC measures a classifier's ranking ability, not the share of failures prevented. No prevention figure is in the register or the memo.
+Fix: Report what was measured (the AUC on a named test set) and remove the prevention claim unless a sourced prevention rate is added.

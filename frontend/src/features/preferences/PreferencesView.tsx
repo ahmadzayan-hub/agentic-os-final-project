@@ -7,6 +7,7 @@ import { useI18n } from '../../i18n'
 import type { Locale, MessageKey } from '../../i18n'
 import { toneLabel } from '../../shared/labels'
 import type { PreferenceValue } from '../../shared/types'
+import { InstallApp } from './InstallApp'
 
 const TONES = ['friendly', 'concise', 'formal'] as const
 const THEMES: Array<{ id: ThemeChoice; label: MessageKey }> = [
@@ -244,8 +245,10 @@ export function PreferencesView({
               </div>
             </div>
           </div>
+          <InstallApp />
         </div>
       </div>
     </section>
   )
 }
+

@@ -1,0 +1,2034 @@
+{
+ "about": "What a chat sentence asks the assistant to do (assistant.understand). Labels are the action a person means; chat covers small talk and anything outside the vocabulary. English and Arabic. Synthetic sentences.",
+ "labels": [
+  "help",
+  "remember",
+  "recall",
+  "forget",
+  "clear_history",
+  "set_preference",
+  "start_run",
+  "run_status",
+  "explain_report",
+  "chat"
+ ],
+ "dev": [
+  {
+   "text": "help",
+   "label": "help"
+  },
+  {
+   "text": "What can you do?",
+   "label": "help"
+  },
+  {
+   "text": "How does this work?",
+   "label": "help"
+  },
+  {
+   "text": "show me the commands",
+   "label": "help"
+  },
+  {
+   "text": "I'm lost, what are my options?",
+   "label": "help"
+  },
+  {
+   "text": "ساعدني",
+   "label": "help"
+  },
+  {
+   "text": "ماذا يمكنك أن تفعل؟",
+   "label": "help"
+  },
+  {
+   "text": "كيف أستخدم هذا؟",
+   "label": "help"
+  },
+  {
+   "text": "Remember that our fiscal year starts in April",
+   "label": "remember"
+  },
+  {
+   "text": "Please remember the Q3 target is 2 million",
+   "label": "remember"
+  },
+  {
+   "text": "Note that Ali owns the dashboard",
+   "label": "remember"
+  },
+  {
+   "text": "Save this: the board meets on Thursdays",
+   "label": "remember"
+  },
+  {
+   "text": "Keep in mind that revenue excludes VAT",
+   "label": "remember"
+  },
+  {
+   "text": "تذكر أن السنة المالية تبدأ في أبريل",
+   "label": "remember"
+  },
+  {
+   "text": "احفظ أن الاجتماع يوم الخميس",
+   "label": "remember"
+  },
+  {
+   "text": "سجّل ملاحظة: الهدف مليونا درهم",
+   "label": "remember"
+  },
+  {
+   "text": "What do you remember about the budget?",
+   "label": "recall"
+  },
+  {
+   "text": "What did I tell you about targets?",
+   "label": "recall"
+  },
+  {
+   "text": "Show me my notes",
+   "label": "recall"
+  },
+  {
+   "text": "What do you know about me?",
+   "label": "recall"
+  },
+  {
+   "text": "List everything you remember",
+   "label": "recall"
+  },
+  {
+   "text": "ماذا تتذكر عن الميزانية؟",
+   "label": "recall"
+  },
+  {
+   "text": "اعرض ملاحظاتي",
+   "label": "recall"
+  },
+  {
+   "text": "ماذا تعرف عني؟",
+   "label": "recall"
+  },
+  {
+   "text": "Forget memory_3",
+   "label": "forget"
+  },
+  {
+   "text": "Delete memory 2",
+   "label": "forget"
+  },
+  {
+   "text": "Forget everything you remember about me",
+   "label": "forget"
+  },
+  {
+   "text": "Erase all my notes",
+   "label": "forget"
+  },
+  {
+   "text": "انس كل ما تتذكره",
+   "label": "forget"
+  },
+  {
+   "text": "احذف الذاكرة رقم 3",
+   "label": "forget"
+  },
+  {
+   "text": "امسح كل ملاحظاتي",
+   "label": "forget"
+  },
+  {
+   "text": "Clear the chat history",
+   "label": "clear_history"
+  },
+  {
+   "text": "Delete our conversation",
+   "label": "clear_history"
+  },
+  {
+   "text": "Wipe this chat",
+   "label": "clear_history"
+  },
+  {
+   "text": "Start a fresh conversation and clear the history",
+   "label": "clear_history"
+  },
+  {
+   "text": "امسح سجل المحادثة",
+   "label": "clear_history"
+  },
+  {
+   "text": "احذف المحادثة",
+   "label": "clear_history"
+  },
+  {
+   "text": "Call me Ahmad",
+   "label": "set_preference"
+  },
+  {
+   "text": "My name is Sara",
+   "label": "set_preference"
+  },
+  {
+   "text": "Switch to Arabic",
+   "label": "set_preference"
+  },
+  {
+   "text": "Reply in English please",
+   "label": "set_preference"
+  },
+  {
+   "text": "Be more concise",
+   "label": "set_preference"
+  },
+  {
+   "text": "Use a formal tone",
+   "label": "set_preference"
+  },
+  {
+   "text": "Arabic",
+   "label": "set_preference"
+  },
+  {
+   "text": "Please answer in Arabic from now on",
+   "label": "set_preference"
+  },
+  {
+   "text": "ناديني أحمد",
+   "label": "set_preference"
+  },
+  {
+   "text": "اسمي سارة",
+   "label": "set_preference"
+  },
+  {
+   "text": "تحدث بالعربية",
+   "label": "set_preference"
+  },
+  {
+   "text": "كن مختصراً",
+   "label": "set_preference"
+  },
+  {
+   "text": "Analyse the sample data",
+   "label": "start_run"
+  },
+  {
+   "text": "Run an analysis on sales.csv to find why revenue fell",
+   "label": "start_run"
+  },
+  {
+   "text": "Start a new analysis of customer churn",
+   "label": "start_run"
+  },
+  {
+   "text": "Analyze my dataset and tell me what drives margin",
+   "label": "start_run"
+  },
+  {
+   "text": "Can you analyse the regional sales file?",
+   "label": "start_run"
+  },
+  {
+   "text": "حلل البيانات النموذجية",
+   "label": "start_run"
+  },
+  {
+   "text": "ابدأ تحليلاً جديداً للمبيعات",
+   "label": "start_run"
+  },
+  {
+   "text": "أريد تحليل ملف المبيعات",
+   "label": "start_run"
+  },
+  {
+   "text": "Is the analysis done?",
+   "label": "run_status"
+  },
+  {
+   "text": "How is my run going?",
+   "label": "run_status"
+  },
+  {
+   "text": "What's the status of the analysis?",
+   "label": "run_status"
+  },
+  {
+   "text": "Has the report finished yet?",
+   "label": "run_status"
+  },
+  {
+   "text": "Is it still running?",
+   "label": "run_status"
+  },
+  {
+   "text": "هل انتهى التحليل؟",
+   "label": "run_status"
+  },
+  {
+   "text": "ما حالة التشغيل؟",
+   "label": "run_status"
+  },
+  {
+   "text": "Explain the report",
+   "label": "explain_report"
+  },
+  {
+   "text": "Why did revenue fall?",
+   "label": "explain_report"
+  },
+  {
+   "text": "What does the forecast say?",
+   "label": "explain_report"
+  },
+  {
+   "text": "What should I do next based on the report?",
+   "label": "explain_report"
+  },
+  {
+   "text": "Summarise the findings",
+   "label": "explain_report"
+  },
+  {
+   "text": "What happened to sales?",
+   "label": "explain_report"
+  },
+  {
+   "text": "Can we say what caused the drop?",
+   "label": "explain_report"
+  },
+  {
+   "text": "اشرح التقرير",
+   "label": "explain_report"
+  },
+  {
+   "text": "ماذا يقول التنبؤ؟",
+   "label": "explain_report"
+  },
+  {
+   "text": "لماذا انخفضت الإيرادات؟",
+   "label": "explain_report"
+  },
+  {
+   "text": "Hello",
+   "label": "chat"
+  },
+  {
+   "text": "Thanks a lot!",
+   "label": "chat"
+  },
+  {
+   "text": "I like Arabic coffee",
+   "label": "chat"
+  },
+  {
+   "text": "The weather is nice today",
+   "label": "chat"
+  },
+  {
+   "text": "Who won the football match?",
+   "label": "chat"
+  },
+  {
+   "text": "Good morning",
+   "label": "chat"
+  },
+  {
+   "text": "Tell me a joke",
+   "label": "chat"
+  },
+  {
+   "text": "مرحبا",
+   "label": "chat"
+  },
+  {
+   "text": "شكراً جزيلاً",
+   "label": "chat"
+  },
+  {
+   "text": "أحب القهوة العربية",
+   "label": "chat"
+  },
+  {
+   "text": "كيف حالك؟",
+   "label": "chat"
+  },
+  {
+   "text": "What commands are available?",
+   "label": "help",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Help me get started",
+   "label": "help",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "ما الأوامر المتاحة؟",
+   "label": "help",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Guide me please",
+   "label": "help",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Remember: the audit is due in May",
+   "label": "remember",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Make a note that Khalid prefers weekly reports",
+   "label": "remember",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "تذكّر أن التدقيق في مايو",
+   "label": "remember",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Don't forget that prices rose in June",
+   "label": "remember",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "What notes do you have?",
+   "label": "recall",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Remind me what I said about prices",
+   "label": "recall",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "ذكرني بما قلته عن الأسعار",
+   "label": "recall",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "What have I asked you to remember?",
+   "label": "recall",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Forget memory_7",
+   "label": "forget",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Remove everything you know about me",
+   "label": "forget",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "انسَ الملاحظة 7",
+   "label": "forget",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Delete all memories",
+   "label": "forget",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Clear our chat",
+   "label": "clear_history",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Erase the conversation history",
+   "label": "clear_history",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "امسح المحادثة",
+   "label": "clear_history",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Please call me Dr. Laila",
+   "label": "set_preference",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Talk to me in English",
+   "label": "set_preference",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Be formal",
+   "label": "set_preference",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "استخدم أسلوباً رسمياً",
+   "label": "set_preference",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Shorter answers please",
+   "label": "set_preference",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Analyze the sample dataset",
+   "label": "start_run",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Kick off an analysis of the Q4 sales",
+   "label": "start_run",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "شغّل تحليلاً على البيانات النموذجية",
+   "label": "start_run",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Please run the analysis on churn.csv",
+   "label": "start_run",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Is my analysis finished?",
+   "label": "run_status",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Any progress on the run?",
+   "label": "run_status",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "هل اكتمل التقرير؟",
+   "label": "run_status",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Where is the analysis at?",
+   "label": "run_status",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Walk me through the report",
+   "label": "explain_report",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "What does the analysis recommend?",
+   "label": "explain_report",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "اشرح النتائج",
+   "label": "explain_report",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "What will happen next quarter?",
+   "label": "explain_report",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Hi there",
+   "label": "chat",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "Thank you",
+   "label": "chat",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "نهارك سعيد",
+   "label": "chat",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "What's your favourite colour?",
+   "label": "chat",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "I had a long day",
+   "label": "chat",
+   "source": "holdout v1, promoted to dev after round 1"
+  },
+  {
+   "text": "what can you actually do for me? I'm not sure where to start",
+   "label": "help",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "How do I upload a sales file and get a report out of it?",
+   "label": "help",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "ايش تقدر تسوي بالضبط؟ وكيف أبدأ معك؟",
+   "label": "help",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "ممكن توضح لي كيف أستخدم هذا المساعد لتحليل بياناتنا؟",
+   "label": "help",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Please remember that our Q4 budget ceiling is 1.2 million, I need it next time.",
+   "label": "remember",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "note this down: the Riyadh warehouse closes for stocktake on the 3rd of each month",
+   "label": "remember",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "احفظ عندك إن مورد التغليف يتأخر عادة أسبوعين في رمضان.",
+   "label": "remember",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "أرجو تسجل في الذاكرة أن هدف الهامش لقسم الصيانة ١٨٪ للربع القادم.",
+   "label": "remember",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "what did I ask you to keep track of last week?",
+   "label": "recall",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Do you still have the note about the supplier payment terms?",
+   "label": "recall",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "وش اللي خزنته لي قبل؟ ابغى أشوف القائمة.",
+   "label": "recall",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "هل تتذكر الملاحظة التي حفظتها عن أسعار الشحن؟",
+   "label": "recall",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Delete the note about the warehouse stocktake, it's no longer valid.",
+   "label": "forget",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "wipe everything you've saved about me, start fresh",
+   "label": "forget",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "امسح الملاحظة المتعلقة بعدد الموظفين، تغيرت الأرقام.",
+   "label": "forget",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "احذف كل اللي حفظته عني وخلنا نبدأ من جديد.",
+   "label": "forget",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Can you clear this chat? It's getting too cluttered to read.",
+   "label": "clear_history",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Delete our conversation history from this morning please.",
+   "label": "clear_history",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "امسح سجل المحادثة كله من فضلك.",
+   "label": "clear_history",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "فضي الشات واحذف الرسائل اللي فوق، ما أبي أحد يشوفها.",
+   "label": "clear_history",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "From now on call me Layla and answer in English only.",
+   "label": "set_preference",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Keep your replies short and to the point, no fluff.",
+   "label": "set_preference",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "خاطبني باسم يوسف، وردّ علي بالعربية الفصحى من الآن.",
+   "label": "set_preference",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "ابغى ردودك بأسلوب ودي، مو رسمي زيادة.",
+   "label": "set_preference",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Run an analysis on the March maintenance tickets file I just uploaded.",
+   "label": "start_run",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Can you start a report on last year's sales by region? The CSV is attached.",
+   "label": "start_run",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "ابغى تحليل جديد على ملف المخزون اللي رفعته اليوم، ابدأ فيه.",
+   "label": "start_run",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "أحتاج تقريراً كاملاً عن الإنفاق التشغيلي للربع الثالث، ابدأ التحليل من الملف المرفق.",
+   "label": "start_run",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Is the analysis on the fuel-cost dataset done yet?",
+   "label": "run_status",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "How far along is the report? It's been running for ages.",
+   "label": "run_status",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "خلص التحليل ولا لسا يشتغل؟",
+   "label": "run_status",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "هل انتهت عملية التحليل الجارية حتى الآن؟",
+   "label": "run_status",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "Why did the cost per repair go up in August according to the report?",
+   "label": "explain_report",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "What should we do about the drop in repeat customers the report flagged?",
+   "label": "explain_report",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "ليش طلعت تكلفة الصيانة عالية في الربع الثاني حسب التقرير؟",
+   "label": "explain_report",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "ما توقعات المبيعات للربع القادم وفق التقرير المنتهي؟",
+   "label": "explain_report",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "good morning, how's your day going?",
+   "label": "chat",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "lol that was a rough meeting earlier",
+   "label": "chat",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "صباح الخير، كيفك اليوم؟",
+   "label": "chat",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "شكراً على مساعدتك أمس، كان ردك ممتازاً.",
+   "label": "chat",
+   "source": "blind v2, promoted to dev after round 2"
+  },
+  {
+   "text": "what can you actually do for me? im not very technical tbh",
+   "label": "help",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Could you possibly walk me through how to upload a spreadsheet and get a report out of it?",
+   "label": "help",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "how do i even start using this thing",
+   "label": "help",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "ما الذي يمكنك أن تفعله لمساعدتي في تحليل بيانات شركتي؟",
+   "label": "help",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "شو تقدر تسوي لي بالضبط؟ أنا ما فاهم كيف أبدأ",
+   "label": "help",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "ممكن تفهمني أستخدمك إزاي؟ أنا مش فاهم حاجة",
+   "label": "help",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Please note that our fiscal year closes on 30 June, keep that in mind for later.",
+   "label": "remember",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Note that the Riyadh depot is shut every Friday for maintenance.",
+   "label": "remember",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Save this for next time: the Q4 fleet availability target is 96 percent.",
+   "label": "remember",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "من فضلك احفظ هذه المعلومة: تُجرى الصيانة الدورية للمحركات كل ستة آلاف كيلومتر.",
+   "label": "remember",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "خلك حافظ عندك إن المورد الجديد يطلب الدفع خلال 45 يوم",
+   "label": "remember",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "سجل عندك إن الخصم الموسمي هيبدأ يوم 15 الشهر الجاي ومتنساش",
+   "label": "remember",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "what did I tell you to remember about the supplier payment terms?",
+   "label": "recall",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "do you still have my note about the Dammam route closure?",
+   "label": "recall",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "what have you got saved about me so far, just list it",
+   "label": "recall",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "ما الملاحظات التي خزنتها لي حتى الآن؟",
+   "label": "recall",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "وش المعلومات اللي حفظتها لي قبل؟",
+   "label": "recall",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "إنت فاكر إيه اللي سجلته عندك عن عقد النقل؟",
+   "label": "recall",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "delete the note about the old warehouse address, it moved",
+   "label": "forget",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "wipe everything you've stored on me, all of it",
+   "label": "forget",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "pls forget that thing about the discount i mentioned earlier",
+   "label": "forget",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "امسح الملاحظة المتعلقة بعنوان المستودع القديم من فضلك.",
+   "label": "forget",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "احذف كل اللي حفظته عني، ما أبي شي يبقى",
+   "label": "forget",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "امسح المعلومة اللي قولتهالك عن الميزانية القديمة دي",
+   "label": "forget",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "clear this chat, I want a fresh start",
+   "label": "clear_history",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "can you delete the whole conversation so far",
+   "label": "clear_history",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Erase our previous messages from this session, please.",
+   "label": "clear_history",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "هل يمكنك حذف سجل هذه المحادثة بالكامل؟",
+   "label": "clear_history",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "امسح المحادثة كلها خلنا نبدي من جديد",
+   "label": "clear_history",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "امسح الشات ده كله عشان مش عايز الكلام القديم يفضل هنا",
+   "label": "clear_history",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "From now on answer me in Arabic, my team reads better in it.",
+   "label": "set_preference",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "keep your replies short and to the point pls",
+   "label": "set_preference",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Call me Sara from now on, and be a bit more formal with me.",
+   "label": "set_preference",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "أرجو أن تكون ردودك رسمية في المرات القادمة.",
+   "label": "set_preference",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "خلّ الردود بالإنجليزي من الحين، أحسن لي وللفريق",
+   "label": "set_preference",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "نفسي تكلمني بأسلوب ودود أكتر شوية، بلاش الكلام الجاف ده",
+   "label": "set_preference",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "analyse Q2 costs",
+   "label": "start_run",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Can you run an analysis on the March sales export I just uploaded?",
+   "label": "start_run",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Would you mind going through the full Q3 finance sheet and putting together a proper report? No rush, but I need it before the board pack goes out on Monday.",
+   "label": "start_run",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "أرجو تحليل ملف بيانات الشحن الذي رفعته للتو وإعداد تقرير شامل عنه.",
+   "label": "start_run",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "ابغى تحلل ملف المبيعات حق الشهر هذا وتطلع لي تقرير",
+   "label": "start_run",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "ممكن تعمل تحليل لملف الصيانة اللي رفعته امبارح؟",
+   "label": "start_run",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "is the analysis done yet",
+   "label": "run_status",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "How far along is the report? It has been running for a while now.",
+   "label": "run_status",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Has the run finished, or is it still stuck on one of the stages?",
+   "label": "run_status",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "هل انتهى التحليل الجاري أم أنه ما زال قيد التنفيذ؟",
+   "label": "run_status",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "التحليل وصل لوين؟ لا زال يشتغل ولا خلص؟",
+   "label": "run_status",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "التقرير خلص ولا لسه بيشتغل؟",
+   "label": "run_status",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "why did returns go up in the northern region according to the report?",
+   "label": "explain_report",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "What does the forecast say for next quarter, and how confident is it?",
+   "label": "explain_report",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "give me the main takeaways from the finished report in plain words",
+   "label": "explain_report",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "ما الأسباب التي أظهرها التقرير لانخفاض الإيرادات في الفرع الغربي؟",
+   "label": "explain_report",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "ليش الطلبات نزلت بالشهر الثالث حسب التقرير؟ فسّرلي",
+   "label": "explain_report",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "التقرير بيقول إيه بالظبط عن المصاريف في الربع اللي فات؟",
+   "label": "explain_report",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "good morning, how's your day going?",
+   "label": "chat",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "lol that was a rough week, wasn't it",
+   "label": "chat",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "Do you follow football at all? Just curious, nothing to do with the data.",
+   "label": "chat",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "شكراً لك على مساعدتك، أنت رائع حقاً.",
+   "label": "chat",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "هلا والله، شخبارك اليوم؟",
+   "label": "chat",
+   "source": "blind v3, promoted to dev after round 3"
+  },
+  {
+   "text": "إنت بتتابع الدوري المصري؟ عايز أعرف رأيك",
+   "label": "chat",
+   "source": "blind v3, promoted to dev after round 3"
+  }
+ ],
+ "holdout": [
+  {
+   "text": "what can you actually do for me? I'm new here and not sure where to start",
+   "label": "help",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "how do i upload a sheet and get a report out of it",
+   "label": "help",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Could you possibly give me a quick tour of the main features before I load our maintenance data?",
+   "label": "help",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ما هي الإمكانيات التي توفرها هذه المنصة لتحليل بيانات الصيانة؟",
+   "label": "help",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "كيف أرفع ملف الإكسل وأحصل على تقرير منه؟",
+   "label": "help",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ايش تقدر تسوي بالضبط؟ ابغى أعرف قبل ما أبدأ",
+   "label": "help",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Please remember that the Q3 supplier audit is due on 14 November.",
+   "label": "remember",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "note for later: the Riyadh depot switched to the new fleet tracker in March, so older numbers from before that date are not comparable",
+   "label": "remember",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "remember that in the March tab the qty column is cartons not units, so don't convert it, I'll upload the file later",
+   "label": "remember",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "احفظ عندك إن ميزانية قطع الغيار للربع الثاني زادت ١٢٪",
+   "label": "remember",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "يرجى تذكّر أن المورد الجديد للأدوية يحتاج اعتماداً قبل نهاية الشهر",
+   "label": "remember",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "خلي في بالك إن المستشفى الشمالي غيّر نظام الفرز من الأسبوع الجاي",
+   "label": "remember",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "what did I ask you to remember about the depot?",
+   "label": "recall",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Do you still have the note about the freight contract renewal?",
+   "label": "recall",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "list everything you've stored for me so far",
+   "label": "recall",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "وش الشي اللي حفظته لي عن موردين الصيانة؟",
+   "label": "recall",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "هل ما زلت تحتفظ بالملاحظة التي طلبتُ منك حفظها عن عقد الشحن؟",
+   "label": "recall",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ورّيني كل المعلومات اللي حفظتها عندي قبل كده",
+   "label": "recall",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "delete the note about the depot, it's wrong",
+   "label": "forget",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "clear all my saved memories please, I want to start fresh",
+   "label": "forget",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Could you possibly drop the freight contract note from what you know about me?",
+   "label": "forget",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "امسح الملاحظة عن المورد الجديد، طلعت غلط",
+   "label": "forget",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "يرجى حذف جميع المعلومات المحفوظة عني",
+   "label": "forget",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "شيل كل اللي حفظته عني، ابغى نبدأ من جديد",
+   "label": "forget",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "clear this chat, I don't want the old messages showing",
+   "label": "clear_history",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "wipe the conversation history, it's getting too long",
+   "label": "clear_history",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Would it be possible to reset this thread so the earlier questions are gone?",
+   "label": "clear_history",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "امسح المحادثة كلها من فضلك",
+   "label": "clear_history",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ابغى أفضي المحادثة وأبدأ من جديد",
+   "label": "clear_history",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "احذف سجل الدردشة اللي فوق ده",
+   "label": "clear_history",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "from now on reply in Arabic please, my team reads the answers in Arabic",
+   "label": "set_preference",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "my name is Dana, use it when you greet me",
+   "label": "set_preference",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "make your tone a bit friendlier and less stiff, thanks",
+   "label": "set_preference",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "خاطبني باسم فهد من الآن فصاعداً",
+   "label": "set_preference",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ابغى الردود بالإنجليزي مو بالعربي",
+   "label": "set_preference",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "اجعل نبرة الردود أكثر رسمية، فالتقارير ستُعرض على الإدارة",
+   "label": "set_preference",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "run the analysis on the Q2 maintenance logs",
+   "label": "start_run",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Could you possibly start a report on last month's bus delay data? Thanks in advance",
+   "label": "start_run",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "I have a sales sheet from the retail chain with about forty stores and nine categories and I need a full analysis of margins by store, so please start that run whenever you can",
+   "label": "start_run",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ابدأ تحليل ملف الشحنات الأخير وأعطني تقريراً",
+   "label": "start_run",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "أرجو تشغيل تحليل لبيانات أوقات الانتظار في الطوارئ للربع الأول",
+   "label": "start_run",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "شغّل لي تحليل الميزانية على الملف اللي رفعته",
+   "label": "start_run",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "is the analysis done yet?",
+   "label": "run_status",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "how far along is the report? it's been running for ages",
+   "label": "run_status",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Has the pipeline finished the cost stage, or is it still going?",
+   "label": "run_status",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "خلص التحليل ولا لسه شغال؟",
+   "label": "run_status",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "وين وصل التقرير؟ كم باقي له؟",
+   "label": "run_status",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "هل انتهت المرحلة الأخيرة من تحليل المخزون أم ما زالت قيد التشغيل؟",
+   "label": "run_status",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "why did on-time arrivals drop in August according to the report?",
+   "label": "explain_report",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Can you summarise what the finished report says about returns?",
+   "label": "explain_report",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "What does the forecast say we should do about inventory in the north stores?",
+   "label": "explain_report",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "لخّص لي أهم ما ورد في التقرير المكتمل عن الإيرادات",
+   "label": "explain_report",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "وش توقعات التقرير للمبيعات الجاية وإيش المفروض نسوي؟",
+   "label": "explain_report",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "التقرير بيقول إيه بالظبط عن سبب زيادة الأعطال في الخطوط؟",
+   "label": "explain_report",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "good morning! hope your week is going well",
+   "label": "chat",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "lol the coffee machine on our floor is broken again",
+   "label": "chat",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Do you think it will rain in Dubai this weekend?",
+   "label": "chat",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "صباح الخير، كيف حالك اليوم؟",
+   "label": "chat",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "يا جماعة الجو حر مرّة اليوم، ما قدرت أركز",
+   "label": "chat",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "عامل إيه؟ يومك كان مزحوم ولا إيه؟",
+   "label": "chat",
+   "source": "blind v4, written by an independent agent from the label definitions only"
+  }
+ ],
+ "holdout_v1": [
+  {
+   "text": "What commands are available?",
+   "label": "help"
+  },
+  {
+   "text": "Help me get started",
+   "label": "help"
+  },
+  {
+   "text": "ما الأوامر المتاحة؟",
+   "label": "help"
+  },
+  {
+   "text": "Guide me please",
+   "label": "help"
+  },
+  {
+   "text": "Remember: the audit is due in May",
+   "label": "remember"
+  },
+  {
+   "text": "Make a note that Khalid prefers weekly reports",
+   "label": "remember"
+  },
+  {
+   "text": "تذكّر أن التدقيق في مايو",
+   "label": "remember"
+  },
+  {
+   "text": "Don't forget that prices rose in June",
+   "label": "remember"
+  },
+  {
+   "text": "What notes do you have?",
+   "label": "recall"
+  },
+  {
+   "text": "Remind me what I said about prices",
+   "label": "recall"
+  },
+  {
+   "text": "ذكرني بما قلته عن الأسعار",
+   "label": "recall"
+  },
+  {
+   "text": "What have I asked you to remember?",
+   "label": "recall"
+  },
+  {
+   "text": "Forget memory_7",
+   "label": "forget"
+  },
+  {
+   "text": "Remove everything you know about me",
+   "label": "forget"
+  },
+  {
+   "text": "انسَ الملاحظة 7",
+   "label": "forget"
+  },
+  {
+   "text": "Delete all memories",
+   "label": "forget"
+  },
+  {
+   "text": "Clear our chat",
+   "label": "clear_history"
+  },
+  {
+   "text": "Erase the conversation history",
+   "label": "clear_history"
+  },
+  {
+   "text": "امسح المحادثة",
+   "label": "clear_history"
+  },
+  {
+   "text": "Please call me Dr. Laila",
+   "label": "set_preference"
+  },
+  {
+   "text": "Talk to me in English",
+   "label": "set_preference"
+  },
+  {
+   "text": "Be formal",
+   "label": "set_preference"
+  },
+  {
+   "text": "استخدم أسلوباً رسمياً",
+   "label": "set_preference"
+  },
+  {
+   "text": "Shorter answers please",
+   "label": "set_preference"
+  },
+  {
+   "text": "Analyze the sample dataset",
+   "label": "start_run"
+  },
+  {
+   "text": "Kick off an analysis of the Q4 sales",
+   "label": "start_run"
+  },
+  {
+   "text": "شغّل تحليلاً على البيانات النموذجية",
+   "label": "start_run"
+  },
+  {
+   "text": "Please run the analysis on churn.csv",
+   "label": "start_run"
+  },
+  {
+   "text": "Is my analysis finished?",
+   "label": "run_status"
+  },
+  {
+   "text": "Any progress on the run?",
+   "label": "run_status"
+  },
+  {
+   "text": "هل اكتمل التقرير؟",
+   "label": "run_status"
+  },
+  {
+   "text": "Where is the analysis at?",
+   "label": "run_status"
+  },
+  {
+   "text": "Walk me through the report",
+   "label": "explain_report"
+  },
+  {
+   "text": "What does the analysis recommend?",
+   "label": "explain_report"
+  },
+  {
+   "text": "اشرح النتائج",
+   "label": "explain_report"
+  },
+  {
+   "text": "What will happen next quarter?",
+   "label": "explain_report"
+  },
+  {
+   "text": "Hi there",
+   "label": "chat"
+  },
+  {
+   "text": "Thank you",
+   "label": "chat"
+  },
+  {
+   "text": "نهارك سعيد",
+   "label": "chat"
+  },
+  {
+   "text": "What's your favourite colour?",
+   "label": "chat"
+  },
+  {
+   "text": "I had a long day",
+   "label": "chat"
+  }
+ ],
+ "holdout_v2": [
+  {
+   "text": "what can you actually do for me? I'm not sure where to start",
+   "label": "help",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "How do I upload a sales file and get a report out of it?",
+   "label": "help",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ايش تقدر تسوي بالضبط؟ وكيف أبدأ معك؟",
+   "label": "help",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ممكن توضح لي كيف أستخدم هذا المساعد لتحليل بياناتنا؟",
+   "label": "help",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Please remember that our Q4 budget ceiling is 1.2 million, I need it next time.",
+   "label": "remember",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "note this down: the Riyadh warehouse closes for stocktake on the 3rd of each month",
+   "label": "remember",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "احفظ عندك إن مورد التغليف يتأخر عادة أسبوعين في رمضان.",
+   "label": "remember",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "أرجو تسجل في الذاكرة أن هدف الهامش لقسم الصيانة ١٨٪ للربع القادم.",
+   "label": "remember",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "what did I ask you to keep track of last week?",
+   "label": "recall",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Do you still have the note about the supplier payment terms?",
+   "label": "recall",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "وش اللي خزنته لي قبل؟ ابغى أشوف القائمة.",
+   "label": "recall",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "هل تتذكر الملاحظة التي حفظتها عن أسعار الشحن؟",
+   "label": "recall",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Delete the note about the warehouse stocktake, it's no longer valid.",
+   "label": "forget",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "wipe everything you've saved about me, start fresh",
+   "label": "forget",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "امسح الملاحظة المتعلقة بعدد الموظفين، تغيرت الأرقام.",
+   "label": "forget",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "احذف كل اللي حفظته عني وخلنا نبدأ من جديد.",
+   "label": "forget",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Can you clear this chat? It's getting too cluttered to read.",
+   "label": "clear_history",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Delete our conversation history from this morning please.",
+   "label": "clear_history",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "امسح سجل المحادثة كله من فضلك.",
+   "label": "clear_history",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "فضي الشات واحذف الرسائل اللي فوق، ما أبي أحد يشوفها.",
+   "label": "clear_history",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "From now on call me Layla and answer in English only.",
+   "label": "set_preference",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Keep your replies short and to the point, no fluff.",
+   "label": "set_preference",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "خاطبني باسم يوسف، وردّ علي بالعربية الفصحى من الآن.",
+   "label": "set_preference",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ابغى ردودك بأسلوب ودي، مو رسمي زيادة.",
+   "label": "set_preference",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Run an analysis on the March maintenance tickets file I just uploaded.",
+   "label": "start_run",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Can you start a report on last year's sales by region? The CSV is attached.",
+   "label": "start_run",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ابغى تحليل جديد على ملف المخزون اللي رفعته اليوم، ابدأ فيه.",
+   "label": "start_run",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "أحتاج تقريراً كاملاً عن الإنفاق التشغيلي للربع الثالث، ابدأ التحليل من الملف المرفق.",
+   "label": "start_run",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Is the analysis on the fuel-cost dataset done yet?",
+   "label": "run_status",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "How far along is the report? It's been running for ages.",
+   "label": "run_status",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "خلص التحليل ولا لسا يشتغل؟",
+   "label": "run_status",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "هل انتهت عملية التحليل الجارية حتى الآن؟",
+   "label": "run_status",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Why did the cost per repair go up in August according to the report?",
+   "label": "explain_report",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "What should we do about the drop in repeat customers the report flagged?",
+   "label": "explain_report",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ليش طلعت تكلفة الصيانة عالية في الربع الثاني حسب التقرير؟",
+   "label": "explain_report",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ما توقعات المبيعات للربع القادم وفق التقرير المنتهي؟",
+   "label": "explain_report",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "good morning, how's your day going?",
+   "label": "chat",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "lol that was a rough meeting earlier",
+   "label": "chat",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "صباح الخير، كيفك اليوم؟",
+   "label": "chat",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "شكراً على مساعدتك أمس، كان ردك ممتازاً.",
+   "label": "chat",
+   "source": "blind v2, written by an independent agent from the label definitions only"
+  }
+ ],
+ "holdout_v3": [
+  {
+   "text": "what can you actually do for me? im not very technical tbh",
+   "label": "help",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Could you possibly walk me through how to upload a spreadsheet and get a report out of it?",
+   "label": "help",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "how do i even start using this thing",
+   "label": "help",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ما الذي يمكنك أن تفعله لمساعدتي في تحليل بيانات شركتي؟",
+   "label": "help",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "شو تقدر تسوي لي بالضبط؟ أنا ما فاهم كيف أبدأ",
+   "label": "help",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ممكن تفهمني أستخدمك إزاي؟ أنا مش فاهم حاجة",
+   "label": "help",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Please note that our fiscal year closes on 30 June, keep that in mind for later.",
+   "label": "remember",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Note that the Riyadh depot is shut every Friday for maintenance.",
+   "label": "remember",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Save this for next time: the Q4 fleet availability target is 96 percent.",
+   "label": "remember",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "من فضلك احفظ هذه المعلومة: تُجرى الصيانة الدورية للمحركات كل ستة آلاف كيلومتر.",
+   "label": "remember",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "خلك حافظ عندك إن المورد الجديد يطلب الدفع خلال 45 يوم",
+   "label": "remember",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "سجل عندك إن الخصم الموسمي هيبدأ يوم 15 الشهر الجاي ومتنساش",
+   "label": "remember",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "what did I tell you to remember about the supplier payment terms?",
+   "label": "recall",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "do you still have my note about the Dammam route closure?",
+   "label": "recall",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "what have you got saved about me so far, just list it",
+   "label": "recall",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ما الملاحظات التي خزنتها لي حتى الآن؟",
+   "label": "recall",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "وش المعلومات اللي حفظتها لي قبل؟",
+   "label": "recall",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "إنت فاكر إيه اللي سجلته عندك عن عقد النقل؟",
+   "label": "recall",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "delete the note about the old warehouse address, it moved",
+   "label": "forget",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "wipe everything you've stored on me, all of it",
+   "label": "forget",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "pls forget that thing about the discount i mentioned earlier",
+   "label": "forget",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "امسح الملاحظة المتعلقة بعنوان المستودع القديم من فضلك.",
+   "label": "forget",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "احذف كل اللي حفظته عني، ما أبي شي يبقى",
+   "label": "forget",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "امسح المعلومة اللي قولتهالك عن الميزانية القديمة دي",
+   "label": "forget",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "clear this chat, I want a fresh start",
+   "label": "clear_history",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "can you delete the whole conversation so far",
+   "label": "clear_history",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Erase our previous messages from this session, please.",
+   "label": "clear_history",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "هل يمكنك حذف سجل هذه المحادثة بالكامل؟",
+   "label": "clear_history",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "امسح المحادثة كلها خلنا نبدي من جديد",
+   "label": "clear_history",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "امسح الشات ده كله عشان مش عايز الكلام القديم يفضل هنا",
+   "label": "clear_history",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "From now on answer me in Arabic, my team reads better in it.",
+   "label": "set_preference",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "keep your replies short and to the point pls",
+   "label": "set_preference",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Call me Sara from now on, and be a bit more formal with me.",
+   "label": "set_preference",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "أرجو أن تكون ردودك رسمية في المرات القادمة.",
+   "label": "set_preference",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "خلّ الردود بالإنجليزي من الحين، أحسن لي وللفريق",
+   "label": "set_preference",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "نفسي تكلمني بأسلوب ودود أكتر شوية، بلاش الكلام الجاف ده",
+   "label": "set_preference",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "analyse Q2 costs",
+   "label": "start_run",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Can you run an analysis on the March sales export I just uploaded?",
+   "label": "start_run",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Would you mind going through the full Q3 finance sheet and putting together a proper report? No rush, but I need it before the board pack goes out on Monday.",
+   "label": "start_run",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "أرجو تحليل ملف بيانات الشحن الذي رفعته للتو وإعداد تقرير شامل عنه.",
+   "label": "start_run",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ابغى تحلل ملف المبيعات حق الشهر هذا وتطلع لي تقرير",
+   "label": "start_run",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ممكن تعمل تحليل لملف الصيانة اللي رفعته امبارح؟",
+   "label": "start_run",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "is the analysis done yet",
+   "label": "run_status",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "How far along is the report? It has been running for a while now.",
+   "label": "run_status",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Has the run finished, or is it still stuck on one of the stages?",
+   "label": "run_status",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "هل انتهى التحليل الجاري أم أنه ما زال قيد التنفيذ؟",
+   "label": "run_status",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "التحليل وصل لوين؟ لا زال يشتغل ولا خلص؟",
+   "label": "run_status",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "التقرير خلص ولا لسه بيشتغل؟",
+   "label": "run_status",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "why did returns go up in the northern region according to the report?",
+   "label": "explain_report",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "What does the forecast say for next quarter, and how confident is it?",
+   "label": "explain_report",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "give me the main takeaways from the finished report in plain words",
+   "label": "explain_report",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ما الأسباب التي أظهرها التقرير لانخفاض الإيرادات في الفرع الغربي؟",
+   "label": "explain_report",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "ليش الطلبات نزلت بالشهر الثالث حسب التقرير؟ فسّرلي",
+   "label": "explain_report",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "التقرير بيقول إيه بالظبط عن المصاريف في الربع اللي فات؟",
+   "label": "explain_report",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "good morning, how's your day going?",
+   "label": "chat",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "lol that was a rough week, wasn't it",
+   "label": "chat",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "Do you follow football at all? Just curious, nothing to do with the data.",
+   "label": "chat",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "شكراً لك على مساعدتك، أنت رائع حقاً.",
+   "label": "chat",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "هلا والله، شخبارك اليوم؟",
+   "label": "chat",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  },
+  {
+   "text": "إنت بتتابع الدوري المصري؟ عايز أعرف رأيك",
+   "label": "chat",
+   "source": "blind v3, written by an independent agent from the label definitions only"
+  }
+ ]
+}

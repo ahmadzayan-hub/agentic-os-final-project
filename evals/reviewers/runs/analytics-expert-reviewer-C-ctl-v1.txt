@@ -1,0 +1,46 @@
+FINDING 1 · blocker · P02
+Category: unsourced_figure
+Evidence: "About one patient in five arrived after their appointment time" gives no count, no denominator and no source. The register (`register.csv`) has no lateness or punctuality KPI, and no other paragraph supports it. It is a headline operational claim with nothing behind it to recompute.
+Fix: Remove the sentence. Or define the KPI (late arrivals / attended appointments) with its numerator and denominator, add it to the register, and cite it.
+
+FINDING 2 · blocker · P03
+Category: arithmetic
+Evidence: The paragraph states its own calculation, $18,450,000 / 412,600. Recomputed, that is $44.716, or $44.72. The memo says $52.10. The register row "Operating cost per visit (ratio: operating cost / visits)" expects $44.72. $52.10 would need about 354,127 visits, which matches no figure in the memo. The paragraph's own inputs contradict its output, so it overstates cost per visit by $7.38 (16.5%).
+Fix: Change $52.10 to $44.72.
+
+FINDING 3 · major · P05
+Category: causal_claim
+Evidence: "The SMS reminder scheme pulled the no-show rate down to 8.4%." The memo gives no pre-scheme rate, no comparison group and no timing of the rollout. It covers one year and three clinics with no design that separates a reminder effect from anything else. The 8.4% figure itself is right (29,400 / 350,000 = 0.084, as in P06 and the register). The causal verb "pulled down" is what lacks support. P12 says the figures cannot confirm explanations, which contradicts this sentence.
+Fix: Write "The no-show rate was 8.4% of booked appointments (29,400 / 350,000)." Add "SMS reminders were in use; this memo does not test their effect" if the scheme matters. Or add a baseline period or a comparison group before using "pulled down".
+
+FINDING 4 · blocker · P07
+Category: denominator
+Evidence: The memo averages the three clinic rates, (12.0 + 6.0 + 11.4) / 3 = 9.8%, and calls this the department rate. A rate over many records must be a ratio of sums. Summing the clinic components gives 6,000 + 12,000 + 11,400 = 29,400 no-shows and 50,000 + 200,000 + 100,000 = 350,000 booked, so 29,400 / 350,000 = 8.4%. The register expects 8.4%. The simple average gives Clinic A (50,000 booked) and Clinic B (200,000 booked) the same weight. That overstates the rate by 1.4 percentage points. It also contradicts P05, P06 and P15, which give 8.4% for the same measure.
+Fix: Replace 9.8% with 8.4% (29,400 / 350,000), or delete P07. State that the department rate is the ratio of summed no-shows to summed booked appointments.
+
+FINDING 5 · major · P08
+Category: overclaim
+Evidence: "Clinic B's 6.0% no-show rate settles the matter: every clinic can expect that level next year, so staffing should be planned on it." This rests on one year of one clinic, and the figures are 6.0% (12,000 / 200,000) against 12.0% for A and 11.4% for C. B is just the lowest of three and holds 200,000 of 350,000 bookings. Nothing in the memo shows A and C could reach 6.0%, so nothing supports calling it settled. The staffing recommendation also rests on a forecast with no interval. Planning every clinic on B's rate would understate no-shows at A and C. At 8.4% overall, 6.0% would imply about 8,400 fewer no-shows than the observed 29,400, an illustrative gap that is not labelled as such. P12 itself says the data are single-year associations.
+Fix: State the observation: "Clinic B had the lowest no-show rate in 2025, 6.0%." Say it is not shown to transfer to other clinics. Plan staffing on each clinic's own rate or on the pooled 8.4%, and label any projection as illustrative.
+
+FINDING 6 · blocker · P10
+Category: unsourced_figure
+Evidence: "Nurse vacancies stood at 14% through the year." There is no numerator (vacant posts), no denominator (established posts), no source and no register entry. The register lists 11 checks and none covers staffing. "Through the year" implies a constant level with no period definition.
+Fix: Remove it. Or add the KPI to the register as vacant posts / established posts, with the counts, the date or period, and the source.
+
+FINDING 7 · blocker · P11
+Category: arithmetic
+Evidence: "Outpatient visits grew 18.0% over 2024, moving from 368,400 to 412,600." Recomputed, (412,600 - 368,400) / 368,400 = 44,200 / 368,400 = 11.998%, or 12.0%. The register expects 12.0%. An 18.0% rise would mean 2025 visits of about 434,700. P04 gives 12.0% with the same two inputs, so the memo contradicts itself.
+Fix: Change 18.0% to 12.0%, or delete P11 as a duplicate of P04.
+
+FINDING 8 · blocker · P13
+Category: causal_claim
+Evidence: "The new evening sessions accounted for the 12.0% rise in visits over 2024." The memo gives no data on evening sessions: no visit counts for them, no start date, no per-clinic split. The 44,200-visit rise is a single total across three clinics over one year, with no comparison group and no decomposition. "Accounted for" claims that the sessions explain all of the 12.0%. Nothing supports that, and P12's own caveat says explanations cannot be confirmed. The 12.0% itself is correct (44,200 / 368,400).
+Fix: Remove the attribution. Or state only that evening sessions were introduced in 2025 and visits rose 12.0%, and say the memo has no breakdown that tests whether the sessions explain the rise. If the claim is needed, add visits by session type and a baseline.
+
+FINDING 9 · blocker · P14
+Category: overclaim
+Evidence: "Visits can be expected to keep rising by 12.0% a year, so the department should open a fourth clinic in 2026." This extrapolates a single year-over-year change (368,400 to 412,600) into a standing growth rate. It uses one data point, no trend, no forecast interval and no baseline model, and it assumes the P13 driver continues. The recommendation does not trace to a finding with a figure. The memo gives no capacity, utilisation, waiting-time or cost measure, and it has no cost for a fourth clinic. The only cost figure is the $44.72 per visit from the register, which is not a capacity test. A 12.0% rise in 2026 would give about 462,100 visits (412,600 x 1.12), and the memo never compares that with capacity. If that figure is used it is illustrative and must be labelled so. The fourth-clinic decision is the largest commitment in the memo and has the least evidence.
+Fix: Replace the recommendation with "Visits rose 12.0% in 2025. One year does not support a growth forecast. Before a clinic decision, review capacity and utilisation per clinic and a multi-year trend." Label any 2026 projection as illustrative.
+
+Notes: P01 and P15 are consistent with the register (412,600 visits; 350,000 booked; 29,400 no-shows; $18,450,000), and P04, P06 and P09 recompute correctly. One definition is unstated: "visits" (412,600) exceeds attended booked appointments (350,000 - 29,400 = 320,600) by 92,000. The memo never says whether visits include walk-ins or unbooked activity, so the cost-per-visit and no-show denominators are different units. The caveat in P12 is also too weak for a memo that makes causal and forecast claims in P05, P13 and P14.

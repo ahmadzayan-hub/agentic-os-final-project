@@ -359,6 +359,39 @@ class ServerAssistantTestCase(unittest.TestCase):
         self.assertIn("No saved information found for memory_9", outcome["text"])
         self.assertNotEqual(outcome["action"], "confirm")
 
+    def test_a_note_named_by_what_it_says_is_confirmed_then_deleted(self):
+        """ADR 0027: "delete the note about X" finds the one note about X and
+        asks first; it never deletes on a description alone."""
+        agent = self.session.agent
+        agent.process_input("remember the warehouse stocktake is on 3 March")
+        agent.process_input("remember the board meets on Thursday")
+        outcome = self.say("Delete the note about the warehouse stocktake, it's no longer valid")
+        self.assertEqual(outcome["action"], "confirm")
+        self.assertIn("“the warehouse stocktake is on 3 March”", outcome["text"])
+        self.assertEqual(len(agent.memory), 2, "nothing deleted yet")
+        self.say("yes")
+        self.assertEqual(agent.memory, {"memory_2": "the board meets on Thursday"})
+
+    def test_a_description_that_fits_several_notes_lists_them_and_deletes_nothing(self):
+        agent = self.session.agent
+        agent.process_input("remember the board meets on Thursday")
+        agent.process_input("remember the board pack is due Monday")
+        outcome = self.say("delete the note about the board")
+        self.assertNotEqual(outcome["action"], "confirm")
+        self.assertIn("memory_1: the board meets on Thursday", outcome["text"])
+        self.assertIn("memory_2: the board pack is due Monday", outcome["text"])
+        self.assertEqual(len(agent.memory), 2)
+        self.assertIn("Nothing I remember matches “the canteen menu”",
+                      self.say("forget the note about the canteen menu")["text"])
+
+    def test_an_arabic_note_is_found_by_its_words(self):
+        self.session = FakeSession(make_agent("Arabic"))
+        self.session.agent.process_input("تذكر أن عدد الموظفين 42")
+        outcome = self.say("امسح الملاحظة المتعلقة بعدد الموظفين، تغيرت الأرقام")
+        self.assertEqual(outcome["action"], "confirm")
+        self.say("نعم")
+        self.assertEqual(self.session.agent.memory, {})
+
     def test_the_confirmation_is_in_arabic_for_an_arabic_session(self):
         self.session = FakeSession(make_agent("Arabic"))
         self.session.agent.process_input("تذكّر القهوة الساعة 8")

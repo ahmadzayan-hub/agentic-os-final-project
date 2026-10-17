@@ -11,6 +11,10 @@ import {
   translatePlural,
   useI18n,
 } from '../i18n'
+import { usePack } from '../i18n/pack'
+import { dashMessages } from '../features/dashboard/messages'
+import { joinMessages, modelMessages } from '../features/runs/messages'
+import { liveMessages } from '../features/live/messages'
 import { StatusBadge } from '../shared/components/StatusBadge'
 
 afterEach(() => {
@@ -30,9 +34,9 @@ describe('the dictionaries', () => {
     const untranslated = (Object.keys(en) as Array<keyof typeof en>).filter(
       (key) => ar[key].trim() === '' || (ar[key] === en[key] && /[a-z]{4,}/i.test(en[key])),
     )
-    // Product names and file paths are the same in both languages and
-    // are allowed; everything else must differ.
-    expect(untranslated).toEqual(['brand.name'])
+    // Product names, file formats and file paths are the same in both
+    // languages and are allowed; everything else must differ.
+    expect(untranslated).toEqual(['brand.name', 'format.xlsx', 'format.json', 'format.jsonl'])
   })
 
   it('use the same placeholders in both languages', () => {
@@ -140,5 +144,43 @@ describe('useI18n', () => {
     const shown = screen.getByText(/\d/).textContent ?? ''
     expect(shown).toMatch(/\d{1,2}:\d{2}/)
     expect(shown).not.toMatch(/[٠-٩]/)
+  })
+})
+
+// A view's own strings (ADR 0035) are held to the main dictionaries'
+// rules: the same keys and placeholders in both languages, none blank or
+// left in English, and no key that the main dictionary also defines.
+describe('message packs', () => {
+  const packs = { dashMessages, joinMessages, modelMessages, liveMessages }
+  const names = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort()
+
+  for (const [name, pack] of Object.entries(packs)) {
+    it(`${name} matches in both languages`, () => {
+      const keys = Object.keys(pack.en) as Array<keyof typeof pack.en>
+      expect(Object.keys(pack.ar).sort()).toEqual([...keys].sort())
+      for (const key of keys) {
+        const english = pack.en[key] as string
+        const arabic = pack.ar[key] as string
+        expect(names(arabic), key).toEqual(names(english))
+        expect(arabic.trim(), key).not.toBe('')
+        expect(arabic === english && /[a-z]{4,}/i.test(english), key).toBe(false)
+        expect(Object.hasOwn(en, key), `${key} is also in the main dictionary`).toBe(false)
+      }
+    })
+  }
+
+  it('usePack reads its pack first and the main dictionary for the rest', () => {
+    function Probe() {
+      const { t } = usePack(modelMessages)
+      return (
+        <p>
+          {t('models.used', { n: 72 })} | {t('status.ready')}
+        </p>
+      )
+    }
+    render(<Probe />)
+    expect(screen.getByText(/Records used/).textContent).toBe('Records used: 72 | Ready')
+    act(() => applyLocale('ar'))
+    expect(screen.getByText(/السجلات/).textContent).toBe('السجلات المستخدمة: 72 | جاهز')
   })
 })

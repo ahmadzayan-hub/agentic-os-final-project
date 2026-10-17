@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n'
 import type { MessageKey } from '../../i18n'
 import { api } from '../../shared/api'
 import { Icon } from '../../shared/components/Icon'
+import { formatBytes } from '../../shared/format'
 import type { IconName } from '../../shared/components/Icon'
 import type { ActivityEvent, ConnectionStatus, SessionState, Usage } from '../../shared/types'
 
@@ -23,13 +24,6 @@ function UsageCard() {
       cancelled = true
     }
   }, [])
-
-  // Byte units stay Latin in both languages: they are symbols, not words.
-  function formatBytes(bytes: number): string {
-    if (bytes < 1000) return `${formatNumber(bytes)} B`
-    if (bytes < 1_000_000) return `${formatNumber(bytes / 1000, { maximumFractionDigits: 1 })} kB`
-    return `${formatNumber(bytes / 1_000_000, { maximumFractionDigits: 1 })} MB`
-  }
 
   if (failed) {
     return (
@@ -74,8 +68,8 @@ function UsageCard() {
       key: 'bytes',
       label: t('usage.storage'),
       used: t('usage.of', {
-        used: formatBytes(usage.dataset_bytes.used),
-        limit: formatBytes(usage.dataset_bytes.limit),
+        used: formatBytes(usage.dataset_bytes.used, formatNumber),
+        limit: formatBytes(usage.dataset_bytes.limit, formatNumber),
       }),
       share: usage.dataset_bytes.limit ? usage.dataset_bytes.used / usage.dataset_bytes.limit : 0,
       help: t('usage.dedupe'),

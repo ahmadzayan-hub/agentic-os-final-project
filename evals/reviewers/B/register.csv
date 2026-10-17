@@ -1,0 +1,10 @@
+Check,Expected
+Vehicles,40
+Failures,"1,240"
+Operating km,"4,960,000"
+Mean km between failures (km / failures),"4,000"
+Availability (available hours / scheduled hours),96.4%
+Maintenance cost,"$18,600,000"
+Maintenance cost per vehicle,"$465,000"
+Delay minutes,"52,300"
+Punctuality,98.1%

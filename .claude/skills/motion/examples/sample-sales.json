@@ -1,0 +1,43 @@
+{
+  "language": "en",
+  "theme": "light",
+  "footer": "Source: the bundled sample sales dataset (server/analytics.sample_dataset), 72 rows, 2025",
+  "brand": "Agentic OS",
+  "scenes": [
+    {
+      "type": "title",
+      "duration": 3,
+      "kicker": "Sample sales · 2025",
+      "title": "A year of sales, in four scenes",
+      "subtitle": "Every figure is computed from the sample dataset."
+    },
+    {
+      "type": "kpis",
+      "duration": 5,
+      "heading": "The year at a glance",
+      "items": [
+        { "label": "Revenue", "value": 3583440, "format": "currency", "currency": "USD", "source": "sum(revenue), 72 rows" },
+        { "label": "Units sold", "value": 33525, "source": "sum(units), 72 rows" },
+        { "label": "Months", "value": 12, "source": "distinct month, 2025-01 to 2025-12" }
+      ]
+    },
+    {
+      "type": "bars",
+      "duration": 5,
+      "heading": "Revenue by category",
+      "items": [
+        { "label": "Software", "value": 1734840, "format": "currency", "currency": "USD", "highlight": true, "source": "sum(revenue) where category = Software" },
+        { "label": "Hardware", "value": 1194480, "format": "currency", "currency": "USD", "source": "sum(revenue) where category = Hardware" },
+        { "label": "Services", "value": 654120, "format": "currency", "currency": "USD", "source": "sum(revenue) where category = Services" }
+      ],
+      "note": "Software earns 48% of the year's revenue."
+    },
+    {
+      "type": "statement",
+      "duration": 4,
+      "figure": { "value": 45, "suffix": "%", "source": "(365,400 − 252,000) / 252,000: December against January revenue" },
+      "text": "Monthly revenue grew from January to December.",
+      "note": "252,000 in January, 365,400 in December."
+    }
+  ]
+}
