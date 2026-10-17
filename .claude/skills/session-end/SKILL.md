@@ -1,5 +1,6 @@
 ---
 name: session-end
+disable-model-invocation: true
 description: Close a working session on Agentic OS. Append the session's entry to session-logs.md, update project-progress.md, keep durable lessons in Memory.md, update the brain notes the work touched (with wikilinks), check the brain, then commit and push to the working branch. Use before a session ends, when the user says "wrap up", "end session" or "log this", or when the Stop hook asks for it.
 ---
 

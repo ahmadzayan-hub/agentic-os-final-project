@@ -1,6 +1,6 @@
 # Project progress
 
-Last updated: 2026-10-17, session `7ba0117d` (A3 to A7: the Analytics OS milestones are built). The session-end skill keeps this file current; the SessionStart hook reads the *Now* section into every new session.
+Last updated: 2026-10-17, session `3c636780` (the Git rules are enforced by a hook, ADR 0036). The session-end skill keeps this file current; the SessionStart hook reads the *Now* section into every new session.
 
 **Vision.** Agentic OS becomes an analytics OS. It digests several datasets with dynamic inputs, then carries them through preparation, cleaning and modelling to a multi-page interactive dashboard with live data, with insights and key findings that are always traceable to a calculation. The reasoning behind it is in `brain/Projects/Analytics OS roadmap.md`.
 
@@ -90,6 +90,7 @@ Reusable foundations: the metric glossary (`metrics.json`), custom stages (ADR 0
 
 | Date | What | Evidence |
 | --- | --- | --- |
+| 2026-10-17 | The Git rules enforced: `guard.py` PreToolUse hook and `permissions.deny`; `session-end` manual-only; compaction guidance; `scripts/restore-workspace.ps1` for Windows (ADR 0036) | `tests.test_project_os` 38 tests pass; full suite 1031 run with 5 failures that also occur without the change (container lacks fastapi and the MCP SDK); PowerShell script not run |
 | 2026-10-17 | A7, live data: live sources with an SSRF fence, scheduled refreshes, the event stream and the Live badge (ADR 0034) | 1025 Python tests with PostgreSQL (16 skipped); 106 frontend unit tests; end-to-end 100 of 104 run and pass, 4 skipped by design; budget 92.8 of 100 KB first load; security review: no blockers, seven findings fixed |
 | 2026-10-17 | A6, modelling stages: four plugins against their baselines, model cards; view strings ship with their chunk (ADRs 0033, 0035) | 964 Python tests with PostgreSQL (16 skipped); 98 frontend unit tests; end-to-end 94 of 98 run and pass, 4 skipped by design; budget 92.8 of 100 KB first load |
 | 2026-10-17 | A5, dashboard pages: router, six pages, global filters in the address, drill-down to records, histogram and scatter (ADR 0032) | 942 Python tests with PostgreSQL (16 skipped); 94 frontend unit tests; end-to-end 90 of 94 run and pass, 4 skipped by design; budget 96.5 of 100 KB first load, CSS 9.4 of 10 KB first load and 10.2 of 16 KB total |

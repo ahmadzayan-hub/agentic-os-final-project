@@ -40,8 +40,9 @@ def decide(data: dict) -> dict | None:
         "decision": "block",
         "reason": (
             f"This session made {commits} commit(s), but session-logs.md has no "
-            f"entry for session `{short_id(sid)}`. Run the session-end skill "
-            "(.claude/skills/session-end/SKILL.md): log the session, update "
+            f"entry for session `{short_id(sid)}`. Follow the session-end skill "
+            "(read .claude/skills/session-end/SKILL.md; it is manual-only, so the "
+            "user can also run /session-end): log the session, update "
             "project-progress.md, Memory.md and the brain notes it touched, then "
             "commit. If the user asked to stop without logging, say so and stop."
         ),

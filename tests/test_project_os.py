@@ -314,16 +314,91 @@ class HookTestCase(unittest.TestCase):
         self.assertTrue((self.repo / ".claude" / "state" / "sessions" / "escape.json").exists())
 
 
+class GuardTestCase(unittest.TestCase):
+    """guard.py as Claude Code runs it: a PreToolUse process, JSON on stdin."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.repo = Path(self.tmp.name)
+        self.env = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.repo))
+        self.env.pop("AGENTIC_OS_GUARD_OFF", None)
+        for args in (("init", "-q", "-b", "work"), ("-c", "user.name=T", "-c", "user.email=t@example.com",
+                                                    "commit", "-q", "--allow-empty", "-m", "start")):
+            subprocess.run(["git", *args], cwd=self.repo, check=True, capture_output=True)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def ask(self, command, env=None):
+        payload = {"tool_name": "Bash", "tool_input": {"command": command}}
+        done = subprocess.run([sys.executable, str(HOOKS / "guard.py")], input=json.dumps(payload),
+                              env=env or self.env, capture_output=True, text=True, timeout=30)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return json.loads(done.stdout)["hookSpecificOutput"] if done.stdout.strip() else None
+
+    def test_refuses_what_the_soul_forbids(self):
+        for command in (
+            "git push --force origin work", "git push -f origin work", "git push origin +work",
+            "git push --force-with-lease origin work", "git push origin :work",
+            "git push --delete origin work", "git push -u origin main",
+            "git push origin HEAD:main", "git -C . push origin other-branch",
+            "git reset --hard HEAD~1", "git branch -D old", "git filter-branch --all",
+            "git add .env", "git add -f private/notes.md",
+            "git status && git push --force",
+            "git push --force origin work 2>&1", "git push origin main 2>&1 | tail -1",
+        ):
+            decision = self.ask(command)
+            self.assertIsNotNone(decision, command)
+            self.assertEqual(decision["permissionDecision"], "deny", command)
+            self.assertTrue(decision["permissionDecisionReason"], command)
+
+    def test_allows_ordinary_git_and_other_commands(self):
+        for command in (
+            "git push -u origin work", "git push origin work", "git push origin HEAD",
+            "git push origin work:work", "git push", "git push -u origin work 2>&1 | tail -3",
+            "git push origin work > out.txt 2>&1", "git push origin work &> out.txt",
+            "git fetch origin work 2>/dev/null", "git status", "git log --oneline",
+            "git add .env.example", "git add server/app.py", "git commit -m 'fix: reset --hard docs'",
+            "python -m unittest discover tests", "ls -la", "",
+        ):
+            self.assertIsNone(self.ask(command), command)
+
+    def test_can_be_turned_off_by_the_person_alone(self):
+        env = dict(self.env, AGENTIC_OS_GUARD_OFF="1")
+        self.assertIsNone(self.ask("git push --force origin work", env=env))
+
+    def test_fails_open_on_bad_input(self):
+        for stdin in ("not json at all", "", "[]", json.dumps({"tool_input": None})):
+            done = subprocess.run([sys.executable, str(HOOKS / "guard.py")], input=stdin,
+                                  env=self.env, capture_output=True, text=True, timeout=30)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stdout.strip(), "")
+
+
 class SettingsTestCase(unittest.TestCase):
     def test_settings_wire_each_hook_to_a_script_that_exists(self):
         settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
-        for event, script in (("SessionStart", "session_start.py"),
+        for event, script in (("PreToolUse", "guard.py"),
+                              ("SessionStart", "session_start.py"),
                               ("Stop", "stop_gate.py"),
                               ("SessionEnd", "session_end.py")):
             commands = [h["command"] for entry in settings["hooks"][event]
                         for h in entry["hooks"]]
             self.assertTrue(any(script in c for c in commands), event)
             self.assertTrue((HOOKS / script).exists(), script)
+
+    def test_the_git_rules_are_denied_in_permissions_and_guarded_on_bash(self):
+        settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+        deny = " ".join(settings["permissions"]["deny"])
+        for rule in ("git push --force", "git reset --hard", "git branch -D", "Read(./.env)"):
+            self.assertIn(rule, deny)
+        self.assertEqual([e["matcher"] for e in settings["hooks"]["PreToolUse"]], ["Bash"])
+
+    def test_session_end_is_manual_only_and_the_stop_hook_still_points_to_it(self):
+        skill = (ROOT / ".claude" / "skills" / "session-end" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("disable-model-invocation: true", skill.split("---")[1])
+        stop = (HOOKS / "stop_gate.py").read_text(encoding="utf-8")
+        self.assertIn("/session-end", stop)
 
     def test_session_end_has_a_budget_above_the_default(self):
         """SessionEnd hooks get 1.5 s unless a hook sets its own timeout."""
@@ -338,6 +413,27 @@ class SettingsTestCase(unittest.TestCase):
             for path in (ROOT / ".claude" / folder).glob("*.md"):
                 text = path.read_text(encoding="utf-8")
                 self.assertTrue(text.startswith("---\n"), f"{path.name} has no frontmatter")
+
+
+class WorkingMemoryTestCase(unittest.TestCase):
+    """The three working-memory files are on the branch and not empty, and the
+    Windows restore script checks for exactly them."""
+
+    FILES = ("Memory.md", "project-progress.md", "session-logs.md")
+
+    def test_the_memory_files_exist_and_hold_content(self):
+        for name in self.FILES:
+            text = (ROOT / name).read_text(encoding="utf-8")
+            self.assertGreater(len(text.splitlines()), 20, name)
+        logs = (ROOT / "session-logs.md").read_text(encoding="utf-8")
+        self.assertRegex(logs, r"(?m)^## \d{4}-\d{2}-\d{2} · `[0-9a-f]{8}` · ")
+
+    def test_the_restore_script_checks_the_same_files(self):
+        script = (ROOT / "scripts" / "restore-workspace.ps1").read_text(encoding="utf-8")
+        for name in self.FILES:
+            self.assertIn(name, script)
+        for forbidden in ("--force", "Remove-Item", "reset --hard", "git push"):
+            self.assertNotIn(forbidden, script)
 
 
 if __name__ == "__main__":

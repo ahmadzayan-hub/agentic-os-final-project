@@ -4,12 +4,13 @@ Everything here is shared with the team through Git, except the paths `.gitignor
 
 | Path | What it holds |
 | --- | --- |
-| `settings.json` | The three project hooks below. Personal settings go in `settings.local.json`, which Git ignores. |
+| `settings.json` | `permissions.deny` for force-push, hard reset, branch deletion and `.env` files, and the four project hooks below. Personal settings go in `settings.local.json`, which Git ignores. |
+| `hooks/guard.py` | PreToolUse on Bash. Refuses force-pushes, pushes to any branch but the checked-out one, `git reset --hard`, branch deletion, `git filter-branch` and adding `.env` or `private/` to Git (ADR 0036). `AGENTIC_OS_GUARD_OFF=1` in your `settings.local.json` env turns it off for you alone. |
 | `hooks/session_start.py` | Records where a session began, and briefs Claude: current focus, last log entry, brain health, whether maintenance is due. |
 | `hooks/stop_gate.py` | Blocks a finish once when the session committed work but has no `session-logs.md` entry. |
 | `hooks/session_end.py` | Appends a factual automatic log entry if the session-end skill never ran. |
 | `skills/session-start/` | Orient: read the memory files, check the repository, state the plan. |
-| `skills/session-end/` | Log the session, update progress, memory and the brain, then commit. |
+| `skills/session-end/` | Log the session, update progress, memory and the brain, then commit and push. Manual-only (`disable-model-invocation`): run `/session-end`, or follow it when the Stop hook asks. |
 | `skills/brain-maintenance/` | Daily: refresh stale values, merge duplicates, repair and add wikilinks. |
 | `skills/verify/` | Run every check with `scripts/verify.py` and report the real counts; how to measure Lighthouse. |
 | `skills/motion/` | Short animated explainers (MP4) from verified figures, rendered frame by frame from code like Claude Motion: `composition.html`, `render.mjs`, and examples from the sample data. Needs the frontend's Playwright and `ffmpeg`. |

@@ -524,3 +524,27 @@ The first entries were written from the commit history and the session's own rec
     - Scheduled refresh on Vercel needs a worker or a cron calling "refresh"; serverless refreshes only on request.
     - Workbook sheet selection (UI plan phase 2).
 - **Blockers:** none for the code. The capstone team items in *Now* are unchanged.
+
+## 2026-10-17 · `3c636780` · claude/zealous-dijkstra-oud9ix (structure review, enforcement)
+
+**Goal:** the user asked for a review of the Agentic OS structure against Claude Code best practice, then for items 1, 3 and 5 of that review, a check that the memory, session-log and progress files are complete on GitHub, and a fix for a Windows error ("no folder at C:\ahmadzayan-hub\agentic-os-final-project").
+
+- **Done:**
+    - Review of `.claude/`, CLAUDE.md, hooks, skills and agents against Anthropic's best-practices page. Findings given to the user; items 2 (slim the generic design skills) and 4 (cut memory duplication) were left to the user because they remove content.
+    - Item 1: `.claude/hooks/guard.py` (PreToolUse on Bash) and `permissions.deny` in `settings.json` enforce the Soul's Git rules (ADR 0036).
+    - Item 3: `session-end` is manual-only (`disable-model-invocation: true`); the Stop hook text points to the file and to `/session-end`.
+    - Item 5: CLAUDE.md says what to keep when compacting and when to use `/context` and `/clear`. AGENTS.md and `.claude/README.md` updated in the same commit.
+    - `scripts/restore-workspace.ps1`: clones the repository to `C:\ahmadzayan-hub\agentic-os-final-project` if the folder is missing, checks out the working branch, and checks the three memory files.
+- **Verified:**
+    - Branch contents: `Memory.md` (94 lines), `project-progress.md` (118) and `session-logs.md` (526 lines, 22 dated entries) are on `origin/claude/agentic-os-final-project-53j6ql` and in this branch. They are **not** on `origin/main`, which has none of the three and has diverged (50 commits here not in main, 41 in main not here).
+    - 1031 Python tests ran (330 skipped), up from 1025 before this session's six new tests (plus two more later, run alone). 5 failures (`test_mcp`, `test_sbom`) occur identically without the changes: this container lacks fastapi and the MCP SDK. `tests.test_project_os` 38 tests and `tests.test_docs` 8 tests pass. `brain_check --strict` is clean.
+    - Not run: frontend checks, e2e, PostgreSQL tests. Nothing in `frontend/` or `server/` changed. The PowerShell script was not run (no PowerShell here); its text is checked by a test only.
+    - README's "Last verified" counts were left as they are, because they describe the A7 run in a full environment that this session could not reproduce.
+- **Decisions:** the guard blocks force-push, pushes to a branch other than the checked-out one, hard reset, branch deletion, `filter-branch`/`filter-repo`, and `git add` of `.env` or `private/`. It does not block rebase or amend (ADR 0036). `AGENTIC_OS_GUARD_OFF=1` in `settings.local.json` turns it off for one person.
+- **Open / next:**
+    - The user decides items 2 and 4.
+    - `main` has none of the memory files; merging or a pull request needs the owner's permission.
+    - Run the PowerShell script on the Windows machine and report its output.
+    - Confirm in Claude Code with `/hooks` and `/permissions` that the guard and deny rules load.
+- **Blockers:** none.
+

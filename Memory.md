@@ -42,6 +42,9 @@ Full list: [brain/Soul.md](brain/Soul.md).
 
 ## Conventions
 
+- `.claude/hooks/guard.py` refuses force-pushes, pushes to another branch, hard resets, branch deletion and `git add` of `.env` or `private/` (ADR 0036). If a command is refused, say so and ask; the person can set `AGENTIC_OS_GUARD_OFF=1` in `settings.local.json`. `session-end` is manual-only: read and follow it, or the user runs `/session-end`.
+- On Windows, a missing `C:\ahmadzayan-hub\agentic-os-final-project` is restored with `scripts/restore-workspace.ps1`. `main` on GitHub does not hold the memory files; the working branches do.
+
 - UI handoff (ADR 0029): `docs/design/AGENTIC_UI_SPEC.md`; editable designs at https://www.figma.com/design/nLdKZ5cVOtRMTWEvhCJSEK. Current delivery targets a PWA on Windows, Android and iOS; native signing/store packages are separate. See `docs/design/VALIDATION.md` before claiming runtime verification.
 
 - A behaviour change gets an ADR in `docs/adr/`, numbered next; ADRs are never edited to fit later facts.
